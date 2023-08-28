@@ -8,10 +8,15 @@
 
 ## 简介
 此软件使用pyside6并用Nuitka编译。使用ffmpeg进行视频合成。
+<br>
 算法部分使用了fire_kepper的图片盲水印算法进行图片操作，文字盲水印使用了guofei9987的算法。各位可自行搜索。
+<br>
 B站视频演示
+<br>
 逻辑为对视频进行随机抽帧进行水印处理，达到隐蔽并不易去除的目的。
+<br>
 最后为用户输出一个json文件，可用于自动化恢复水印。用户也可以手动截图输入来进行解码。
+<br>
 致力于帮助广大创作者抵抗盗版狗！
 ## 环境配置
 运行该软件需要python3.10的环境
@@ -49,3 +54,7 @@ pip install -r requirement.txt
 如果水印图过大会报错，合适的水印图大小各位可以自己试一试试出来，因为原作者好像没有给判断方法。
 <br>
 pack分支为我用~~Natsuki~~Nuitka编译时的结构，将不会再维护。
+
+## 参考项目
+https://github.com/fire-keeper/BlindWatermark
+https://github.com/guofei9987/blind_watermark
