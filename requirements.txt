@@ -61,7 +61,6 @@ platformdirs==3.10.0
 proglog==0.1.10
 psutil==5.9.5
 pycparser==2.21
-pycuda @ file:///D:/invisible_video_watermark/result/ansel/pycuda-2022.1%2Bcuda116-cp310-cp310-win_amd64.whl#sha256=e6dd5f5ab189df0ffafc1ed3e962c48ef82888fc222055f25c3a1a0bd796c44e
 pydantic==2.3.0
 pydantic_core==2.6.3
 pydub==0.25.1
