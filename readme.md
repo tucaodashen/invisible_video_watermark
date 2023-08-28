@@ -11,7 +11,7 @@
 <br>
 算法部分使用了fire_kepper的图片盲水印算法进行图片操作，文字盲水印使用了guofei9987的算法。各位可自行搜索。
 <br>
-B站视频演示
+[B站视频演示](https://www.bilibili.com/video/BV1Rp4y1P71r/?spm_id_from=top_right_bar_window_dynamic.content.click&vd_source=e1f1e5e71aad5101946baba5c0d06773)
 <br>
 逻辑为对视频进行随机抽帧进行水印处理，达到隐蔽并不易去除的目的。
 <br>
