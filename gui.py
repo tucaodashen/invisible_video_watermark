@@ -133,13 +133,15 @@ class MainWindows(QMainWindow,Ui_MainWindow):
     def browservideofunc(self):
         self.videopath = QFileDialog.getOpenFileName(self, "选择输入视频文件", "", "mp4 文件(*.mp4);;mkv 文件(*.mkv);;avi 文件(*.avi);;flv 文件(*.flv)")
         self.videofile.setText(str(self.videopath[0]))
-        self.videopath1=self.videofile.text()
+        
     def imagepath(self):
         self.wmpath = QFileDialog.getOpenFileName(self, "选择输入水印文件", "",
                                                          "png 文件(*.png);;jpg 文件(*.jpg);;jpeg 文件(*.jpeg);;bmp 文件(*.bmp)")
         self.imagefile.setText(self.wmpath[0])
-        self.wmpath1=self.imagefile.text()
+        
     def inputp(self):
+        self.videopath1=self.videofile.text()
+        self.wmpath1=self.imagefile.text()
         self.mtype=str(self.filttype.currentText())
         self.videotype = str(self.vtype.currentText())
         self.wmquality = str(self.wm_quality.text())
