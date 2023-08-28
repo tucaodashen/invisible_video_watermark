@@ -57,4 +57,5 @@ pack分支为我用~~Natsuki~~Nuitka编译时的结构，将不会再维护。
 
 ## 参考项目
 https://github.com/fire-keeper/BlindWatermark
+<br>
 https://github.com/guofei9987/blind_watermark
