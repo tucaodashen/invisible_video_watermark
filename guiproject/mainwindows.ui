@@ -1,0 +1,668 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>612</width>
+    <height>409</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>不可见水印工具  codeby：吐槽大神_Official</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../gui/res.qrc">
+    <normaloff>:/icon/C:/Users/27698/Downloads/reico.ico</normaloff>:/icon/C:/Users/27698/Downloads/reico.ico</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QWidget" name="layoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>583</width>
+      <height>356</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout_2">
+     <item row="0" column="0" colspan="2">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>视频文件</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="videofile">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_2">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>水印（如果为图片水印则为图片路径，文字水印为内容）</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="imagefile">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="QPushButton" name="browservideo">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>浏览</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="browserimage">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>浏览</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item row="1" column="0">
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QLabel" name="label_3">
+         <property name="font">
+          <font>
+           <family>Source Han Sans Bold</family>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>水印设置</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QRadioButton" name="imagewm">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="tabletTracking">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>图片水印</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QRadioButton" name="textwm">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>文字水印</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_4">
+         <property name="font">
+          <font>
+           <family>Source Han Sans Bold</family>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>水印抗干扰性   数值越大越抗干扰，但画质会降低</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QSpinBox" name="wm_quality">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="frame">
+            <bool>false</bool>
+           </property>
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>200</number>
+           </property>
+           <property name="singleStep">
+            <number>1</number>
+           </property>
+           <property name="value">
+            <number>35</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_5">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>此选项在文字水印下无效</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <item>
+          <widget class="QComboBox" name="filttype">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <item>
+            <property name="text">
+             <string>.png</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>.jpg</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>.jpeg</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>.bmp</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_7">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>处理格式(程序处理时所用的格式，建议选择png)</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_7">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_11">
+           <item>
+            <widget class="QLabel" name="label_13">
+             <property name="font">
+              <font>
+               <family>Source Han Sans Bold</family>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>采样数</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="sampletime">
+             <property name="font">
+              <font>
+               <family>Source Han Sans Bold</family>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>9999</number>
+             </property>
+             <property name="value">
+              <number>10</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_10">
+           <item>
+            <widget class="QLabel" name="label_14">
+             <property name="font">
+              <font>
+               <family>Source Han Sans Bold</family>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>采样帧延续</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="peroid">
+             <property name="font">
+              <font>
+               <family>Source Han Sans Bold</family>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>9999</number>
+             </property>
+             <property name="value">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item row="1" column="1">
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QLabel" name="label_6">
+         <property name="font">
+          <font>
+           <family>Source Han Sans Bold</family>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>输出设置</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QComboBox" name="comboBox">
+           <item>
+            <property name="text">
+             <string>视频</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>图片</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <item>
+          <widget class="QLabel" name="label_8">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>输出格式</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="vtype">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <item>
+            <property name="text">
+             <string>.mp4</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>.avi</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>.mkv</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>.flv</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_7">
+         <item>
+          <widget class="QLabel" name="label_9">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>输出名</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="output">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_10">
+         <property name="font">
+          <font>
+           <family>Source Han Sans Bold</family>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>编码设置</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <item>
+            <widget class="QLabel" name="label_11">
+             <property name="font">
+              <font>
+               <family>Source Han Sans Bold</family>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>目标码率(kbps)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="dkbps">
+             <property name="font">
+              <font>
+               <family>Source Han Sans Bold</family>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>10000</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_9">
+           <item>
+            <widget class="QLabel" name="label_12">
+             <property name="font">
+              <font>
+               <family>Source Han Sans Bold</family>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>最高码率(kbps)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="maxkbps">
+             <property name="font">
+              <font>
+               <family>Source Han Sans Bold</family>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>15000</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item row="2" column="0" colspan="2">
+      <layout class="QVBoxLayout" name="verticalLayout_8">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_12">
+         <item>
+          <widget class="QProgressBar" name="processbar_bo">
+           <property name="font">
+            <font>
+             <family>Source Han Sans Bold</family>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="value">
+            <number>0</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_6">
+           <item>
+            <widget class="QPushButton" name="buton_start">
+             <property name="font">
+              <font>
+               <family>Source Han Sans Bold</family>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>开始</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="stopbutton">
+             <property name="text">
+              <string>停止</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="operation_label">
+         <property name="font">
+          <font>
+           <family>Source Han Sans Bold</family>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>等待中....</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>612</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>工具</string>
+    </property>
+    <addaction name="genimg"/>
+    <addaction name="recqrcode"/>
+    <addaction name="genqrcode"/>
+    <addaction name="manr"/>
+    <addaction name="recover"/>
+    <addaction name="actionnihao"/>
+   </widget>
+   <widget class="QMenu" name="about">
+    <property name="title">
+     <string>关于</string>
+    </property>
+    <addaction name="actionabout"/>
+   </widget>
+   <addaction name="menu"/>
+   <addaction name="about"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="genimg">
+   <property name="text">
+    <string>文字生成图片</string>
+   </property>
+  </action>
+  <action name="recqrcode">
+   <property name="text">
+    <string>二维码识别</string>
+   </property>
+  </action>
+  <action name="genqrcode">
+   <property name="text">
+    <string>二维码生成</string>
+   </property>
+  </action>
+  <action name="initialflodar">
+   <property name="text">
+    <string>初始化文件夹</string>
+   </property>
+  </action>
+  <action name="recover">
+   <property name="text">
+    <string>读取水印</string>
+   </property>
+  </action>
+  <action name="actionabout">
+   <property name="text">
+    <string>about</string>
+   </property>
+  </action>
+  <action name="manr">
+   <property name="text">
+    <string>手动读取水印</string>
+   </property>
+  </action>
+  <action name="actionnihao">
+   <property name="text">
+    <string>生成单张图片水印</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../gui/res.qrc"/>
+ </resources>
+ <connections/>
+</ui>
