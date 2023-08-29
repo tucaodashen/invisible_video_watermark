@@ -5,7 +5,7 @@
  ### Python Based video blind water mark tool.
  <br>
 <img src="https://moe-counter.glitch.me/get/@:tucaodashen?theme=rule34" /><br>
-
+<img src="https://github.com/tucaodashen/invisible_video_watermark/blob/main/readme/splash.png?raw=true" /><br>
 ## 简介
 此软件使用pyside6并用~~Natsuki~~Nuitka编译。使用ffmpeg进行视频合成。
 <br>
