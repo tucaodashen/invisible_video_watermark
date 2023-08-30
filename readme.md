@@ -52,9 +52,3 @@ pip install -r requirement.txt
 软件暂时没有防呆保护，所以先检查你的设置有没有错再开始。
 <br>
 如果水印图过大会报错，合适的水印图大小各位可以自己试一试试出来，因为原作者好像没有给判断方法。
-
-
-## 参考项目
-https://github.com/fire-keeper/BlindWatermark
-<br>
-https://github.com/guofei9987/blind_watermark
