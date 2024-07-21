@@ -1,6 +1,0 @@
-name: AutoBuildLatestVersion
-
-run-name: ${{ github.actor }} is building the py files 🚀
-
-on: [ push ]
-jobs:
