@@ -1,6 +1,6 @@
 name: learn-github-actions
 run-name: ${{ github.actor }} is learning GitHub Actions
-on: [push]
+on:
 jobs:
   build:
 
@@ -21,4 +21,4 @@ jobs:
         run: python -c "import sys; print(sys.version)"
       - name: Install depends
         run: dir
-          pip install -r requirements.txt
+      - run:  pip install -r requirements.txt
