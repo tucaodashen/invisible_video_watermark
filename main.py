@@ -6,7 +6,6 @@ from PySide6.QtCore import Qt,QTime,QTimer,QThread,Signal
 import os
 import random
 import time
-import pil
 import blind_watermark as bw
 import command
 import videoprocess
@@ -130,7 +129,9 @@ def process(watermark,
             shutil.copy("processedframe/"+fil, "origin")#进行帧替换
         print(processlist,"处理已完成")
         progressbar({'cent': 60, 'operation': '处理完成，正在进行文件输出'})
-        command.extractaudio(video) #提取原视频音频
+        audextst = command.extractaudio(video) #提取原视频音频
+        if audextst == "err":
+            print("视频无音频！")
         if outputtype=="video": #进行视频合成
             command.output(origin=video,video=filename,fps=fps,sen=sen,kbps=kbps,maxkbps=maxkbps,mtype=filetype,vtype=videotype)
         os.mkdir("result/"+str(filename))
