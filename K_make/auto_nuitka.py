@@ -307,7 +307,7 @@ class AutoNuitka:
         self.icon = icon
         self.command = ''
         self.display_args = " --show-progress --show-memory "
-        self.head = sys.executable+" -m nuitka --standalone "
+        self.head = "python"+" -m nuitka --standalone "
         if self.mode == 'auto_p':
             if self.included_py != []:
                 inclue = " --include-module="
