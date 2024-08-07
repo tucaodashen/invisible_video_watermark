@@ -1,31 +1,33 @@
 @echo off
 pip install --upgrade pip
-pip install -r selfreq.txt
+
 pip install -r requirements.txt
+
+pip install -r selfreq.txt
 
 
 
 
 set /a retry_count=0
 set max_retries=5
-set retry_delay=2  ; µÈ´ıÊ±¼ä£¬µ¥Î»ÎªÃë
+set retry_delay=2  ; ç­‰å¾…æ—¶é—´ï¼Œå•ä½ä¸ºç§’
 
 :run_command
-echo ³¢ÊÔÖ´ĞĞÃüÁî: %retry_count% ´Î...
+echo å°è¯•æ‰§è¡Œå‘½ä»¤: %retry_count% æ¬¡...
 python -m nuitka --mingw64 --standalone helloworld.py < auto.txt
 if errorlevel 1 (
     set /a retry_count+=1
-    echo ÃüÁîÖ´ĞĞÊ§°Ü£¬ÕıÔÚµÈ´ı %retry_delay% ÃëºóÖØÊÔ...
+    echo å‘½ä»¤æ‰§è¡Œå¤±è´¥ï¼Œæ­£åœ¨ç­‰å¾… %retry_delay% ç§’åé‡è¯•...
     timeout /t %retry_delay%
     if %retry_count% lss %max_retries% (
         goto run_command
     ) else (
-        echo ´ïµ½×î´óÖØÊÔ´ÎÊı£¬ÃüÁîÎ´ÄÜ³É¹¦Ö´ĞĞ¡£
+        echo è¾¾åˆ°æœ€å¤§é‡è¯•æ¬¡æ•°ï¼Œå‘½ä»¤æœªèƒ½æˆåŠŸæ‰§è¡Œã€‚
         exit /b 1
     )
 ) else (
-    echo ÃüÁî³É¹¦Ö´ĞĞ¡£
-    echo ¼ÌĞøÖ´ĞĞºóĞøÖ¸Áî...
+    echo å‘½ä»¤æˆåŠŸæ‰§è¡Œã€‚
+    echo ç»§ç»­æ‰§è¡Œåç»­æŒ‡ä»¤...
     rd /S /Q helloworld.dist
 	rd /S /Q helloworld.build
     goto :eof
