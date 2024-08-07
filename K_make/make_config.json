@@ -1,0 +1,20 @@
+{
+  "attached_data": "",
+  "console": true,
+  "debug": false,
+  "disabled_pypi": [
+    "numpy",
+    "pyzbar",
+    "PIL",
+    "pywt"
+  ],
+  "enabled_plugin": [
+    "dll-files",
+    "pyside6"
+  ],
+  "generator_type": "nuitka",
+  "icon": "D:\\invisible_video_watermark\\reico.ico",
+  "main_entrance": "gui.py",
+  "mode": "auto_p",
+  "uac": false
+}

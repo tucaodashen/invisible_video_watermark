@@ -1,0 +1,7 @@
+psutil
+pyinstaller
+nuitka
+rich
+tqdm
+pipdeptree
+imageio

@@ -10,7 +10,7 @@ from gui.ui_about import Ui_Formabout
 from gui.ui_splash import Ui_splashfr
 from gui.ui_manul import Ui_manul
 import main
-import pil
+import pils
 import core
 import gui.res_rc
 
