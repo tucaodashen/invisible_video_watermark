@@ -1,7 +1,9 @@
 @echo off
 pip install --upgrade pip
-pip install -r selfreq.txt
+
 pip install -r requirements.txt
+
+pip install -r selfreq.txt
 
 
 

@@ -1,6 +1,6 @@
 psutil
 pyinstaller
-nuitka
+nuitka==2.4.5
 rich
 tqdm
 pipdeptree
