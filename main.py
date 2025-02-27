@@ -171,9 +171,9 @@ def process(watermark,
         progressbar({'cent': 100, 'operation': '处理完成！'})
         print(recoverdata)
         return 0
-    except:
+    except Exception as e:
         progressbar({'cent': 0, 'operation': '操作失败，请检查输出后重试。当然如果你是点了停止就是你停止了'})
-        print("wdnmd又出错!")
+        print(f"wdnmd又出错!{e}")
         return -1
 def recorver(recoverfile,video,processtype):
     initial()
