@@ -54,7 +54,7 @@ def output(origin, video, fps, sen, kbps=10000, maxkbps=15000, mtype=".jpg", vty
     """
     if os.path.exists("origin/" + str(os.path.basename(video)) + vtype):
         os.remove("origin/" + str(os.path.basename(video)) + vtype)
-    if audstate != "err":
+    if audstate == True:
         comm = r"ffmpeg\bin\ffmpeg.exe -r " + str(fps) + " -f image2 -start_number 1 -i origin/%0d" + str(
             mtype) + " -i origin/" + str(os.path.basename(origin)) + ".aac -c:v libx264 -b:v " + str(
             kbps) + "k -maxrate " + str(kbps) + "k -bufsize 10000k -pix_fmt yuv420p -c:a copy origin/" + str(

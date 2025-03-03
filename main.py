@@ -130,10 +130,10 @@ def process(watermark,
         print(processlist,"处理已完成")
         progressbar({'cent': 60, 'operation': '处理完成，正在进行文件输出'})
         audextst = command.extractaudio(video) #提取原视频音频
-        if audextst == "err":
+        if not os.path.exists("origin/" + str(os.path.basename(video)) + ".aac"):
             print("视频无音频！")
         if outputtype=="video": #进行视频合成
-            command.output(origin=video,video=filename,fps=fps,sen=sen,kbps=kbps,maxkbps=maxkbps,mtype=filetype,vtype=videotype)
+            command.output(origin=video,video=filename,fps=fps,sen=sen,kbps=kbps,maxkbps=maxkbps,mtype=filetype,vtype=videotype,audstate=os.path.exists("origin/" + str(os.path.basename(video)) + ".aac"))
         os.mkdir("result/"+str(filename))
         print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
         nowtime=str(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))#获取当前时间
