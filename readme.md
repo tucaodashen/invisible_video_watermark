@@ -1,5 +1,7 @@
 ![Alt](https://repobeats.axiom.co/api/embed/30e3f4c85c3c74c1e22a1c0872a1165809c7ace8.svg "Repobeats analytics image")
 
+# 此版本已被弃用，请等待Next→分支的开发完成与发布。若仍需使用此版本，请自行去GithubAction构建可执行程序或自行搭建环境运行。
+## This version has been depecated. The "NEXT→" branch will be released as soon as possible. Please use GithubAction or build you own virtual environment to run depecated version
 
 # **基于python的视频盲水印制作工具**
 
