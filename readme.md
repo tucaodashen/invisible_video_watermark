@@ -5,7 +5,7 @@
 
 # **基于python的视频盲水印制作工具**
 
- ### Python Based video blind water mark tool.
+ ### Python Based video blind water mark tool
  
  ![Alt](https://moe-counter.glitch.me/get/@:tucaodashen?theme=rule34 "Repobeats analytics image")
  
