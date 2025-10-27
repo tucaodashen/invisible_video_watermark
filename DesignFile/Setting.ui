@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>580</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="TitleLabel" name="SettingTitleLabel">
+     <property name="text">
+      <string>TextLabel</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="ScrollArea" name="scrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>-148</y>
+        <width>768</width>
+        <height>1019</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_8">
+       <item>
+        <widget class="QFrame" name="frame">
+         <property name="frameShape">
+          <enum>QFrame::Shape::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Raised</enum>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="TitleLabel" name="General_label">
+            <property name="text">
+             <string>通用</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_21">
+            <item>
+             <widget class="QLabel" name="LanguageLabel">
+              <property name="text">
+               <string>语言</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ComboBox" name="LanguagecomboBox"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="BodyLabel" name="StartPageLabel">
+              <property name="text">
+               <string>启动时页面</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ComboBox" name="StartPageCombo"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="BodyLabel" name="CompleteDing">
+              <property name="text">
+               <string>完成后提示音</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="CheckBox" name="CompleteDingCheck">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="frame_2">
+         <property name="frameShape">
+          <enum>QFrame::Shape::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Raised</enum>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <widget class="TitleLabel" name="FileRelatedLabel">
+            <property name="text">
+             <string>文件</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <widget class="BodyLabel" name="DefaultSaveDictLabel">
+              <property name="text">
+               <string>默认保存目录</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="LineEdit" name="DefaultSaveDictTextEdit"/>
+            </item>
+            <item>
+             <widget class="PushButton" name="DefaultSaveDictBrowserButton">
+              <property name="text">
+               <string>浏览</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <widget class="BodyLabel" name="CacheDirLabel">
+              <property name="text">
+               <string>缓存目录</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="LineEdit" name="CacheDirTL"/>
+            </item>
+            <item>
+             <widget class="PushButton" name="CacheBrowButton">
+              <property name="text">
+               <string>浏览</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <widget class="BodyLabel" name="OutputStructureLabel">
+              <property name="text">
+               <string>输出格式</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ComboBox" name="OutputStructureComboBox"/>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="frame_4">
+         <property name="frameShape">
+          <enum>QFrame::Shape::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Raised</enum>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="TitleLabel" name="VideoSetting">
+            <property name="text">
+             <string>视频设置</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_9">
+            <item>
+             <widget class="BodyLabel" name="DefaultEncoderLabel">
+              <property name="text">
+               <string>默认编码器</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ComboBox" name="DefaultEncoder_comboBox_4"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_10">
+            <item>
+             <widget class="BodyLabel" name="QualityControl">
+              <property name="text">
+               <string>默认质量控制方式</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ComboBox" name="DefaultQualityControl"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_11">
+            <item>
+             <widget class="BodyLabel" name="MaximumBitRateLabel">
+              <property name="text">
+               <string>默认最大码率</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="LineEdit" name="MaximumBitrateTL"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_12">
+            <item>
+             <widget class="BodyLabel" name="TargetBitrateLabel">
+              <property name="text">
+               <string>默认目标码率</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="LineEdit" name="TargetBitrateTL"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_13">
+            <item>
+             <widget class="BodyLabel" name="DefaultTargetLabel">
+              <property name="text">
+               <string>默认目标格式</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ComboBox" name="TargetFormatDefaultComboBox"/>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="frame_3">
+         <property name="frameShape">
+          <enum>QFrame::Shape::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Raised</enum>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="TitleLabel" name="ProcessSettingLabel">
+            <property name="text">
+             <string>处理设置</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_6">
+            <item>
+             <widget class="BodyLabel" name="DefaultWatermarkMethod">
+              <property name="text">
+               <string>默认水印处理方式</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ComboBox" name="DefaultMethodComboBox"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_7">
+            <item>
+             <widget class="BodyLabel" name="PerTaskPararllelCountLabel">
+              <property name="text">
+               <string>任务并行数量</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="SpinBox" name="PerTaskPrarllelCountInput"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_8">
+            <item>
+             <widget class="BodyLabel" name="PerProjMaxProcessLabel">
+              <property name="text">
+               <string>单任务最大进程数</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="SpinBox" name="PerProjMaxProcessInput"/>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="frame_5">
+         <property name="frameShape">
+          <enum>QFrame::Shape::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Raised</enum>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_6">
+          <item>
+           <widget class="TitleLabel" name="DebugLabel">
+            <property name="text">
+             <string>Debug</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_14">
+            <item>
+             <widget class="BodyLabel" name="DisplayLogLabel">
+              <property name="text">
+               <string>显示日志</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="PushButton" name="DisplayLogButton">
+              <property name="text">
+               <string>PushButton</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_15">
+            <item>
+             <widget class="BodyLabel" name="DumpCoreDataWhenExceptionOccuredLabel">
+              <property name="text">
+               <string>错误时核心转储</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="CheckBox" name="DumpCoreDataWhenExceptionOccuredCheckBox">
+              <property name="text">
+               <string>重新启动后生效</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_16">
+            <item>
+             <widget class="BodyLabel" name="ManualCoreDump">
+              <property name="text">
+               <string>手动核心转储</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="CheckBox" name="ManualCoreDumpCheckBox">
+              <property name="text">
+               <string>重新启动后生效</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_17">
+            <item>
+             <widget class="BodyLabel" name="ManualCoreDumpShortCutLabel">
+              <property name="text">
+               <string>手动核心转储快捷键</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QKeySequenceEdit" name="ManualCoreDumpKeySeq"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_18">
+            <item>
+             <widget class="BodyLabel" name="BugReportLabel">
+              <property name="text">
+               <string>反馈Bug</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="PushButton" name="BugReportButton">
+              <property name="text">
+               <string>PushButton</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="frame_6">
+         <property name="frameShape">
+          <enum>QFrame::Shape::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Raised</enum>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="0" column="0">
+           <widget class="TitleLabel" name="VersionLabel">
+            <property name="text">
+             <string>版本</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QFrame" name="frame_7">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QGridLayout" name="gridLayout">
+             <item row="0" column="0">
+              <layout class="QHBoxLayout" name="horizontalLayout_19">
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_7">
+                 <item>
+                  <widget class="BodyLabel" name="SoftwareVersionLabel">
+                   <property name="font">
+                    <font>
+                     <pointsize>20</pointsize>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>软件版本</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="TextBrowser" name="SoftwareVersionDetial"/>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="PushButton" name="SoftwareVersionCheckButton">
+                 <property name="text">
+                  <string>PushButton</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item row="1" column="0">
+              <widget class="QFrame" name="frame_8">
+               <property name="frameShape">
+                <enum>QFrame::Shape::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Shadow::Raised</enum>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_3">
+                <item row="0" column="0">
+                 <layout class="QHBoxLayout" name="horizontalLayout_20">
+                  <item>
+                   <widget class="BodyLabel" name="AboutLabel">
+                    <property name="text">
+                     <string>关于</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="PushButton" name="AboutButton">
+                    <property name="text">
+                     <string>打开</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>TitleLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>BodyLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>PushButton</class>
+   <extends>QPushButton</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>ScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>qfluentwidgets</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TextBrowser</class>
+   <extends>QTextBrowser</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>ComboBox</class>
+   <extends>QComboBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>CheckBox</class>
+   <extends>QCheckBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>SpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

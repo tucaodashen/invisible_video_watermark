@@ -1,0 +1,688 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SetUpNewForm</class>
+ <widget class="QWidget" name="SetUpNewForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>805</width>
+    <height>669</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>CreateNewProject</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout_22">
+   <item>
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>377</width>
+        <height>1102</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_7">
+       <item>
+        <widget class="TitleLabel" name="L_CreateProject">
+         <property name="text">
+          <string>新建工程</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="F_Present">
+         <property name="frameShape">
+          <enum>QFrame::Shape::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Raised</enum>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="BodyLabel" name="L_UsePresent">
+              <property name="text">
+               <string>使用预设</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="CheckBox" name="C_UsePresent">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="BodyLabel" name="L_SelectPresent">
+              <property name="text">
+               <string>选择预设</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ComboBox" name="CB_SelectPresent"/>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_10">
+         <item>
+          <widget class="SubtitleLabel" name="L_ProjectType">
+           <property name="text">
+            <string>工程类型</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="ComboBox" name="CB_ProjectType"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QFrame" name="F_Watermark">
+         <property name="frameShape">
+          <enum>QFrame::Shape::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Raised</enum>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_10">
+          <item>
+           <widget class="SubtitleLabel" name="L_WatermarkSetting">
+            <property name="text">
+             <string>水印设置</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_11">
+            <item>
+             <widget class="BodyLabel" name="L_WatermarkAgori">
+              <property name="text">
+               <string>水印算法</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ComboBox" name="CB_WatermarkAgori"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_12">
+            <item>
+             <widget class="BodyLabel" name="L_WatermarkType">
+              <property name="text">
+               <string>水印类型</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="ComboBox" name="CB_WatermarkType"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_13">
+            <item>
+             <widget class="BodyLabel" name="L_WatermarkContent">
+              <property name="text">
+               <string>水印内容</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="LineEdit" name="LE_WatermarkContent"/>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_26">
+              <item>
+               <widget class="BodyLabel" name="L_wmpara1">
+                <property name="text">
+                 <string>TextLabel</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="LineEdit" name="LE_wmpara1"/>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_25">
+              <item>
+               <widget class="BodyLabel" name="L_wmpara2">
+                <property name="text">
+                 <string>TextLabel</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="LineEdit" name="LE_wmpara2"/>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_24">
+              <item>
+               <widget class="BodyLabel" name="L_wmpara3">
+                <property name="text">
+                 <string>TextLabel</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="LineEdit" name="LE_wmpara3"/>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_23">
+              <item>
+               <widget class="BodyLabel" name="L_wmpara4">
+                <property name="text">
+                 <string>TextLabel</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="LineEdit" name="LE_wmpara4"/>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="F_Video">
+         <property name="frameShape">
+          <enum>QFrame::Shape::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Raised</enum>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="SubtitleLabel" name="L_VideoProcess">
+            <property name="text">
+             <string>视频处理</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="F_Sampler">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <item>
+              <widget class="SubtitleLabel" name="L_Samper">
+               <property name="text">
+                <string>采样器</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_6">
+               <item>
+                <widget class="BodyLabel" name="L_SamplerType">
+                 <property name="text">
+                  <string>采样器选择</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ComboBox" name="CB_Sampler"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_5">
+               <item>
+                <widget class="BodyLabel" name="L_SamplerSheet">
+                 <property name="text">
+                  <string>采样表</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="LineEdit" name="LE_SamplerSheet"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_4">
+               <item>
+                <widget class="BodyLabel" name="L_SamplerTimes">
+                 <property name="text">
+                  <string>采样数</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="SpinBox" name="SB_SamplerTimes"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_3">
+               <item>
+                <widget class="BodyLabel" name="L_FrameExtend">
+                 <property name="text">
+                  <string>延续处理帧</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="Slider" name="HS_FrameExtend">
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="SpinBox" name="SB_FrameExtend"/>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="F_VideoExport">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_3">
+             <item>
+              <widget class="SubtitleLabel" name="L_VideoExportSetting">
+               <property name="text">
+                <string>视频输出设置</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_7">
+               <item>
+                <widget class="BodyLabel" name="L_VideoExportPath">
+                 <property name="text">
+                  <string>输出路径</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="LineEdit" name="LE_VideoExportPath"/>
+               </item>
+               <item>
+                <widget class="PushButton" name="PB_VideoExportPath">
+                 <property name="text">
+                  <string>PushButton</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_8">
+               <item>
+                <widget class="BodyLabel" name="L_VideoExportFormat">
+                 <property name="text">
+                  <string>输出格式</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ComboBox" name="CB_VideoExportFormat"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_27">
+               <item>
+                <widget class="BodyLabel" name="L_RenderDevices">
+                 <property name="text">
+                  <string>渲染设备</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ComboBox" name="CB_RenderDevices"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_9">
+               <item>
+                <widget class="BodyLabel" name="L_VideoEncoder">
+                 <property name="text">
+                  <string>视频编码器</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ComboBox" name="CB_VideoEncoder"/>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="F_VideoEncoder">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_6">
+             <item>
+              <widget class="SubtitleLabel" name="L_VideoEncoderSetting">
+               <property name="text">
+                <string>视频编码器设置</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_14">
+               <item>
+                <widget class="BodyLabel" name="L_BitRateControl">
+                 <property name="text">
+                  <string>比特率控制</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ComboBox" name="CB_BitRateControl"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_15">
+               <item>
+                <widget class="BodyLabel" name="L_BitRate">
+                 <property name="text">
+                  <string>比特率</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="LineEdit" name="LE_BitRate"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_16">
+               <item>
+                <widget class="BodyLabel" name="L_MaxBitRate">
+                 <property name="text">
+                  <string>最大比特率</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="LineEdit" name="LE_MaxBitRate"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_17">
+               <item>
+                <widget class="BodyLabel" name="L_FFmpegPresent">
+                 <property name="text">
+                  <string>预设</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ComboBox" name="CB_FFmpegPresent"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_18">
+               <item>
+                <widget class="BodyLabel" name="L_Tune">
+                 <property name="text">
+                  <string>调节</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ComboBox" name="CB_Tune"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_19">
+               <item>
+                <widget class="BodyLabel" name="L_EncodePattern">
+                 <property name="text">
+                  <string>编码模式</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="ComboBox" name="CB_EncodePattern"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_28">
+               <item>
+                <widget class="CheckBox" name="CB_Foreward">
+                 <property name="text">
+                  <string>前向考虑</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="SpinBox" name="SB_Forward"/>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_29">
+               <item>
+                <widget class="CheckBox" name="CB_AdjustiveNormalize">
+                 <property name="text">
+                  <string>自适应量化</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="SpinBox" name="SB_AN"/>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="SubtitleLabel" name="L_OutputFormat">
+            <property name="text">
+             <string>输出格式</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="ComboBox" name="CB_OutputFormat"/>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="frame_7">
+     <property name="frameShape">
+      <enum>QFrame::Shape::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Shadow::Raised</enum>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_9">
+      <item>
+       <widget class="ImageLabel" name="L_PreviewImage">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>128</width>
+          <height>128</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_21">
+        <item>
+         <widget class="BodyLabel" name="L_S_OutputPath">
+          <property name="text">
+           <string>输出路径</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="BodyLabel" name="L_D_OutputPath">
+          <property name="text">
+           <string>TextLabel</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_20">
+        <item>
+         <widget class="BodyLabel" name="L_S_CalculateOccupation">
+          <property name="text">
+           <string>预计大小</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="BodyLabel" name="L_D_CalculateOccupation">
+          <property name="text">
+           <string>TextLabel</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_8">
+        <item>
+         <widget class="BodyLabel" name="L_S_DetailArgs">
+          <property name="text">
+           <string>详细参数</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="TextBrowser" name="TB_S_Detail"/>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>TitleLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>BodyLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>PushButton</class>
+   <extends>QPushButton</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>SubtitleLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>ImageLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>ComboBox</class>
+   <extends>QComboBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>CheckBox</class>
+   <extends>QCheckBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>SpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>Slider</class>
+   <extends>QSlider</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>TextBrowser</class>
+   <extends>QTextBrowser</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
