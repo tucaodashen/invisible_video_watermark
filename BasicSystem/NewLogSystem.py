@@ -1,258 +1,110 @@
-# structured_logger.py
+# centralized_logger.py
 import os
+import sys
 import time
 import uuid
-import multiprocessing
-import sys
-import inspect
-from loguru import logger as global_logger
+from loguru import logger
+from multiprocessing import Process, Queue, current_process
+from logging.handlers import QueueHandler, QueueListener
 
-# 全局日志系统实例
-_global_log_system = None
-
-
-def init_global_log_system(log_system_instance):
-    """初始化全局日志系统"""
-    global _global_log_system
-    _global_log_system = log_system_instance
+# 日志队列和监听器（全局单例）
+_log_queue = Queue()
+_listener = None
 
 
-def get_module_logger(module_name=None):
-    """
-    获取模块日志记录器（用于松散模块）
+def init_logging_system():
+    """初始化日志系统（主进程调用）"""
+    global _listener
 
-    :param module_name: 模块名称，如果为None则自动检测
-    :return: 配置好的日志记录器
-    """
-    global _global_log_system
+    # 创建日志目录
+    log_dir = "./logs"
+    os.makedirs(log_dir, exist_ok=True)
 
-    if _global_log_system is None:
-        # 如果全局日志系统未初始化，创建后备日志记录器
-        from loguru import logger
-        return logger
+    # 生成唯一日志文件名
+    log_name = f"log_{time.strftime('%Y-%m-%d-%H%M%S')}_{uuid.uuid4().hex[:8]}.log"
+    log_path = os.path.join(log_dir, log_name)
 
-    if module_name is None:
-        # 自动获取调用者模块名
-        import inspect
-        frame = inspect.stack()[1]
-        module = inspect.getmodule(frame[0])
-        module_name = module.__name__ if module else "unknown"
+    # 移除默认日志处理器
+    logger.remove()
 
-    return _global_log_system.get_module_logger(module_name)
+    # 定义日志格式 - 保留原始位置信息
+    fmt = (
+        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{extra[process_name]}</cyan> | "
+        "<magenta>{extra[module_tag]}</magenta> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+        "<level>{message}</level>"
+    )
+
+    # 控制台输出（只显示INFO及以上）
+    logger.add(sys.stderr, level="INFO", format=fmt, enqueue=True)
+    # 文件输出（所有DEBUG及以上）
+    logger.add(log_path, level="DEBUG", format=fmt, enqueue=True)
+
+    # 创建队列监听器（处理子进程日志）
+    _listener = QueueListener(_log_queue, *logger._core.handlers.values())
+    _listener.start()
 
 
-class StructuredLogger:
-    def __init__(self, project_name, base_dir="./logs", console_level="INFO"):
-        """
-        初始化结构化日志系统
+def worker_log_configurer(queue):
+    """子进程日志配置器"""
+    logger.remove()
+    # 添加队列处理器，保留位置信息
+    logger.add(
+        queue.put,
+        level="DEBUG",
+        enqueue=False,
+        format="{message}",
+        serialize=True  # 保留所有日志元数据
+    )
 
-        :param project_name: 项目名称
-        :param base_dir: 日志基础目录，默认为"./logs"
-        :param console_level: 控制台日志级别，默认为"INFO"
-        """
-        self.project_name = project_name
-        self.execution_id = f"{time.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
-        self.base_path = os.path.join(base_dir, f"{project_name}_{self.execution_id}")
-        self.subprocess_dir = os.path.join(self.base_path, "subprocess_logs")
-        self.modules_dir = os.path.join(self.base_path, "module_logs")
-        self.console_level = console_level
 
-        # 创建目录结构
-        os.makedirs(self.base_path, exist_ok=True)
-        os.makedirs(self.subprocess_dir, exist_ok=True)
-        os.makedirs(self.modules_dir, exist_ok=True)
+def bind_process_context(process_name="", module_tag=""):
+    """绑定进程上下文信息"""
+    # 如果没有提供进程名，使用进程ID和进程名（来自multiprocessing）
+    if not process_name:
+        process_name = f"{os.getpid()}:{current_process().name}"
 
-        # 配置主进程日志
-        self.main_log_path = os.path.join(self.base_path, "main_process.log")
-        self._configure_main_logger()
+    return logger.bind(
+        process_name=process_name,
+        module_tag=module_tag or current_process().name
+    )
 
-        # 存储日志信息
-        self.log_info = {
-            "project_name": project_name,
-            "execution_id": self.execution_id,
-            "base_path": self.base_path,
-            "main_log": self.main_log_path,
-            "subprocess_logs": {},
-            "module_logs": {}
-        }
 
-        # 提供全局日志记录器
-        self.logger = global_logger
+# 示例使用
+if __name__ == "__main__":
+    # 主进程初始化
+    init_logging_system()
+    main_log = bind_process_context("MainProcess", "CoreModule")
 
-        # 缓存模块日志记录器
-        self.module_loggers = {}
 
-        # 记录初始化信息
-        self.logger.info(f"Structured logger initialized for project: {project_name}")
-        self.logger.info(f"Execution ID: {self.execution_id}")
-        self.logger.info(f"Log base path: {self.base_path}")
+    # 测试位置信息
+    def test_function():
+        main_log.info("This should show function name and line number")
 
-        # 设置全局日志系统
-        init_global_log_system(self)
 
-    def _configure_main_logger(self):
-        """配置主进程日志记录器"""
-        global_logger.remove()  # 移除默认配置
+    main_log.info("Application started")
+    test_function()
 
-        # 主日志格式 - 使用Loguru内置的字段
-        main_format = (
-            "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-            "<level>{level: <8}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
-            "<level>{message}</level>"
-        )
 
-        # 文件日志
-        global_logger.add(
-            self.main_log_path,
-            level="DEBUG",
-            format=main_format,
-            enqueue=True,
-            backtrace=True,
-            diagnose=True
-        )
+    # 创建子进程
+    def worker(module_tag):
+        worker_log_configurer(_log_queue)
+        worker_log = bind_process_context(module_tag=module_tag)
+        worker_log.info(f"Worker in module {module_tag} started")
+        time.sleep(0.5)
+        worker_log.success("Task completed")
 
-        # 控制台输出
-        console_format = (
-            "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
-            "<level>{level: <8}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
-            "<level>{message}</level>"
-        )
 
-        global_logger.add(
-            sys.stdout,
-            level=self.console_level,
-            format=console_format
-        )
+    processes = []
+    for i, tag in enumerate(["DataLoader", "AI_Engine", "OutputHandler"]):
+        p = Process(target=worker, args=(tag,))
+        p.start()
+        processes.append(p)
 
-    def get_subprocess_logger(self, process_name):
-        """
-        为子进程创建独立的日志记录器
+    for p in processes:
+        p.join()
 
-        :param process_name: 子进程名称
-        :return: 配置好的日志记录器
-        """
-        process_id = multiprocessing.current_process().name.split("-")[-1]
-        log_filename = f"{process_name}_{process_id}.log"
-        log_path = os.path.join(self.subprocess_dir, log_filename)
-
-        # 创建全新的日志记录器实例
-        sub_logger = global_logger.bind(process_name=process_name)
-
-        # 移除可能存在的默认处理器
-        sub_logger.remove()
-
-        # 子进程日志格式 - 使用Loguru内置的字段
-        sub_format = (
-            "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-            "<level>{level: <8}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
-            "<magenta>Process: {extra[process_name]}</magenta> | "
-            "<level>{message}</level>"
-        )
-
-        # 文件日志
-        sub_logger.add(
-            log_path,
-            level="DEBUG",
-            format=sub_format,
-            enqueue=True,
-            backtrace=True,
-            diagnose=True
-        )
-
-        # 控制台输出
-        console_format = (
-            "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
-            "<level>{level: <8}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
-            "<magenta>Process: {extra[process_name]}</magenta> | "
-            "<level>{message}</level>"
-        )
-
-        sub_logger.add(
-            sys.stdout,
-            level=self.console_level,
-            format=console_format
-        )
-
-        # 存储日志信息
-        self.log_info["subprocess_logs"][process_name] = log_path
-        return sub_logger
-
-    def get_module_logger(self, module_name):
-        """
-        为松散模块创建独立的日志记录器
-
-        :param module_name: 模块名称
-        :return: 配置好的日志记录器
-        """
-        # 如果已经创建过，直接返回缓存的记录器
-        if module_name in self.module_loggers:
-            return self.module_loggers[module_name]
-
-        log_filename = f"{module_name}.log"
-        log_path = os.path.join(self.modules_dir, log_filename)
-
-        # 创建全新的日志记录器实例
-        module_logger = global_logger.bind(module_name=module_name)
-
-        # 移除可能存在的默认处理器
-        module_logger.remove()
-
-        # 模块日志格式 - 使用Loguru内置的字段
-        module_format = (
-            "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-            "<level>{level: <8}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
-            "<level>{message}</level>"
-        )
-
-        # 文件日志
-        module_logger.add(
-            log_path,
-            level="DEBUG",
-            format=module_format,
-            enqueue=True,
-            backtrace=True,
-            diagnose=True
-        )
-
-        # 控制台输出
-        console_format = (
-            "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
-            "<level>{level: <8}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
-            "<level>{message}</level>"
-        )
-
-        module_logger.add(
-            sys.stdout,
-            level=self.console_level,
-            format=console_format
-        )
-
-        # 存储日志信息
-        self.log_info["module_logs"][module_name] = log_path
-        self.module_loggers[module_name] = module_logger
-        return module_logger
-
-    def get_execution_info(self):
-        """获取日志执行信息"""
-        return self.log_info
-
-    def __getstate__(self):
-        """序列化时排除不可pickle的对象"""
-        state = self.__dict__.copy()
-        # 移除不可pickle的对象
-        state.pop('logger', None)
-        state.pop('module_loggers', None)
-        return state
-
-    def __setstate__(self, state):
-        """反序列化时重新初始化"""
-        self.__dict__.update(state)
-        # 重新初始化必要的属性
-        self.logger = global_logger
-        self.module_loggers = {}
+    main_log.info("All workers finished")
+    _listener.stop()

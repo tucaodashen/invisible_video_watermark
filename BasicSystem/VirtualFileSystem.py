@@ -6,9 +6,9 @@ import psutil
 import json
 from pathlib import Path
 from enum import Enum
+
 from BasicSystem.NewLogSystem import get_module_logger
 
-# 获取当前模块的日志记录器
 logger = get_module_logger()
 
 logger.debug("Import over")

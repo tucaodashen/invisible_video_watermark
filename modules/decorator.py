@@ -1,6 +1,8 @@
 import time
 from functools import wraps
-from BasicSystem.LogSystem import logger
+from BasicSystem.NewLogSystem import get_module_logger
+
+logger = get_module_logger()
 
 def timer_decorator(func):
     @wraps(func)  # 保留原函数的名称和文档字符串等元信息
