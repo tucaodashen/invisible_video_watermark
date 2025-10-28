@@ -6,14 +6,18 @@ import psutil
 import json
 from pathlib import Path
 from enum import Enum
-from BasicSystem import LogSystem
-LogSystem.logger.debug("Import over")
+from BasicSystem.NewLogSystem import get_module_logger
+
+# 获取当前模块的日志记录器
+logger = get_module_logger()
+
+logger.debug("Import over")
 
 from BasicSystem.const import File_Return_Type
 
 base_path = Path.cwd() / "WorkPath"
 base_path.mkdir(parents=True, exist_ok=True)
-LogSystem.logger.debug(f"Base path: {base_path} has been created")
+logger.success(f"Base path: {base_path} has been created")
 
 
 class WorkSpace:
@@ -37,7 +41,7 @@ class WorkSpace:
             self.add_mapping({name: s_uuid})
 
         os.mkdir(f"{base_path}/{s_uuid}")
-        LogSystem.logger.debug(f"Workspace {name} has been created")
+        logger.success(f"Workspace {name} has been created")
 
     def clone_workspace(self, name,new_name):
         name_list = list(self.mapping_list.keys())
@@ -46,7 +50,7 @@ class WorkSpace:
         else:
             self.create_workspace(new_name)
             shutil.copytree(f"{base_path}/{self.mapping_list[name]}", f"{base_path}/{self.mapping_list[new_name]}",dirs_exist_ok=True)
-        LogSystem.logger.debug(f"Workspace {name} has been cloned to {new_name}")
+        logger.debug(f"Workspace {name} has been cloned to {new_name}")
 
     def destroy_workspace(self, name):
         try:
@@ -54,14 +58,14 @@ class WorkSpace:
             shutil.rmtree(f"{base_path}/{c_uuid}")
             del self.mapping_list[name]
         except KeyError as ke:
-            LogSystem.logger.error(f"Workspace name {name} does not exist.Details: {ke}")
+            logger.error(f"Workspace name {name} does not exist.Details: {ke}")
         except Exception as e:
-            LogSystem.logger.error(f"Unknown error: {e}")
-        LogSystem.logger.debug(f"Workspace {name} has been destroyed")
+            logger.error(f"Unknown error: {e}")
+        logger.debug(f"Workspace {name} has been destroyed")
 
     def after_processing(self): # 完成后删除所有目录
         shutil.rmtree(base_path)
-        LogSystem.logger.debug(f"Base path: {base_path} has been deleted")
+        logger.debug(f"Base path: {base_path} has been deleted")
 
     def add_mapping(self, mapping):
         # 检查所有键是否已存在
@@ -71,7 +75,7 @@ class WorkSpace:
 
         # 添加新映射
         self.mapping_list.update(mapping)
-        LogSystem.logger.debug(f"Mapping has been updated: {self.mapping_list}")
+        logger.debug(f"Mapping has been updated: {self.mapping_list}")
 
 
     """
@@ -97,12 +101,12 @@ class WorkSpace:
                     vdirs.append(dn)
             for i in vdirs:
                 result.append(i.split(str(path_index))[1])
-            LogSystem.logger.debug(f"List over!{result}")
+            logger.debug(f"List over!{result}")
             return result
         except KeyError:
-            LogSystem.logger.error(f"Workspace '{workspace}' does not exist")
+            logger.error(f"Workspace '{workspace}' does not exist")
         except Exception as e:
-            LogSystem.logger.error(f"Unknown error: {e}")
+            logger.error(f"Unknown error: {e}")
 
 
     def open_file(self,work_space,path,return_type : File_Return_Type):
@@ -119,7 +123,7 @@ class WorkSpace:
             clean_path = path.lstrip('\\/')
 
             full_path = base_path / workspace / clean_path
-            LogSystem.logger.debug(f"Open file with path mode.File path: {full_path}")
+            logger.debug(f"Open file with path mode.File path: {full_path}")
             return str(full_path)
 
         if return_type == File_Return_Type.ATTRIBUTE:
@@ -127,10 +131,10 @@ class WorkSpace:
             path_obj = Path(pts)
 
             if not path_obj.exists():
-                LogSystem.logger.error(f"File {path} does not exist")
+                logger.error(f"File {path} does not exist")
 
             stat_info = path_obj.stat()
-            LogSystem.logger.debug(f"Open file with attribute mode.File path: {pts}")
+            logger.debug(f"Open file with attribute mode.File path: {pts}")
 
             return {
                 "name": path_obj.name,
@@ -148,32 +152,32 @@ class WorkSpace:
                 "writable": os.access(path, os.W_OK),
                 "executable": os.access(path, os.X_OK)
             }
-        LogSystem.logger.error(f"No such return type.{return_type}")
+        logger.error(f"No such return type.{return_type}")
         return None
 
     def remove_file(self,work_space,path):
         try:
             shutil.rmtree(f"{base_path}/{self.mapping_list[work_space]}/{path}")
-            LogSystem.logger.debug(f"File {path} has been removed")
+            logger.debug(f"File {path} has been removed")
             return True
         except KeyError:
-            LogSystem.logger.error(f"Workspace '{work_space}' does not exist")
+            logger.error(f"Workspace '{work_space}' does not exist")
         except OSError as e:
-            LogSystem.logger.error(f"OS Error: {str(e)}")
+            logger.error(f"OS Error: {str(e)}")
         except Exception as e:
-            LogSystem.logger.error(f"Unknown error: {str(e)}")
+            logger.error(f"Unknown error: {str(e)}")
 
     def create_directory(self,work_space,path):
         try:
             os.mkdir(f"{base_path}/{self.mapping_list[work_space]}/{path}")
-            LogSystem.logger.debug(f"Directory {path} has been created")
+            logger.debug(f"Directory {path} has been created")
             return True
         except KeyError:
-            LogSystem.logger.error(f"Workspace '{work_space}' does not exist")
+            logger.error(f"Workspace '{work_space}' does not exist")
         except OSError as e:
-            LogSystem.logger.error(f"OS Error: {str(e)}")
+            logger.error(f"OS Error: {str(e)}")
         except Exception as e:
-            LogSystem.logger.error(f"Unknown error: {str(e)}")
+            logger.error(f"Unknown error: {str(e)}")
 
     def create_file(self,work_space,path):
         try:
@@ -181,14 +185,14 @@ class WorkSpace:
             if os.path.exists(paths.parent):
                 with open(paths, 'a') as file:
                     pass
-                LogSystem.logger.debug(f"File {path} has been created")
+                logger.debug(f"File {path} has been created")
             else:
                 self.create_directory(work_space,paths.parent)
                 with open(paths, 'a') as file:
                     pass
-                LogSystem.logger.debug(f"Directory {path} has been created")
+                logger.debug(f"Directory {path} has been created")
         except KeyError:
-            LogSystem.logger.error(f"Workspace '{work_space}' does not exist")
+            logger.error(f"Workspace '{work_space}' does not exist")
 
     def copy_to(self,workspace,path,target):
         try:
@@ -196,19 +200,19 @@ class WorkSpace:
                 shutil.copytree(os.path.join(base_path,str(self.mapping_list[workspace]), path), os.path.join(base_path,str(self.mapping_list[workspace]),target),dirs_exist_ok=True)
             else:
                 shutil.copy(os.path.join(base_path,str(self.mapping_list[workspace]), path), os.path.join(base_path,str(self.mapping_list[workspace]),target))
-            LogSystem.logger.debug(f"File {path} has been copied to {target}")
+            logger.success(f"File {path} has been copied to {target}")
 
         except OSError as e:
-            LogSystem.logger.error(f"OS Error: {str(e)}")
+            logger.error(f"OS Error: {str(e)}")
 
     def move_to(self,work_space,path,target):
         try:
             shutil.copytree(os.path.join(base_path, str(self.mapping_list[work_space]), path),
                             os.path.join(base_path, str(self.mapping_list[work_space]), target), dirs_exist_ok=True)
             shutil.rmtree(os.path.join(base_path, str(self.mapping_list[work_space]), path))
-            LogSystem.logger.debug(f"File {path} has been moved to {target}")
+            logger.debug(f"File {path} has been moved to {target}")
         except OSError as e:
-            LogSystem.logger.error(f"OS Error: {str(e)}")
+            logger.error(f"OS Error: {str(e)}")
 
     def import_file(self,work_space,path,target):
         try:
@@ -216,9 +220,9 @@ class WorkSpace:
                 shutil.copytree(str(os.path.join(path)),os.path.join(base_path,str(self.mapping_list[work_space]), target),dirs_exist_ok=True)
             else:
                 shutil.copy(str(path),os.path.join(base_path,str(self.mapping_list[work_space]), target))
-            LogSystem.logger.debug(f"File {path} has been imported to {target}")
+            logger.debug(f"File {path} has been imported to {target}")
         except OSError as e:
-            LogSystem.logger.error(f"OS Error: {str(e)}")
+            logger.error(f"OS Error: {str(e)}")
 
 
     def export_file(self,work_space,path,target):
@@ -227,11 +231,11 @@ class WorkSpace:
                 shutil.copytree(os.path.join(base_path, str(self.mapping_list[work_space]), path),str(os.path.join(target)), dirs_exist_ok=True)
             else:
                 shutil.copy(os.path.join(base_path, str(self.mapping_list[work_space]), path),str(os.path.join(target)))
-            LogSystem.logger.debug(f"File {path} has been exported to {target}")
+            logger.debug(f"File {path} has been exported to {target}")
         except OSError as e:
-            LogSystem.logger.error(f"OS Error: {str(e)}")
+            logger.error(f"OS Error: {str(e)}")
 
-@LogSystem.logger.catch()
+
 def test():
     ws = WorkSpace()
     ws.create_workspace("Project1")

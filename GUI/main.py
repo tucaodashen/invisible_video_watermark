@@ -1,12 +1,7 @@
-import gc
-import time
 from modules import ProcessUnit
 from PySide6.QtWidgets import QApplication,QWidget,QMainWindow,QFrame
-from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt,QTimer
 from qfluentwidgets import FluentIcon as FIF
-from qfluentwidgets import FluentIcon,PrimaryPushSettingCard
-from qfluentwidgets import TransparentPushButton, setTheme, Theme, SettingCardGroup
 
 from GUI.Splash import Ui_SplashDesu
 from GUI.MainWindows import Ui_MainWindow
@@ -16,7 +11,6 @@ from GUI.SetUp import Ui_SetUpNewForm
 import sys
 import threading
 from GUI import PrepareRequirements
-import os
 import gettext
 from PySide6.QtCore import Qt
 from modules import pltform
