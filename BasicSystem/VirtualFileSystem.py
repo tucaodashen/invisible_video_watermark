@@ -7,9 +7,8 @@ import json
 from pathlib import Path
 from enum import Enum
 
-from BasicSystem.NewLogSystem import get_module_logger
+from BasicSystem.NewLogSystem import logger
 
-logger = get_module_logger()
 
 logger.debug("Import over")
 
