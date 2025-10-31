@@ -1,3 +1,5 @@
+import os
+import uuid
 import socket
 import loguru
 import threading
@@ -28,7 +30,7 @@ def setup_logger_simple(default_tags=None, log_file="app.json.log"):
         format="{extra} {message}",
         level="DEBUG",
         serialize=True,  # 关键：让Loguru自动序列化为JSON
-        rotation="10 MB",
+        rotation="100 MB",
         encoding="utf-8"
     )
 
@@ -54,12 +56,11 @@ class NetworkLogSystem:
             "tags":[]
         }
 
-    def set_logger(self, path,default_tags=None):
+    def set_logger(self,default_tags=None):
         self._logger = setup_logger_simple(
             default_tags=default_tags,
-            log_file=path
+            log_file=self.path
         )
-
     def log_callback(self, message, addr):
         cur_data = json.loads(message)
         if cur_data['level'] == 'CRITICAL':
@@ -72,6 +73,8 @@ class NetworkLogSystem:
             self._logger.info(cur_data['content'], extra=cur_data['tags'])
         elif cur_data['level'] == 'DEBUG':
             self._logger.debug(cur_data['content'], extra=cur_data['tags'])
+        elif cur_data['level'] == 'SUCCESS':
+            self._logger.success(cur_data['content'], extra=cur_data['tags'])
 
     def stop(self):
         self._running = False
@@ -82,7 +85,7 @@ class NetworkLogSystem:
         self._thread = threading.Thread(target=self.ipc_recv, args=("0.0.0.0", self.port, self.log_callback))
         if not self._runed:
             self._thread.start()
-            self._thread.join()
+        return self._thread
 
 
 
@@ -98,6 +101,7 @@ class NetworkLogSystem:
             """
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.bind((host, port))
+            sock.settimeout(1.0)
             print(f"UDP receiver started on {host}:{port}")
 
             while self._running:
@@ -105,11 +109,33 @@ class NetworkLogSystem:
                     self._runed = True
                     data, addr = sock.recvfrom(buffer_size)
                     callback(data.decode('utf-8'), addr)
+                except socket.timeout:
+                    # 超时后继续循环，检查self._running
+                    continue
                 except OSError as e:
                     print(f"Receiver error: {e}")
                     break
                 if not self._running:
                     break
+
+
+class BasicLog:
+    def __init__(self, instance_name="default",log_path="./logs"):
+        self.instance_name = instance_name
+        self.log_path = log_path
+        self._logger = None
+        self._path = os.path.join(self.log_path,f"{self.instance_name}_{str(uuid.uuid4())}")
+        os.makedirs(self._path, exist_ok=True)
+
+    def get_logger(self):
+        self._logger = setup_logger_simple(
+            default_tags={"process": self.instance_name},
+            log_file=os.path.join(self._path,"app.log")
+        )
+        return self._logger,self._path
+
+
+
 
 
 

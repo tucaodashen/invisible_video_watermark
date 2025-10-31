@@ -60,3 +60,14 @@ class NetworkLogSender:
         }
         msg = json.dumps(log_template)
         ipc_send(msg, self.host, self.port)
+
+    def success(self, message,tags=None):
+        if tags is None:
+            tags = {}
+        log_template = {
+            "level": "SUCCESS",
+            "content": message,
+            "tags": tags
+        }
+        msg = json.dumps(log_template)
+        ipc_send(msg, self.host, self.port)
