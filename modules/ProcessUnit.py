@@ -1,3 +1,4 @@
+from BasicSystem.NetworkLogSender import NetworkLogSender
 from modules import VideoProcessor
 from pathlib import Path
 from BasicSystem import const
@@ -10,7 +11,6 @@ from BasicSystem.VirtualFileSystem import FileSystem
 from modules.GenerateVideo import merge_video_sequnece
 from modules.ProcessSchedulerSusFec import ConcurrentExecutor, manage_process_by_pid
 from modules.decorator import timer_decorator
-from BasicSystem.LogSystem import logger
 import json
 import pickle
 import socket
@@ -84,6 +84,8 @@ class ProcessUnit(QObject):
         self.ipc_listener = None
         self.ipc_port = None
         self.progress_dict = {}
+        self.log_port = 25565
+        self.logger = NetworkLogSender(self.log_port)
 
     def setup_ipc(self):
         with socket.socket() as s:
@@ -101,16 +103,16 @@ class ProcessUnit(QObject):
         }
 
     def ipc_callback(self,data,addr):
-        logger.debug(f"Received data from {addr}: {data}")
+        self.logger.debug(f"Received data from {addr}: {data}")
         try:
             data = json.loads(data)
             if data["process_order"] is None and data['process_message'] is not None:
-                logger.debug(f"Received message: {data['process_message']}")
+                self.logger.debug(f"Received message: {data['process_message']}")
             elif data['process_order'] is not None:
                 self.progress_dict.update({int(data['process_order']): float(data['process_progress'])})
                 print(f"Progress: {self.progress_dict}")
         except json.JSONDecodeError:
-            logger.warning(f"Invalid JSON data: {data}")
+            self.logger.warning(f"Invalid JSON data: {data}")
         if self.progress_dict != {}:
             cur_sum = 0
             for i in list(self.progress_dict.values()):
@@ -125,7 +127,7 @@ class ProcessUnit(QObject):
             self.progress_dict.update(
                 {i:0}
             )
-        logger.debug(f"Progress dict: {self.progress_dict}")
+        self.logger.debug(f"Progress dict: {self.progress_dict}")
 
 
 
@@ -162,6 +164,7 @@ class ProcessUnit(QObject):
                                          two_pass=True,
                                          progress_id=self.identify,
                                          ipc_port=self.ipc_port,
+                                         logger_port=?
                                          ))
 
     def prepare_for_merge(self):
@@ -181,7 +184,7 @@ class ProcessUnit(QObject):
         for i in range(1,ti+1):
             lists.append(FileSystem.open_file(f"{self.base_file_name}-merge",f"./merge/{i}.{self.output_format}",const.File_Return_Type.PATH))
         print(lists)
-        merge_video_sequnece(lists,os.path.join(self._temporary_path,f"{self.output_name}.{self.output_format}"))
+        merge_video_sequnece(lists,os.path.join(self._temporary_path,f"{self.output_name}.{self.output_format}"),port=self.log_port)
         if os.path.exists("input_list.txt"):
             os.remove("input_list.txt")
         # VideoProcessor.add_audio_to_video(f"{self.output_name}.{self.output_format}","test.mp3","ooout_with_audio.mp4")
@@ -282,7 +285,7 @@ class ProcessUnit(QObject):
         for i in self.result_list:
             if str(i[0]) != "114514":
                 list_data.append(i[0])
-        logger.debug(f"Attachment data: {list_data}")
+        self.logger.debug(f"Attachment data: {list_data}")
         return list_data
 
     def sort_log(self):

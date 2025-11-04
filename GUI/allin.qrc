@@ -3,6 +3,7 @@
     <file>BandiView_Splash.png</file>
   </qresource>
   <qresource prefix="MainWindow">
+    <file>呜哇.png</file>
     <file>C:/Users/ASUS/Desktop/G0DtOFdaQAEjRZC.jpg</file>
   </qresource>
 </RCC>

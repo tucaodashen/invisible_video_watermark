@@ -1,8 +1,6 @@
 import time
 from functools import wraps
-from BasicSystem.NewLogSystem import get_module_logger
 
-logger = get_module_logger()
 
 def timer_decorator(func):
     @wraps(func)  # 保留原函数的名称和文档字符串等元信息
@@ -11,6 +9,6 @@ def timer_decorator(func):
         result = func(*args, **kwargs)    # 执行被装饰的函数
         end_time = time.perf_counter()    # 获取结束时间
         elapsed_time = end_time - start_time  # 计算耗时
-        logger.info(f"函数 {func.__name__} 执行耗时: {elapsed_time:.6f} 秒")
+        print(f"Function {func.__name__} executed in {elapsed_time:.4f} seconds.")
         return result  # 返回原函数的执行结果
     return wrapper

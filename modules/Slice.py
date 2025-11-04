@@ -1,5 +1,7 @@
 import types
 import uuid
+
+from BasicSystem.NetworkLogSender import NetworkLogSender
 from modules import networks
 from BasicSystem import const
 from BasicSystem.VirtualFileSystem import FileSystem
@@ -11,7 +13,6 @@ import cv2
 import ffmpeg
 from modules.GenerateVideo import merge_sequences, setup_sequence
 import subprocess
-from BasicSystem import LogSystem
 import json
 import traceback
 import gettext
@@ -20,7 +21,6 @@ _ = gettext.gettext
 
 progress_path = "./progressCalc"
 
-logger = LogSystem.logger
 
 
 frame_format = {
@@ -99,7 +99,7 @@ def extract_audio_to_flac(video_path, start_frame, end_frame, output_audio_path,
         return False
 
 
-def get_audio_tracks_info(video_path):
+def get_audio_tracks_info(video_path,logger):
     """
     获取视频中所有音频轨道的详细信息
     """
@@ -127,7 +127,8 @@ def get_audio_tracks_info(video_path):
 
 
 
-def execute_command(args):
+def execute_command(args,port):
+    logger = NetworkLogSender(port)
 
     process = subprocess.Popen(
         args,
@@ -166,7 +167,9 @@ class Slice():
                  self_adaptive=None,
                  two_pass=None,
                  progress_id=None,
-                 ipc_port=None,):
+                 ipc_port=None,
+                 logger_port=None,):
+        self.logger = NetworkLogSender(logger_port)
 
         self.video_range = range
 
@@ -214,6 +217,7 @@ class Slice():
 
         #ipc
         self.ipc_port = ipc_port
+        self.logger_port = logger_port
 
 
     def stamp_callback(self,prog):
@@ -230,7 +234,7 @@ class Slice():
 
     def process(self):
         try:
-            logger.debug(f"Start processing {self.identify['order']},sort UUID {str(self.log_sort_uuid)}")
+            self.logger.debug(f"Start processing {self.identify['order']},sort UUID {str(self.log_sort_uuid)}")
             self.output_progress_description(0,_("Start processing"))
             FileSystem.create_workspace(self.identify['name'])
             self.output_progress_description(1,_("Create workspace"))
@@ -238,7 +242,7 @@ class Slice():
             self.output_progress_description(2,_("Create extracted directory"))
             self._extract_path = FileSystem.open_file(self.identify['name'],"extracted",const.File_Return_Type.PATH)
             self.output_progress_description(3,_("Open extracted directory"))
-            LogSystem.logger.info(f"Extracted frames saved to {self._extract_path}")
+            self.LogSystem.logger.info(f"Extracted frames saved to {self._extract_path}")
             self.extract()
             self.output_progress_description(4,_("Extract frames"))
             for sing in FileSystem.ls_directory(self.identify['name'],"extracted"):
@@ -248,7 +252,7 @@ class Slice():
             self.output_progress_description(6,_("Start stamping"))
             self.stamp()
             self.output_progress_description(7,_("Stamp frames"))
-            self.audio_process(self.file, self.video_range)
+            self.audio_process(self.file, self.video_range,self.logger)
             self.output_progress_description(8,_("Process audio"))
             self.output()
 
@@ -266,7 +270,7 @@ class Slice():
 
             # 或者获取堆栈字符串
             error_msg = traceback.format_exc()
-            logger.critical(error_msg)
+            self.logger.critical(error_msg)
             res = error_msg
         finally:
             return res
@@ -298,7 +302,7 @@ class Slice():
                     self._result = image
                 os.remove(file)
                 cv2.imwrite(file,self._result)
-                LogSystem.logger.info(f"Stamped frame {number} saved to {file}")
+                self.logger.info(f"Stamped frame {number} saved to {file}")
             else:
                 pass
             index += 1
@@ -325,7 +329,7 @@ class Slice():
             self.output_progress_description(13, _("Start FFmpeg process"))
 
             merge_sequences(
-                os.path.join(image_folder,setup_sequence(image_folder)),
+                os.path.join(image_folder,setup_sequence(image_folder,)),
                 output_video_path,
                 self.fps,
                 self.BitRateControl,
@@ -339,7 +343,8 @@ class Slice():
                 fc=self.FFmpegForeward,
                 psy=self.FFmpegSelfAdaptive,
                 two_pass=self.two_pass,
-                output_format=self.output_format
+                output_format=self.output_format,
+                port=self.logger_port,
             )
             self.output_progress_description(14, _("Error check"))
             if execute_command(["ffprobe", "-v", "error",output_video_path]) == 0:
@@ -355,8 +360,8 @@ class Slice():
         results = self.process()
         return results
 
-    def audio_process(self,input_video, ranges):
-        track_count = get_audio_tracks_info(input_video)
+    def audio_process(self,input_video, ranges,logger):
+        track_count = get_audio_tracks_info(input_video,logger)
         logger.info(f"视频{input_video}有{track_count}个音轨")
         FileSystem.create_directory(self.identify['name'], "audio_track")
         for i in range(track_count):

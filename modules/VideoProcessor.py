@@ -3,14 +3,15 @@ import random
 import os
 import ffmpeg
 from PySide6.QtCore import QObject,Signal
-import multiprocessing
 import psutil
-from BasicSystem import LogSystem
-from BasicSystem.VirtualFileSystem import FileSystem
+from BasicSystem import NetworkLogSender
 from BasicSystem.const import *
 
 
+with open("./default_port.txt","r") as f:
+    default_port = int(f.read())
 
+logger = NetworkLogSender.NetworkLogSender(default_port)
 
 
 
@@ -89,24 +90,24 @@ def get_count(path):
 
 
 def video_sampler(source_path,sampler_times,sampler_extension):
-    LogSystem.logger.info(f"Start sampling video: {source_path}")
+    logger.info(f"Start sampling video: {source_path}")
     cap = cv2.VideoCapture(source_path)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     cap.release()
-    LogSystem.logger.info(f"Total frames: {total_frames}")
+    logger.info(f"Total frames: {total_frames}")
     primary_sampler_point = []
     for i in range(sampler_times):
         primary_sampler_point.append(random.randint(0,total_frames-1))
-    LogSystem.logger.info(f"Primary sampler point: {primary_sampler_point}")
+    logger.info(f"Primary sampler point: {primary_sampler_point}")
     secondary_sampler_point = []
     for i in primary_sampler_point:
         for ti in range(sampler_extension):
             secondary_sampler_point.append(i+ti)
-    LogSystem.logger.info(f"Secondary sampler point: {secondary_sampler_point}")
+    logger.info(f"Secondary sampler point: {secondary_sampler_point}")
     final_sampler_point = primary_sampler_point + secondary_sampler_point
     final_sampler_point.sort()
     final_sampler_point = list(set(final_sampler_point))
-    LogSystem.logger.debug(f"Final sampler point: {final_sampler_point}")
+    logger.debug(f"Final sampler point: {final_sampler_point}")
     return final_sampler_point
 
 
@@ -154,19 +155,19 @@ def extract_frames(video_path, start_frame, end_frame, output_dir,formate="png",
     # 打开视频文件
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        LogSystem.logger.error(f"Failed to open video file: {video_path}")
+        logger.error(f"Failed to open video file: {video_path}")
         return
 
     # 获取视频总帧数和帧率
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = cap.get(cv2.CAP_PROP_FPS)
 
-    LogSystem.logger.info(f"total_frames: {total_frames}")
+    logger.info(f"total_frames: {total_frames}")
     print(f"FPS:{fps:.2f}")
 
     # 验证帧范围有效性
     if start_frame < 0 or end_frame >= total_frames or start_frame > end_frame:
-        LogSystem.logger.error(f"Invalid frame range: {start_frame} to {end_frame}")
+        logger.error(f"Invalid frame range: {start_frame} to {end_frame}")
         cap.release()
         return
 
@@ -178,7 +179,7 @@ def extract_frames(video_path, start_frame, end_frame, output_dir,formate="png",
         ret, frame = cap.read()
 
         if not ret:
-            LogSystem.logger.error(f"Failed to read {frame_num}")
+            logger.error(f"Failed to read {frame_num}")
             break
 
         # 保存帧为图像文件
@@ -187,7 +188,7 @@ def extract_frames(video_path, start_frame, end_frame, output_dir,formate="png",
 
         # 显示进度
         if frame_num % 1 == 0:
-            LogSystem.logger.debug(f"Extracted frame {frame_num}/{end_frame}")
+            logger.debug(f"Extracted frame {frame_num}/{end_frame}")
             total = ((end_frame-start_frame+1)*1.0)
             cur = ((frame_num-start_frame)*1.0)
             if callback is not None and type(callback) is not float:
@@ -202,10 +203,10 @@ def extract_frames(video_path, start_frame, end_frame, output_dir,formate="png",
 
     # 释放资源
     cap.release()
-    LogSystem.logger.info(f"\nOver! Extracted {end_frame - start_frame + 1} to {output_dir}")
+    logger.info(f"\nOver! Extracted {end_frame - start_frame + 1} to {output_dir}")
 
 def spitter(total_frame_count,split_size):
-    LogSystem.logger.info(f"Executing spitter with total_frame_count: {total_frame_count} and split_size: {split_size}")
+    logger.info(f"Executing spitter with total_frame_count: {total_frame_count} and split_size: {split_size}")
     result = []
     start_index = 0
     while start_index < total_frame_count-1:
@@ -213,7 +214,7 @@ def spitter(total_frame_count,split_size):
         start_index = start_index + split_size
         end_index = min(start_index, total_frame_count)
         result.append((s_start_index, end_index-1))
-    LogSystem.logger.debug(f"Spitter result: {result}")
+    logger.debug(f"Spitter result: {result}")
     return result
 
 def multiprocess_video_extractor(source_path,spitter_result,process=0):
@@ -264,51 +265,6 @@ def concatenate_with_ffmpeg_python(video_paths, output_path):
         # 清理临时文件
         if os.path.exists(list_file):
             os.remove(list_file)
-
-class ProcessUnit(QObject):
-    """
-    最小处理单元
-    """
-    def __init__(self,
-                 input_file,
-                 output,
-                 thread=0):
-        super().__init__()
-        self.attachment_data = []
-        self.basic_args(thread,output,input_file)
-
-    def basic_args(self,thread,output,input_file):
-        # input and process setings
-        self.source_file_type = SourceType.VIDEO
-        self.watermark_content = "Defa"
-        self.encode_type = BitRateControl.CBR
-        self.encoder = Encoder.CPU
-        self.bit_rate = 10000
-        self.output_format = OutputFormat.MP4
-
-        # process device settings
-        self.thread = thread
-        self.output_dir = output
-        self.input_file = input_file
-
-        # de_space settings
-        self.slice_length = 1800
-
-
-    def run_task(self):
-        pass
-
-    def slice_indexer(self):
-        self.frame_count = get_frame_count(self.input_file)
-        self.split_index = spitter(self.frame_count,self.slice_length)
-
-    def slicer(self):
-        pass
-
-    def runner(self):
-        args_list = []
-        sliced_frame_list = slice_list(spitter(get_frame_count(self.input_file),self.slice_length),self.thread)
-
 
 
 if __name__ == '__main__':

@@ -1,13 +1,15 @@
 import os
 import subprocess
-from BasicSystem.LogSystem import logger
+
+from BasicSystem.NetworkLogSender import NetworkLogSender
 from BasicSystem.const import Encoder, BitRateControl, FFmpegTune, FFmpegPreset
 import sys
 
 ffmpeg_path = r'D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\ffmpeg\ffmpeg-8.0-essentials_build\bin\ffmpeg.exe'
 
 
-def execute_command(args):
+def execute_command(args,port=25565):
+    logger = NetworkLogSender(port)
     args.append("-y")
     process = subprocess.Popen(
         args,
@@ -51,12 +53,14 @@ def merge_sequences(input_files,
                     fc=False,
                     psy=False,
                     two_pass=False,
-                    output_format=None,):
+                    output_format=None,
+                    port=25565):
     """
     Merges image sequences into a single video file using ffmpeg.
     """
     # 执行 FFmpeg 命令
     args = []
+    logger = NetworkLogSender(port)
 
     args.append(ffmpeg_path)
     # fps
@@ -253,8 +257,9 @@ def setup_sequence(path):
     return name
 
 
-def merge_video_sequnece(input_list, output_path):
+def merge_video_sequnece(input_list, output_path,port=25565):
     args = []
+    logger = NetworkLogSender(port)
     strings = ""
     for i in input_list:
         temp = f"file '{i}'\n"
@@ -280,18 +285,6 @@ def merge_video_sequnece(input_list, output_path):
     code = execute_command(args)
     return code
 
-def extract_video_unique_frame(input_file, output_path, frame_number):
-    args = []
-    args.append(ffmpeg_path)
-    args.append('-i')
-    args.append(input_file)
-    args.append('-vf')
-    args.append(f"select='eq(n,{frame_number})'")
-    args.append('-vsync')
-    args.append('0')
-    args.append(output_path)
-    logger.debug(f"FFmpeg command: {' '.join(args)}")
-    code = execute_command(args)
 
 
 if __name__ == '__main__':

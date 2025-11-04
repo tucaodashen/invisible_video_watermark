@@ -7,9 +7,11 @@ import json
 from pathlib import Path
 from enum import Enum
 
-from BasicSystem.NewLogSystem import logger
+from BasicSystem.NetworkLogSender import NetworkLogSender
 
-
+with open("./default_port.txt","r") as f:
+    default_port = int(f.read())
+logger = NetworkLogSender(default_port)
 logger.debug("Import over")
 
 from BasicSystem.const import File_Return_Type
