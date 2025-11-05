@@ -217,21 +217,4 @@ def terminate_thread(thread):
 
 # 使用示例
 if __name__ == "__main__":
-
-    executor = ConcurrentExecutor()
-
-    # 创建任务列表
-    tasks = [Task(f"Task-{i}", i * 0.5) for i in range(1, 600)]
-    thre = threading.Thread(target=executor.const_print)
-    thre.start()
-
-    # 执行并发任务
-    results = executor.execute_concurrently(tasks, max_workers=61)
-
-
-    # 输出结果
-    for result in results:
-        print(result)
-
-    # 检查执行过程中的PID（此时应该为空，因为所有任务已完成）
-    print("Running PIDs after completion:", executor.get_running_pids())
+    pass

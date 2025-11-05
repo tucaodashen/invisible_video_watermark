@@ -4,14 +4,9 @@ import os
 import ffmpeg
 from PySide6.QtCore import QObject,Signal
 import psutil
-from BasicSystem import NetworkLogSender
+from BasicSystem.log_client import setup_logger,get_logger
 from BasicSystem.const import *
 
-
-with open("./default_port.txt","r") as f:
-    default_port = int(f.read())
-
-logger = NetworkLogSender.NetworkLogSender(default_port)
 
 
 
@@ -90,6 +85,8 @@ def get_count(path):
 
 
 def video_sampler(source_path,sampler_times,sampler_extension):
+    setup_logger(default_tags="VideoSampler", enable_udp=True, enable_console=True)
+    logger = get_logger()
     logger.info(f"Start sampling video: {source_path}")
     cap = cv2.VideoCapture(source_path)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -150,6 +147,8 @@ def extract_frames(video_path, start_frame, end_frame, output_dir,formate="png",
     output_dir: 输出目录路径
     """
     # 确保输出目录存在
+    setup_logger(default_tags="ExtractFrames", enable_udp=True, enable_console=True)
+    logger = get_logger()
     os.makedirs(output_dir, exist_ok=True)
 
     # 打开视频文件
@@ -206,6 +205,8 @@ def extract_frames(video_path, start_frame, end_frame, output_dir,formate="png",
     logger.info(f"\nOver! Extracted {end_frame - start_frame + 1} to {output_dir}")
 
 def spitter(total_frame_count,split_size):
+    setup_logger(default_tags="Spitter", enable_udp=True, enable_console=True)
+    logger = get_logger()
     logger.info(f"Executing spitter with total_frame_count: {total_frame_count} and split_size: {split_size}")
     result = []
     start_index = 0

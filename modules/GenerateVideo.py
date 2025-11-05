@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from BasicSystem.NetworkLogSender import NetworkLogSender
+from BasicSystem.log_client import setup_logger, get_logger
 from BasicSystem.const import Encoder, BitRateControl, FFmpegTune, FFmpegPreset
 import sys
 
@@ -9,7 +9,8 @@ ffmpeg_path = r'D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWate
 
 
 def execute_command(args,port=25565):
-    logger = NetworkLogSender(port)
+    setup_logger(default_tags="execute_command", enable_udp=True, enable_console=True)
+    logger = get_logger()
     args.append("-y")
     process = subprocess.Popen(
         args,
@@ -53,14 +54,14 @@ def merge_sequences(input_files,
                     fc=False,
                     psy=False,
                     two_pass=False,
-                    output_format=None,
-                    port=25565):
+                    output_format=None):
     """
     Merges image sequences into a single video file using ffmpeg.
     """
     # 执行 FFmpeg 命令
     args = []
-    logger = NetworkLogSender(port)
+    setup_logger(default_tags="GenerateVideo", enable_udp=True, enable_console=True)
+    logger = get_logger()
 
     args.append(ffmpeg_path)
     # fps
@@ -257,9 +258,8 @@ def setup_sequence(path):
     return name
 
 
-def merge_video_sequnece(input_list, output_path,port=25565):
+def merge_video_sequnece(input_list, output_path,logger):
     args = []
-    logger = NetworkLogSender(port)
     strings = ""
     for i in input_list:
         temp = f"file '{i}'\n"

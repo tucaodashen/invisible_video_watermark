@@ -1,4 +1,4 @@
-from BasicSystem.NetworkLogSender import NetworkLogSender
+from BasicSystem.log_client import setup_logger, get_logger
 from modules import VideoProcessor
 from pathlib import Path
 from BasicSystem import const
@@ -39,7 +39,7 @@ class ProcessUnit(QObject):
         self.attachment_data = {'img_password':1145,'wm_password':1919}
         self.output_name = "coded_mul_"
         self.output_path = "./"
-        self.slice_length = 300
+        self.slice_length = 10
         self.sample_times = 10
         self.sample_extend = 16
         self.process_limit = 16
@@ -84,8 +84,11 @@ class ProcessUnit(QObject):
         self.ipc_listener = None
         self.ipc_port = None
         self.progress_dict = {}
-        self.log_port = 25565
-        self.logger = NetworkLogSender(self.log_port)
+
+        #sort_log
+        default_tags={"module":"ProcessUnit","task":f"{self.base_file_name}_Process{self.identify['name']}"}
+        setup_logger(default_tags=default_tags, enable_udp=True, enable_console=True)
+        self.logger = get_logger()
 
     def setup_ipc(self):
         with socket.socket() as s:
@@ -136,7 +139,12 @@ class ProcessUnit(QObject):
         self._sample_list = VideoProcessor.video_sampler(self.file,self.sample_times,self.sample_extend)
 
     def generate_queue(self):
-        self._sliced_list = VideoProcessor.spitter(VideoProcessor.get_frame_count(self.file),self.slice_length)
+        count = VideoProcessor.get_frame_count(self.file)
+        print(count,self.file)
+        self._sliced_list = VideoProcessor.spitter(count,self.slice_length)
+        print(len(self._sliced_list))
+        for r in self._sliced_list:
+            print(r)
         index = 0
         for ranges in self._sliced_list:
             index += 1
@@ -164,8 +172,8 @@ class ProcessUnit(QObject):
                                          two_pass=True,
                                          progress_id=self.identify,
                                          ipc_port=self.ipc_port,
-                                         logger_port=?
                                          ))
+        print(len(self.slice_list),"Length of slice list")
 
     def prepare_for_merge(self):
 
@@ -184,7 +192,7 @@ class ProcessUnit(QObject):
         for i in range(1,ti+1):
             lists.append(FileSystem.open_file(f"{self.base_file_name}-merge",f"./merge/{i}.{self.output_format}",const.File_Return_Type.PATH))
         print(lists)
-        merge_video_sequnece(lists,os.path.join(self._temporary_path,f"{self.output_name}.{self.output_format}"),port=self.log_port)
+        merge_video_sequnece(lists,os.path.join(self._temporary_path,f"{self.output_name}.{self.output_format}"),logger=self.logger)
         if os.path.exists("input_list.txt"):
             os.remove("input_list.txt")
         # VideoProcessor.add_audio_to_video(f"{self.output_name}.{self.output_format}","test.mp3","ooout_with_audio.mp4")
@@ -289,7 +297,7 @@ class ProcessUnit(QObject):
         return list_data
 
     def sort_log(self):
-        os.mkdir(os.path.join("./logs",str(self.base_file_name+str(self.identify["UUID"]))))
+        pass
         # for i in os.listdir("./logs"):
         #     with open(os.path.join("./logs",i), 'r') as file:
         #         lines = []

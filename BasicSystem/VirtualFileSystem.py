@@ -6,12 +6,10 @@ import psutil
 import json
 from pathlib import Path
 from enum import Enum
+from BasicSystem.log_client import setup_logger, get_logger
 
-from BasicSystem.NetworkLogSender import NetworkLogSender
-
-with open("./default_port.txt","r") as f:
-    default_port = int(f.read())
-logger = NetworkLogSender(default_port)
+setup_logger(default_tags="VirtualFileSystem", enable_udp=True, enable_console=True)
+logger = get_logger()
 logger.debug("Import over")
 
 from BasicSystem.const import File_Return_Type
