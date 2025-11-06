@@ -1,7 +1,8 @@
 import rollbar
 import coredumpy
 
-from BasicSystem.NewLogSystem import logger
+from BasicSystem.log_client import setup_logger, get_logger
+
 
 
 def process_data(data):

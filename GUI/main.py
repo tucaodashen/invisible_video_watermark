@@ -1,7 +1,9 @@
+import os.path
+
 from modules import ProcessUnit
-from PySide6.QtWidgets import QApplication,QWidget,QMainWindow,QFrame
+from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout
 from PySide6.QtCore import Qt,QTimer
-from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon
 
 from GUI.Splash import Ui_SplashDesu
 from GUI.MainWindows import Ui_MainWindow
@@ -298,9 +300,9 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             self.CB_RenderDevices.addItem(device)
         self.CB_BitRateControl.addItem(_("VBR"))
         self.CB_BitRateControl.addItem(_("CBR"))
-        self.CB_OutputFormat.addItem(_("MP4"))
-        self.CB_OutputFormat.addItem(_("MKV"))
-        self.CB_OutputFormat.addItem(_("MOV"))
+        self.CB_VideoExportFormat.addItem(_("MP4"))
+        self.CB_VideoExportFormat.addItem(_("MKV"))
+        self.CB_VideoExportFormat.addItem(_("MOV"))
         self.CB_EncodePattern.addItem(_("单次编码"))
         self.CB_EncodePattern.addItem(_("二次编码(全分辨率)"))
         self.CB_WatermarkAgori.addItems([_("GuoFei"),_("FireKeeper"),_("ShieldMint_DCT"),_("ShieldMint_RivaGan")])
@@ -316,6 +318,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.SB_FrameExtend.valueChanged.connect(self.sync_frame_set_SB)
         self.CB_Sampler.currentIndexChanged.connect(self.sample_set)
         self.CB_WatermarkAgori.currentIndexChanged.connect(self.set_watermark_params)
+        self.PB_Confirm.clicked.connect(self.check_validity)
 
     def sync_frame_set_HS(self):
         self.SB_FrameExtend.setValue(int(self.HS_FrameExtend.value()))
@@ -324,6 +327,46 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
 
     def initial_CB(self):
         self.set_encoders()
+
+    def check_validity(self):
+        if int(self.CB_BitRateControl.currentIndex()) == 1 and len(self.LE_BitRate.text()) == 1:
+            showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率?！"),_("比特率不合规！"))
+        elif int(self.CB_BitRateControl.currentIndex()) == 0:
+            if len(self.LE_BitRate.text()) == 1 or len(self.LE_MaxBitRate.text()) == 1:
+                showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率！"),_("比特率不合规！"))
+
+        if int(self.CB_BitRateControl.currentIndex()) == 1 and len(self.LE_BitRate.text()) == 0:
+            showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率！"),_("比特率不能为空！"))
+        elif int(self.CB_BitRateControl.currentIndex()) == 0:
+            if len(self.LE_BitRate.text()) == 0 or len(self.LE_MaxBitRate.text()) == 0:
+                showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率！"),_("比特率不能为空！"))
+
+
+
+        if int(self.CB_BitRateControl.currentIndex()) == 1:
+            try:
+                int(str(self.LE_BitRate.text()).replace("k","").replace("K","").replace("M","").replace("m","").replace(" ",""))
+            except ValueError:
+                    showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率?！"),_("比特率不合规！"))
+            except Exception as e:
+                print(e)
+        else:
+            try:
+                int(str(self.LE_BitRate.text()).replace("k","").replace("K","").replace("M","").replace("m","").replace(" ",""))
+                int(str(self.LE_MaxBitRate.text()).replace("k", "").replace("K", "").replace("M", "").replace("m",
+                                                                                                           "").replace(
+                    " ", ""))
+            except ValueError:
+                    showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率！"),_("比特率不合规！"))
+            except Exception as e:
+                print(e)
+
+        if self.CB_Sampler.currentIndex() == 2 and len(self.LE_SamplerSheet.text().replace("\n","")) == 0:
+            showFlyout(self,self.CB_Sampler,InfoBarIcon.ERROR,_("请输入采样器工作表"),_("采样表不能为空！"))
+        elif not os.path.exists(self.LE_VideoExportPath.text()):
+            showFlyout(self,self.LE_VideoExportPath,InfoBarIcon.ERROR,_("导出路径不存在！请选择其他路径！"),_("导出路径不存在！"))
+
+
 
     def set_watermark_params(self):
         current_wm_method = self.CB_WatermarkAgori.currentText()
@@ -353,7 +396,15 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             self.LE_wmpara3.setPlaceholderText(_("除数越大鲁棒性越强，但图片失真越严重。输入两个以半角逗号分割的数字以在选定范围内随机"))
             self.L_wmpara4.setText(_("除数2"))
             self.LE_wmpara4.setPlaceholderText(_("除数越大鲁棒性越强，但图片失真越严重。输入两个以半角逗号分割的数字以在选定范围内随机"))
-        elif "DCT" in current_wm_method:
+        elif "DCT" in current_wm_method or "RivaGan" in current_wm_method:
+            self.L_wmpara1.hide()
+            self.LE_wmpara1.hide()
+            self.L_wmpara2.hide()
+            self.LE_wmpara2.hide()
+            self.L_wmpara3.hide()
+            self.LE_wmpara3.hide()
+            self.L_wmpara4.hide()
+            self.LE_wmpara4.hide()
             pass
 
 
@@ -531,8 +582,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             self.F_Video.hide()
 
 
-
-
 def start():
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
@@ -542,6 +591,15 @@ def start():
     window.show()
     sys.exit(app.exec())
 
+def showFlyout(self,target,icon,content,title):
+    Flyout.create(
+        icon=icon,
+        title=title,
+        content=content,
+        target=target,
+        parent=self,
+        isClosable=True
+    )
 
 
 

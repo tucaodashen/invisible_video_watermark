@@ -15,11 +15,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QScrollArea,
-    QSizePolicy, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QPushButton,
+    QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
 
-from qfluentwidgets import (BodyLabel, CaptionLabel, CheckBox, ComboBox,
-    ImageLabel, LineEdit, PushButton, Slider,
+from qfluentwidgets import (BodyLabel, CheckBox, ComboBox, ImageLabel,
+    LineEdit, PrimaryPushButton, PushButton, Slider,
     SpinBox, SubtitleLabel, TextBrowser, TitleLabel)
 
 class Ui_SetUpNewForm(object):
@@ -34,7 +34,7 @@ class Ui_SetUpNewForm(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, -453, 377, 1102))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, -465, 377, 1114))
         self.verticalLayout_7 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.L_CreateProject = TitleLabel(self.scrollAreaWidgetContents)
@@ -55,28 +55,13 @@ class Ui_SetUpNewForm(object):
 
         self.horizontalLayout_2.addWidget(self.L_UsePresent)
 
-        self.C_UsePresent = CheckBox(self.F_Present)
-        self.C_UsePresent.setObjectName(u"C_UsePresent")
+        self.PB_saveaspreset = QPushButton(self.F_Present)
+        self.PB_saveaspreset.setObjectName(u"PB_saveaspreset")
 
-        self.horizontalLayout_2.addWidget(self.C_UsePresent)
+        self.horizontalLayout_2.addWidget(self.PB_saveaspreset)
 
 
         self.verticalLayout.addLayout(self.horizontalLayout_2)
-
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.L_SelectPresent = BodyLabel(self.F_Present)
-        self.L_SelectPresent.setObjectName(u"L_SelectPresent")
-
-        self.horizontalLayout.addWidget(self.L_SelectPresent)
-
-        self.CB_SelectPresent = ComboBox(self.F_Present)
-        self.CB_SelectPresent.setObjectName(u"CB_SelectPresent")
-
-        self.horizontalLayout.addWidget(self.CB_SelectPresent)
-
-
-        self.verticalLayout.addLayout(self.horizontalLayout)
 
 
         self.verticalLayout_7.addWidget(self.F_Present)
@@ -149,6 +134,11 @@ class Ui_SetUpNewForm(object):
 
         self.horizontalLayout_13.addWidget(self.LE_WatermarkContent)
 
+        self.PB_wmcontent = QPushButton(self.F_Watermark)
+        self.PB_wmcontent.setObjectName(u"PB_wmcontent")
+
+        self.horizontalLayout_13.addWidget(self.PB_wmcontent)
+
 
         self.verticalLayout_10.addLayout(self.horizontalLayout_13)
 
@@ -156,7 +146,7 @@ class Ui_SetUpNewForm(object):
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
         self.horizontalLayout_26 = QHBoxLayout()
         self.horizontalLayout_26.setObjectName(u"horizontalLayout_26")
-        self.L_wmpara1 = CaptionLabel(self.F_Watermark)
+        self.L_wmpara1 = BodyLabel(self.F_Watermark)
         self.L_wmpara1.setObjectName(u"L_wmpara1")
 
         self.horizontalLayout_26.addWidget(self.L_wmpara1)
@@ -171,7 +161,7 @@ class Ui_SetUpNewForm(object):
 
         self.horizontalLayout_25 = QHBoxLayout()
         self.horizontalLayout_25.setObjectName(u"horizontalLayout_25")
-        self.L_wmpara2 = CaptionLabel(self.F_Watermark)
+        self.L_wmpara2 = BodyLabel(self.F_Watermark)
         self.L_wmpara2.setObjectName(u"L_wmpara2")
 
         self.horizontalLayout_25.addWidget(self.L_wmpara2)
@@ -186,7 +176,7 @@ class Ui_SetUpNewForm(object):
 
         self.horizontalLayout_24 = QHBoxLayout()
         self.horizontalLayout_24.setObjectName(u"horizontalLayout_24")
-        self.L_wmpara3 = CaptionLabel(self.F_Watermark)
+        self.L_wmpara3 = BodyLabel(self.F_Watermark)
         self.L_wmpara3.setObjectName(u"L_wmpara3")
 
         self.horizontalLayout_24.addWidget(self.L_wmpara3)
@@ -201,7 +191,7 @@ class Ui_SetUpNewForm(object):
 
         self.horizontalLayout_23 = QHBoxLayout()
         self.horizontalLayout_23.setObjectName(u"horizontalLayout_23")
-        self.L_wmpara4 = CaptionLabel(self.F_Watermark)
+        self.L_wmpara4 = BodyLabel(self.F_Watermark)
         self.L_wmpara4.setObjectName(u"L_wmpara4")
 
         self.horizontalLayout_23.addWidget(self.L_wmpara4)
@@ -537,6 +527,21 @@ class Ui_SetUpNewForm(object):
 
         self.verticalLayout_7.addWidget(self.F_Video)
 
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.PB_Cancel = PushButton(self.scrollAreaWidgetContents)
+        self.PB_Cancel.setObjectName(u"PB_Cancel")
+
+        self.horizontalLayout.addWidget(self.PB_Cancel)
+
+        self.PB_Confirm = PrimaryPushButton(self.scrollAreaWidgetContents)
+        self.PB_Confirm.setObjectName(u"PB_Confirm")
+
+        self.horizontalLayout.addWidget(self.PB_Confirm)
+
+
+        self.verticalLayout_7.addLayout(self.horizontalLayout)
+
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 
         self.horizontalLayout_22.addWidget(self.scrollArea)
@@ -545,8 +550,8 @@ class Ui_SetUpNewForm(object):
         self.frame_7.setObjectName(u"frame_7")
         self.frame_7.setFrameShape(QFrame.Shape.StyledPanel)
         self.frame_7.setFrameShadow(QFrame.Shadow.Raised)
-        self.verticalLayout_9 = QVBoxLayout(self.frame_7)
-        self.verticalLayout_9.setObjectName(u"verticalLayout_9")
+        self.verticalLayout_8 = QVBoxLayout(self.frame_7)
+        self.verticalLayout_8.setObjectName(u"verticalLayout_8")
         self.L_PreviewImage = ImageLabel(self.frame_7)
         self.L_PreviewImage.setObjectName(u"L_PreviewImage")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
@@ -556,7 +561,7 @@ class Ui_SetUpNewForm(object):
         self.L_PreviewImage.setSizePolicy(sizePolicy)
         self.L_PreviewImage.setMinimumSize(QSize(128, 128))
 
-        self.verticalLayout_9.addWidget(self.L_PreviewImage)
+        self.verticalLayout_8.addWidget(self.L_PreviewImage)
 
         self.horizontalLayout_21 = QHBoxLayout()
         self.horizontalLayout_21.setObjectName(u"horizontalLayout_21")
@@ -571,7 +576,7 @@ class Ui_SetUpNewForm(object):
         self.horizontalLayout_21.addWidget(self.L_D_OutputPath)
 
 
-        self.verticalLayout_9.addLayout(self.horizontalLayout_21)
+        self.verticalLayout_8.addLayout(self.horizontalLayout_21)
 
         self.horizontalLayout_20 = QHBoxLayout()
         self.horizontalLayout_20.setObjectName(u"horizontalLayout_20")
@@ -586,10 +591,8 @@ class Ui_SetUpNewForm(object):
         self.horizontalLayout_20.addWidget(self.L_D_CalculateOccupation)
 
 
-        self.verticalLayout_9.addLayout(self.horizontalLayout_20)
+        self.verticalLayout_8.addLayout(self.horizontalLayout_20)
 
-        self.verticalLayout_8 = QVBoxLayout()
-        self.verticalLayout_8.setObjectName(u"verticalLayout_8")
         self.L_S_DetailArgs = BodyLabel(self.frame_7)
         self.L_S_DetailArgs.setObjectName(u"L_S_DetailArgs")
 
@@ -599,9 +602,6 @@ class Ui_SetUpNewForm(object):
         self.TB_S_Detail.setObjectName(u"TB_S_Detail")
 
         self.verticalLayout_8.addWidget(self.TB_S_Detail)
-
-
-        self.verticalLayout_9.addLayout(self.verticalLayout_8)
 
 
         self.horizontalLayout_22.addWidget(self.frame_7)
@@ -615,14 +615,14 @@ class Ui_SetUpNewForm(object):
     def retranslateUi(self, SetUpNewForm):
         SetUpNewForm.setWindowTitle(QCoreApplication.translate("SetUpNewForm", u"CreateNewProject", None))
         self.L_CreateProject.setText(QCoreApplication.translate("SetUpNewForm", u"\u65b0\u5efa\u5de5\u7a0b", None))
-        self.L_UsePresent.setText(QCoreApplication.translate("SetUpNewForm", u"\u4f7f\u7528\u9884\u8bbe", None))
-        self.C_UsePresent.setText("")
-        self.L_SelectPresent.setText(QCoreApplication.translate("SetUpNewForm", u"\u9009\u62e9\u9884\u8bbe", None))
+        self.L_UsePresent.setText(QCoreApplication.translate("SetUpNewForm", u"\u4fdd\u5b58\u4e3a\u9884\u8bbe", None))
+        self.PB_saveaspreset.setText(QCoreApplication.translate("SetUpNewForm", u"\u4fdd\u5b58", None))
         self.L_ProjectType.setText(QCoreApplication.translate("SetUpNewForm", u"\u5de5\u7a0b\u7c7b\u578b", None))
         self.L_WatermarkSetting.setText(QCoreApplication.translate("SetUpNewForm", u"\u6c34\u5370\u8bbe\u7f6e", None))
         self.L_WatermarkAgori.setText(QCoreApplication.translate("SetUpNewForm", u"\u6c34\u5370\u7b97\u6cd5", None))
         self.L_WatermarkType.setText(QCoreApplication.translate("SetUpNewForm", u"\u6c34\u5370\u7c7b\u578b", None))
         self.L_WatermarkContent.setText(QCoreApplication.translate("SetUpNewForm", u"\u6c34\u5370\u5185\u5bb9", None))
+        self.PB_wmcontent.setText(QCoreApplication.translate("SetUpNewForm", u"\u6d4f\u89c8", None))
         self.L_wmpara1.setText(QCoreApplication.translate("SetUpNewForm", u"TextLabel", None))
         self.L_wmpara2.setText(QCoreApplication.translate("SetUpNewForm", u"TextLabel", None))
         self.L_wmpara3.setText(QCoreApplication.translate("SetUpNewForm", u"TextLabel", None))
@@ -649,6 +649,8 @@ class Ui_SetUpNewForm(object):
         self.CB_Foreward.setText(QCoreApplication.translate("SetUpNewForm", u"\u524d\u5411\u8003\u8651", None))
         self.CB_AdjustiveNormalize.setText(QCoreApplication.translate("SetUpNewForm", u"\u81ea\u9002\u5e94\u91cf\u5316", None))
         self.L_OutputFormat.setText(QCoreApplication.translate("SetUpNewForm", u"\u8f93\u51fa\u683c\u5f0f", None))
+        self.PB_Cancel.setText(QCoreApplication.translate("SetUpNewForm", u"\u53d6\u6d88", None))
+        self.PB_Confirm.setText(QCoreApplication.translate("SetUpNewForm", u"\u786e\u5b9a", None))
         self.L_PreviewImage.setText("")
         self.L_S_OutputPath.setText(QCoreApplication.translate("SetUpNewForm", u"\u8f93\u51fa\u8def\u5f84", None))
         self.L_D_OutputPath.setText(QCoreApplication.translate("SetUpNewForm", u"TextLabel", None))

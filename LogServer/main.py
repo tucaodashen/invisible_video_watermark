@@ -6,7 +6,6 @@ import sys
 from datetime import datetime
 from threading import Thread
 from loguru import logger
-import os
 from pathlib import Path
 
 

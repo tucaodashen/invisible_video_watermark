@@ -88,9 +88,21 @@ class UDPLogger:
         self.log(message, 'WARNING', tags, **extra)
 
     def error(self, message, tags=None, **extra):
+        """记录错误级别日志
+        
+        Args:
+            message (str): 错误日志消息
+            tags (str, optional): 日志标签，用于分类标识，默认为None，此时使用类初始化时设置的默认标签
+            **extra: 额外的日志信息，可以是任意键值对，将作为日志的额外字段记录
+        
+        Note:
+            - 当消息长度超过3000字符时，会被截断为前2997个字符并添加'...'
+            - 实际日志处理会通过内部调用self.log方法完成，支持UDP发送和控制台备用输出
+        """
         if len(message) >= 3000:
             message = message[:2997] + '...'
         self.log(message, 'ERROR', tags, **extra)
+
 
     def critical(self, message, tags=None, **extra):
         if len(message) >= 3000:
