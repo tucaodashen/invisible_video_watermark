@@ -43,6 +43,8 @@ class ProcessUnit(QObject):
         self.sample_times = 10
         self.sample_extend = 16
         self.process_limit = 16
+        self.sample_type = const.SamplerType.RANDOM
+        self.manual_sample_sheet = "1"
         self.watermark_content = cv2.imread("vm.png")
 
         self._sample_list = []
@@ -136,7 +138,7 @@ class ProcessUnit(QObject):
 
 
     def sample(self):
-        self._sample_list = VideoProcessor.video_sampler(self.file,self.sample_times,self.sample_extend)
+        self._sample_list = VideoProcessor.video_sampler(self.file,self.sample_times,self.sample_extend,self.sample_type,self.manual_sample_sheet)
 
     def generate_queue(self):
         count = VideoProcessor.get_frame_count(self.file)

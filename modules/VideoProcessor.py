@@ -4,6 +4,8 @@ import os
 import ffmpeg
 from PySide6.QtCore import QObject,Signal
 import psutil
+
+from BasicSystem import const
 from BasicSystem.log_client import setup_logger,get_logger
 from BasicSystem.const import *
 
@@ -84,7 +86,7 @@ def get_count(path):
     return int(total_frames)
 
 
-def video_sampler(source_path,sampler_times,sampler_extension):
+def video_sampler(source_path,sampler_times,sampler_extension,sampler_type,manual=None):
     setup_logger(default_tags="VideoSampler", enable_udp=True, enable_console=True)
     logger = get_logger()
     logger.info(f"Start sampling video: {source_path}")
@@ -92,20 +94,50 @@ def video_sampler(source_path,sampler_times,sampler_extension):
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     cap.release()
     logger.info(f"Total frames: {total_frames}")
-    primary_sampler_point = []
-    for i in range(sampler_times):
-        primary_sampler_point.append(random.randint(0,total_frames-1))
-    logger.info(f"Primary sampler point: {primary_sampler_point}")
-    secondary_sampler_point = []
-    for i in primary_sampler_point:
-        for ti in range(sampler_extension):
-            secondary_sampler_point.append(i+ti)
-    logger.info(f"Secondary sampler point: {secondary_sampler_point}")
-    final_sampler_point = primary_sampler_point + secondary_sampler_point
-    final_sampler_point.sort()
-    final_sampler_point = list(set(final_sampler_point))
-    logger.debug(f"Final sampler point: {final_sampler_point}")
-    return final_sampler_point
+    if sampler_type == const.SamplerType.RANDOM:
+        primary_sampler_point = []
+        for i in range(sampler_times):
+            primary_sampler_point.append(random.randint(0,total_frames-1))
+        logger.info(f"Primary sampler point: {primary_sampler_point}")
+        secondary_sampler_point = []
+        for i in primary_sampler_point:
+            for ti in range(sampler_extension):
+                secondary_sampler_point.append(i+ti)
+        logger.info(f"Secondary sampler point: {secondary_sampler_point}")
+        final_sampler_point = primary_sampler_point + secondary_sampler_point
+        final_sampler_point.sort()
+        final_sampler_point = list(set(final_sampler_point))
+        logger.debug(f"Final sampler point: {final_sampler_point}")
+        return final_sampler_point
+    elif sampler_type == const.SamplerType.FULL:
+        final_sampler_point = list(range(total_frames))
+        logger.debug(f"Final sampler point: {final_sampler_point}")
+        return final_sampler_point
+    elif sampler_type == const.SamplerType.AVERAGE:
+        primary_sampler_point = []
+        period = total_frames // sampler_times
+        for i in range(sampler_times):
+            primary_sampler_point.append(i*period)
+        logger.info(f"Primary sampler point: {primary_sampler_point}")
+        secondary_sampler_point = []
+        for i in primary_sampler_point:
+            for ti in range(sampler_extension):
+                secondary_sampler_point.append(i+ti)
+        logger.info(f"Secondary sampler point: {secondary_sampler_point}")
+        final_sampler_point = primary_sampler_point + secondary_sampler_point
+        final_sampler_point.sort()
+        final_sampler_point = list(set(final_sampler_point))
+        logger.debug(f"Final sampler point: {final_sampler_point}")
+        return final_sampler_point
+    elif sampler_type == const.SamplerType.PSY:
+        pass
+    else:
+        sampler_list = str(manual).split(",")
+        final_sampler_point = []
+        for i in sampler_list:
+            final_sampler_point.append(int(i))
+        logger.debug(f"Final sampler point: {final_sampler_point}")
+        return final_sampler_point
 
 
 def extract_frame_by_index(video_path, frame_index, output_path):

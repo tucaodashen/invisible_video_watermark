@@ -34,7 +34,7 @@ class Ui_SetUpNewForm(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, -465, 377, 1114))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 377, 1174))
         self.verticalLayout_7 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.L_CreateProject = TitleLabel(self.scrollAreaWidgetContents)
@@ -220,6 +220,44 @@ class Ui_SetUpNewForm(object):
         self.L_VideoProcess.setObjectName(u"L_VideoProcess")
 
         self.verticalLayout_4.addWidget(self.L_VideoProcess)
+
+        self.horizontalLayout_31 = QHBoxLayout()
+        self.horizontalLayout_31.setObjectName(u"horizontalLayout_31")
+        self.L_MultiProcess = SubtitleLabel(self.F_Video)
+        self.L_MultiProcess.setObjectName(u"L_MultiProcess")
+
+        self.horizontalLayout_31.addWidget(self.L_MultiProcess)
+
+        self.SB_MultiProcess = SpinBox(self.F_Video)
+        self.SB_MultiProcess.setObjectName(u"SB_MultiProcess")
+        self.SB_MultiProcess.setMaximum(61)
+
+        self.horizontalLayout_31.addWidget(self.SB_MultiProcess)
+
+        self.CB_MultiProcess = CheckBox(self.F_Video)
+        self.CB_MultiProcess.setObjectName(u"CB_MultiProcess")
+
+        self.horizontalLayout_31.addWidget(self.CB_MultiProcess)
+
+
+        self.verticalLayout_4.addLayout(self.horizontalLayout_31)
+
+        self.horizontalLayout_30 = QHBoxLayout()
+        self.horizontalLayout_30.setObjectName(u"horizontalLayout_30")
+        self.L_SliceLength = BodyLabel(self.F_Video)
+        self.L_SliceLength.setObjectName(u"L_SliceLength")
+
+        self.horizontalLayout_30.addWidget(self.L_SliceLength)
+
+        self.SB_Slicelength = SpinBox(self.F_Video)
+        self.SB_Slicelength.setObjectName(u"SB_Slicelength")
+        self.SB_Slicelength.setMaximum(99999999)
+        self.SB_Slicelength.setValue(300)
+
+        self.horizontalLayout_30.addWidget(self.SB_Slicelength)
+
+
+        self.verticalLayout_4.addLayout(self.horizontalLayout_30)
 
         self.F_Sampler = QFrame(self.F_Video)
         self.F_Sampler.setObjectName(u"F_Sampler")
@@ -628,6 +666,9 @@ class Ui_SetUpNewForm(object):
         self.L_wmpara3.setText(QCoreApplication.translate("SetUpNewForm", u"TextLabel", None))
         self.L_wmpara4.setText(QCoreApplication.translate("SetUpNewForm", u"TextLabel", None))
         self.L_VideoProcess.setText(QCoreApplication.translate("SetUpNewForm", u"\u89c6\u9891\u5904\u7406", None))
+        self.L_MultiProcess.setText(QCoreApplication.translate("SetUpNewForm", u"\u591a\u8fdb\u7a0b", None))
+        self.CB_MultiProcess.setText(QCoreApplication.translate("SetUpNewForm", u"\u542f\u7528", None))
+        self.L_SliceLength.setText(QCoreApplication.translate("SetUpNewForm", u"\u5207\u7247\u957f\u5ea6", None))
         self.L_Samper.setText(QCoreApplication.translate("SetUpNewForm", u"\u91c7\u6837\u5668", None))
         self.L_SamplerType.setText(QCoreApplication.translate("SetUpNewForm", u"\u91c7\u6837\u5668\u9009\u62e9", None))
         self.L_SamplerSheet.setText(QCoreApplication.translate("SetUpNewForm", u"\u91c7\u6837\u8868", None))

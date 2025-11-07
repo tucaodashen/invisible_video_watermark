@@ -103,5 +103,12 @@ class SourceType(Enum):
     IMAGE = 0
     VIDEO = 1
 
+class SamplerType(Enum):
+    RANDOM = 0
+    FULL = 1
+    AVERAGE = 2
+    PSY = 3
+    MANUAL = 4
+
 
 
