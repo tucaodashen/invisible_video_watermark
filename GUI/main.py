@@ -4,7 +4,7 @@ import cv2
 from BasicSystem import const
 from modules import ProcessUnit
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout
-from PySide6.QtCore import Qt,QTimer
+from PySide6.QtCore import Qt, QTimer, Signal
 from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon
 
 from GUI.Splash import Ui_SplashDesu
@@ -22,6 +22,7 @@ from modules import pltform
 
 
 _ = gettext.gettext
+_devices = pltform.get_render_devices()
 
 
 from qfluentwidgets import Dialog, setTheme, Theme, PrimaryPushButton, MessageBoxBase, SubtitleLabel, ProgressBar, BodyLabel
@@ -102,6 +103,7 @@ class SettingUi_L(QFrame,Ui_Setting):
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
+        self.setUp_form = None
         self.pu_thread = None
         self.pu = None
         self.setupUi(self)
@@ -110,20 +112,37 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.set_slot()
         setTheme(Theme.DARK)
         self.action_9.triggered.connect(self.show_all)
-        self.settingUI = CreateNewProject("1")
-        self.settingUI.show()
         self.setButtons()
+        self.temporary = None
 
     def set_slot(self):
-        pass
+        self.SingleInputSelector.receive_file.connect(self.create_single_task)
+
+
+
+    def create_single_task(self, files):
+        if len(files) > 1:
+            showFlyout(self,self.SingleInputSelector,InfoBarIcon.WARNING,_("请勿拖入多个文件"),_("非法操作"))
+        else:
+            file = files[0]
+            self.setUp_form = CreateNewProject(file,self)
+            self.setUp_form.setWindowModality(Qt.ApplicationModal)
+            self.setUp_form.show()
+            self.setUp_form.complete.connect(self.save_profile)
+
+    def save_profile(self):
+        self.temporary = self.setUp_form.save_watermark_profile()
+        self.setUp_form.close()
 
     def setButtons(self):
         self.StartButton.clicked.connect(self.start_render)
 
     def start_render(self):
-        pu = ProcessUnit.ProcessUnit()
-        pu.update_progress.connect(self.set_progess_bar)
-        threading.Thread(target=pu.run).start()
+        # pu = ProcessUnit.ProcessUnit()
+        # pu.update_progress.connect(self.set_progess_bar)
+        # threading.Thread(target=pu.run).start()
+        self.temporary.connect(self.set_progess_bar)
+        threading.Thread(target=self.temporary.run).start()
 
     def set_progess_bar(self, value, message):
         self.QueueProgressBar.setValue(value*100)
@@ -282,10 +301,11 @@ class FFmpegDownloadPage(MessageBoxBase):
             self.close()
 
 class CreateNewProject(QFrame,Ui_SetUpNewForm):
-    def __init__(self,file_path):
-        super().__init__()
+    complete = Signal()
+    def __init__(self, file_path,parent=None):
+        super().__init__(parent, Qt.Window)
         self.setupUi(self)
-        self.render_device = pltform.get_render_devices()
+        self.render_device = _devices
         self.set_text()
         self.set_connections()
         self.initial_CB()
@@ -294,8 +314,20 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.checker.start(50)
         self.processUnit = None
         self.file_path = file_path
+        self.PB_Confirm.clicked.connect(self.completed)
+
+    def completed(self):
+        self.complete.emit()
+        self.hide()
+
+
+    def save_watermark_profile(self):
+        self.generate_profile()
+        return self.processUnit
 
     def generate_profile(self):
+
+        # ToDO: 有OpenCV的读取错误，疑似为逻辑判断有问题
         self.processUnit = ProcessUnit.ProcessUnit()
         self.processUnit.file = self.file_path
         if int(self.CB_WatermarkAgori.currentIndex()) == 0:
@@ -593,6 +625,14 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             if len(self.LE_BitRate.text()) == 0 or len(self.LE_MaxBitRate.text()) == 0:
                 showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率！"),_("比特率不能为空！"))
                 return False
+        if int(self.CB_WatermarkAgori.currentIndex()) == 3:
+            if len(str(self.LE_WatermarkContent.text()).encode('utf-8')) != 4:
+                showFlyout(self,self.LE_WatermarkContent,InfoBarIcon.ERROR,_("RivaGan算法目前并不支持四字节以外长度！"),_("水印长度不匹配！"))
+                return False
+        if len(self.LE_WatermarkContent.text()) >= 500:
+            showFlyout(self, self.LE_WatermarkContent, InfoBarIcon.ERROR, _("其实这个并不是很能藏的......"),
+                       _("水印长度过长！"))
+            return False
 
 
 

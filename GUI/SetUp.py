@@ -34,7 +34,7 @@ class Ui_SetUpNewForm(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 377, 1174))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, -493, 377, 1142))
         self.verticalLayout_7 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.L_CreateProject = TitleLabel(self.scrollAreaWidgetContents)
@@ -55,7 +55,7 @@ class Ui_SetUpNewForm(object):
 
         self.horizontalLayout_2.addWidget(self.L_UsePresent)
 
-        self.PB_saveaspreset = QPushButton(self.F_Present)
+        self.PB_saveaspreset = PushButton(self.F_Present)
         self.PB_saveaspreset.setObjectName(u"PB_saveaspreset")
 
         self.horizontalLayout_2.addWidget(self.PB_saveaspreset)
@@ -223,7 +223,7 @@ class Ui_SetUpNewForm(object):
 
         self.horizontalLayout_31 = QHBoxLayout()
         self.horizontalLayout_31.setObjectName(u"horizontalLayout_31")
-        self.L_MultiProcess = SubtitleLabel(self.F_Video)
+        self.L_MultiProcess = BodyLabel(self.F_Video)
         self.L_MultiProcess.setObjectName(u"L_MultiProcess")
 
         self.horizontalLayout_31.addWidget(self.L_MultiProcess)
@@ -565,21 +565,6 @@ class Ui_SetUpNewForm(object):
 
         self.verticalLayout_7.addWidget(self.F_Video)
 
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.PB_Cancel = PushButton(self.scrollAreaWidgetContents)
-        self.PB_Cancel.setObjectName(u"PB_Cancel")
-
-        self.horizontalLayout.addWidget(self.PB_Cancel)
-
-        self.PB_Confirm = PrimaryPushButton(self.scrollAreaWidgetContents)
-        self.PB_Confirm.setObjectName(u"PB_Confirm")
-
-        self.horizontalLayout.addWidget(self.PB_Confirm)
-
-
-        self.verticalLayout_7.addLayout(self.horizontalLayout)
-
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 
         self.horizontalLayout_22.addWidget(self.scrollArea)
@@ -641,6 +626,21 @@ class Ui_SetUpNewForm(object):
 
         self.verticalLayout_8.addWidget(self.TB_S_Detail)
 
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.PB_Cancel = PushButton(self.frame_7)
+        self.PB_Cancel.setObjectName(u"PB_Cancel")
+
+        self.horizontalLayout.addWidget(self.PB_Cancel)
+
+        self.PB_Confirm = PrimaryPushButton(self.frame_7)
+        self.PB_Confirm.setObjectName(u"PB_Confirm")
+
+        self.horizontalLayout.addWidget(self.PB_Confirm)
+
+
+        self.verticalLayout_8.addLayout(self.horizontalLayout)
+
 
         self.horizontalLayout_22.addWidget(self.frame_7)
 
@@ -676,27 +676,29 @@ class Ui_SetUpNewForm(object):
         self.L_FrameExtend.setText(QCoreApplication.translate("SetUpNewForm", u"\u5ef6\u7eed\u5904\u7406\u5e27", None))
         self.L_VideoExportSetting.setText(QCoreApplication.translate("SetUpNewForm", u"\u89c6\u9891\u8f93\u51fa\u8bbe\u7f6e", None))
         self.L_VideoExportPath.setText(QCoreApplication.translate("SetUpNewForm", u"\u8f93\u51fa\u8def\u5f84", None))
-        self.PB_VideoExportPath.setText(QCoreApplication.translate("SetUpNewForm", u"PushButton", None))
+        self.PB_VideoExportPath.setText(QCoreApplication.translate("SetUpNewForm", u"\u6d4f\u89c8", None))
         self.L_VideoExportFormat.setText(QCoreApplication.translate("SetUpNewForm", u"\u8f93\u51fa\u683c\u5f0f", None))
         self.L_RenderDevices.setText(QCoreApplication.translate("SetUpNewForm", u"\u6e32\u67d3\u8bbe\u5907", None))
         self.L_VideoEncoder.setText(QCoreApplication.translate("SetUpNewForm", u"\u89c6\u9891\u7f16\u7801\u5668", None))
         self.L_VideoEncoderSetting.setText(QCoreApplication.translate("SetUpNewForm", u"\u89c6\u9891\u7f16\u7801\u5668\u8bbe\u7f6e", None))
         self.L_BitRateControl.setText(QCoreApplication.translate("SetUpNewForm", u"\u6bd4\u7279\u7387\u63a7\u5236", None))
         self.L_BitRate.setText(QCoreApplication.translate("SetUpNewForm", u"\u6bd4\u7279\u7387", None))
+        self.LE_BitRate.setText(QCoreApplication.translate("SetUpNewForm", u"6M", None))
         self.L_MaxBitRate.setText(QCoreApplication.translate("SetUpNewForm", u"\u6700\u5927\u6bd4\u7279\u7387", None))
+        self.LE_MaxBitRate.setText(QCoreApplication.translate("SetUpNewForm", u"10M", None))
         self.L_FFmpegPresent.setText(QCoreApplication.translate("SetUpNewForm", u"\u9884\u8bbe", None))
         self.L_Tune.setText(QCoreApplication.translate("SetUpNewForm", u"\u8c03\u8282", None))
         self.L_EncodePattern.setText(QCoreApplication.translate("SetUpNewForm", u"\u7f16\u7801\u6a21\u5f0f", None))
         self.CB_Foreward.setText(QCoreApplication.translate("SetUpNewForm", u"\u524d\u5411\u8003\u8651", None))
         self.CB_AdjustiveNormalize.setText(QCoreApplication.translate("SetUpNewForm", u"\u81ea\u9002\u5e94\u91cf\u5316", None))
         self.L_OutputFormat.setText(QCoreApplication.translate("SetUpNewForm", u"\u8f93\u51fa\u683c\u5f0f", None))
-        self.PB_Cancel.setText(QCoreApplication.translate("SetUpNewForm", u"\u53d6\u6d88", None))
-        self.PB_Confirm.setText(QCoreApplication.translate("SetUpNewForm", u"\u786e\u5b9a", None))
         self.L_PreviewImage.setText("")
         self.L_S_OutputPath.setText(QCoreApplication.translate("SetUpNewForm", u"\u8f93\u51fa\u8def\u5f84", None))
         self.L_D_OutputPath.setText(QCoreApplication.translate("SetUpNewForm", u"TextLabel", None))
         self.L_S_CalculateOccupation.setText(QCoreApplication.translate("SetUpNewForm", u"\u9884\u8ba1\u5927\u5c0f", None))
         self.L_D_CalculateOccupation.setText(QCoreApplication.translate("SetUpNewForm", u"TextLabel", None))
         self.L_S_DetailArgs.setText(QCoreApplication.translate("SetUpNewForm", u"\u8be6\u7ec6\u53c2\u6570", None))
+        self.PB_Cancel.setText(QCoreApplication.translate("SetUpNewForm", u"\u53d6\u6d88", None))
+        self.PB_Confirm.setText(QCoreApplication.translate("SetUpNewForm", u"\u786e\u5b9a", None))
     # retranslateUi
 

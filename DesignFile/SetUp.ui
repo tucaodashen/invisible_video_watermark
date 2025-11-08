@@ -23,9 +23,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
+        <y>-493</y>
         <width>377</width>
-        <height>1174</height>
+        <height>1142</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -55,7 +55,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="PB_saveaspreset">
+             <widget class="PushButton" name="PB_saveaspreset">
               <property name="text">
                <string>保存</string>
               </property>
@@ -227,7 +227,7 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_31">
             <item>
-             <widget class="SubtitleLabel" name="L_MultiProcess">
+             <widget class="BodyLabel" name="L_MultiProcess">
               <property name="text">
                <string>多进程</string>
               </property>
@@ -383,7 +383,7 @@
                <item>
                 <widget class="PushButton" name="PB_VideoExportPath">
                  <property name="text">
-                  <string>PushButton</string>
+                  <string>浏览</string>
                  </property>
                 </widget>
                </item>
@@ -474,7 +474,11 @@
                 </widget>
                </item>
                <item>
-                <widget class="LineEdit" name="LE_BitRate"/>
+                <widget class="LineEdit" name="LE_BitRate">
+                 <property name="text">
+                  <string>6M</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </item>
@@ -488,7 +492,11 @@
                 </widget>
                </item>
                <item>
-                <widget class="LineEdit" name="LE_MaxBitRate"/>
+                <widget class="LineEdit" name="LE_MaxBitRate">
+                 <property name="text">
+                  <string>10M</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </item>
@@ -578,24 +586,6 @@
          </layout>
         </widget>
        </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="PushButton" name="PB_Cancel">
-           <property name="text">
-            <string>取消</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="PrimaryPushButton" name="PB_Confirm">
-           <property name="text">
-            <string>确定</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
       </layout>
      </widget>
     </widget>
@@ -673,6 +663,24 @@
       </item>
       <item>
        <widget class="TextBrowser" name="TB_S_Detail"/>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="PushButton" name="PB_Cancel">
+          <property name="text">
+           <string>取消</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="PrimaryPushButton" name="PB_Confirm">
+          <property name="text">
+           <string>确定</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
