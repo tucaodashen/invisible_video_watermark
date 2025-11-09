@@ -31,8 +31,10 @@ progress_path = "./progressCalc"
 
 class ProcessUnit(QObject):
     update_progress = Signal(float,str)
+    OccurError = Signal(list)
     def __init__(self):
         super().__init__()
+        self.error_occured = False
         self.scheduler = None
         self.file = "mul.mov"
         self.watermark_method = const.WatermarkAlgorithm.IMAGE_GUOFEI
@@ -45,7 +47,7 @@ class ProcessUnit(QObject):
         self.process_limit = 16
         self.sample_type = const.SamplerType.RANDOM
         self.manual_sample_sheet = "1"
-        self.watermark_content = cv2.imread("vm.png")
+        self.watermark_content = None
 
         self._sample_list = []
         self._sliced_list = []
@@ -124,7 +126,7 @@ class ProcessUnit(QObject):
                 cur_sum += i
             cur_percent = (cur_sum/len(self.slice_list))
             self.update_progress.emit(cur_percent,f"Progress: {cur_percent}%")
-            print(f"Progress: {cur_percent*100}%___________________________________________________________________________________")
+            # print(f"Progress: {cur_percent*100}%___________________________________________________________________________________")
 
 
     def set_up_progress_dict(self):
@@ -199,6 +201,12 @@ class ProcessUnit(QObject):
             os.remove("input_list.txt")
         # VideoProcessor.add_audio_to_video(f"{self.output_name}.{self.output_format}","test.mp3","ooout_with_audio.mp4")
 
+    def report_error(self,error_list):
+        self.OccurError.emit(error_list)
+        self.error_occured = True
+        print("?????????????????????????????????????????????????????????????????")
+
+
 
 
 
@@ -215,19 +223,20 @@ class ProcessUnit(QObject):
         if self.process_limit != 1:
             self.scheduler = None
             self.scheduler = ConcurrentExecutor()
-            self.result_list = self.scheduler.execute_concurrently(self.slice_list,self.process_limit)
+            self.result_list = self.scheduler.execute_concurrently(self.slice_list,self.process_limit,self.report_error)
         else:
             for ob in self.slice_list:
                 self.result_list.append(ob.process())
-        self.set_stage(3)
-        print(self.result_list)
-        self.set_stage(4)
-        self.prepare_for_merge()
-        self.set_stage(5)
-        self.merge()
-        self.set_stage(6)
-        self.after_processing()
-        self.sort_log()
+        if not self.error_occured:
+            self.set_stage(3)
+            print(self.result_list)
+            self.set_stage(4)
+            self.prepare_for_merge()
+            self.set_stage(5)
+            self.merge()
+            self.set_stage(6)
+            self.after_processing()
+            self.sort_log()
 
     def suspend(self):
         for i in self.scheduler.get_running_pids():
@@ -288,7 +297,7 @@ class ProcessUnit(QObject):
         self.calculate_total_progress_stage()
         self.calculate_current_progress_stage()
         self.progress_percent = (self.current_progress_stage/self.total_progress_stage)*100
-        print(f"Progress: {self.progress_percent}%")
+        # print(f"Progress: {self.progress_percent}%")
 
     def process_attachment(self):
         list_data = []

@@ -2,6 +2,7 @@ import concurrent.futures
 import os
 import time
 import signal
+import traceback
 from typing import List, Any, Set
 from multiprocessing import Manager
 import threading
@@ -34,7 +35,7 @@ class ConcurrentExecutor:
         self._executor = None  # 保存执行器实例
         self._futures = []  # 保存所有future对象
 
-    def execute_concurrently(self, object_list: List[Any], max_workers: int) -> List[Any]:
+    def execute_concurrently(self, object_list: List[Any], max_workers: int,callback_report) -> List[Any]:
         """
         并发执行一个对象列表中的每个对象的start方法，并收集所有结果。
 
@@ -86,7 +87,12 @@ class ConcurrentExecutor:
                 try:
                     results.append(future.result())
                 except Exception as e:
-                    results.append(e)  # 或者可以根据需要处理异常
+                    print("ERRRRRRRROR")
+                    stack_trace = traceback.format_exc()
+                    frame = [e,stack_trace]
+                    callback_report(frame)
+                    self._executor.shutdown(wait=False)
+                    self._executor = None
 
             # 等待监控线程结束
             monitor_future.result()

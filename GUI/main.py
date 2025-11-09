@@ -119,6 +119,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.SingleInputSelector.receive_file.connect(self.create_single_task)
 
 
+    def handle_error(self,err):
+        print(err)
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
+
 
     def create_single_task(self, files):
         if len(files) > 1:
@@ -136,13 +141,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def setButtons(self):
         self.StartButton.clicked.connect(self.start_render)
+        self.StopButton.clicked.connect(self.terminal_all_task)
+
+
 
     def start_render(self):
         # pu = ProcessUnit.ProcessUnit()
         # pu.update_progress.connect(self.set_progess_bar)
         # threading.Thread(target=pu.run).start()
-        self.temporary.connect(self.set_progess_bar)
+        self.temporary.update_progress.connect(self.set_progess_bar)
+        self.temporary.OccurError.connect(self.handle_error)
         threading.Thread(target=self.temporary.run).start()
+
+    def terminal_all_task(self):
+        self.temporary.stop()
 
     def set_progess_bar(self, value, message):
         self.QueueProgressBar.setValue(value*100)
@@ -327,7 +339,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
 
     def generate_profile(self):
 
-        # ToDO: 有OpenCV的读取错误，疑似为逻辑判断有问题
         self.processUnit = ProcessUnit.ProcessUnit()
         self.processUnit.file = self.file_path
         if int(self.CB_WatermarkAgori.currentIndex()) == 0:
@@ -348,6 +359,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                 }
                 self.processUnit.attachment_data = attachment_data
                 self.processUnit.watermark_content = cv2.imread(self.LE_WatermarkContent.text())
+                print(1)
             elif int(self.CB_WatermarkType.currentIndex()) == 1:
                 self.processUnit.watermark_method = const.WatermarkAlgorithm.TEXT_GOUFEI
                 if "," in str(self.LE_wmpara1):
@@ -396,6 +408,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                 "mod2": num4,
             }
             self.processUnit.watermark_content = cv2.imread(self.LE_WatermarkContent.text())
+            print(2)
             self.processUnit.attachment_data = attachment_data
         elif int(self.CB_WatermarkAgori.currentIndex()) == 2:
             self.processUnit.watermark_method = const.WatermarkAlgorithm.TEXT_FREQM

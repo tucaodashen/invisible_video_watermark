@@ -268,7 +268,7 @@ class Slice():
             res = [self.attachment_data_result, self._file_path]
         except Exception:
             traceback.print_exc()
-
+            #Todo: 别TM乱捕获异常啊！
             # 或者获取堆栈字符串
             error_msg = traceback.format_exc()
             self.logger.critical(error_msg,tags=self.additional_tags)

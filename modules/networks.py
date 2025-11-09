@@ -23,7 +23,7 @@ def ipc_send(message,host,port):
 
         # 发送消息
         sock.sendto(message, (host, port))
-        print(f"Sent {len(message)} bytes to {host}:{port}")
+        # print(f"Sent {len(message)} bytes to {host}:{port}")
 
 
 def ipc_recv(host,port,callback,buffer_size=1024):
@@ -38,7 +38,7 @@ def ipc_recv(host,port,callback,buffer_size=1024):
         """
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind((host, port))
-        print(f"UDP receiver started on {host}:{port}")
+        # print(f"UDP receiver started on {host}:{port}")
 
         while True:
             try:
