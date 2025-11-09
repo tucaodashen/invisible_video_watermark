@@ -1,3 +1,4 @@
+import sys
 import uuid
 
 from BasicSystem.log_client import setup_logger, get_logger
@@ -13,7 +14,7 @@ import ffmpeg
 from modules.GenerateVideo import merge_sequences, setup_sequence
 import subprocess
 import json
-import traceback
+import coredumpy
 import gettext
 
 _ = gettext.gettext
@@ -21,12 +22,12 @@ _ = gettext.gettext
 progress_path = "./progressCalc"
 
 
-
 frame_format = {
             "process_order":None,
             "process_progress":None,
             "process_message":None,
         }
+
 
 
 def extract_audio_to_flac(video_path, start_frame, end_frame, output_audio_path,
@@ -234,47 +235,84 @@ class Slice():
         VideoProcessor.extract_frames(self.file,self.video_range[0],self.video_range[1],self._extract_path,formate="png",callback=self.extract_callback)
 
     def process(self):
-        try:
-            self.logger.debug(f"Start processing {self.identify['order']},sort UUID {str(self.log_sort_uuid)}",tags=self.additional_tags)
-            self.output_progress_description(0,_("Start processing"))
-            FileSystem.create_workspace(self.identify['name'])
-            self.output_progress_description(1,_("Create workspace"))
-            FileSystem.create_directory(self.identify['name'],"extracted")
-            self.output_progress_description(2,_("Create extracted directory"))
-            self._extract_path = FileSystem.open_file(self.identify['name'],"extracted",const.File_Return_Type.PATH)
-            self.output_progress_description(3,_("Open extracted directory"))
-            self.logger.info(f"Extracted frames saved to {self._extract_path}",tags=self.additional_tags)
-            self.extract()
-            self.output_progress_description(4,_("Extract frames"))
-            for sing in FileSystem.ls_directory(self.identify['name'],"extracted"):
-                self.file_list.append(FileSystem.open_file(self.identify['name'],sing,const.File_Return_Type.PATH))
-            self.output_progress_description(5,_("Get extracted frames"))
-            print(self.file_list)
-            self.output_progress_description(6,_("Start stamping"))
-            self.stamp()
-            self.output_progress_description(7,_("Stamp frames"))
-            self.audio_process(self.file, self.video_range,self.logger,self.additional_tags)
-            self.output_progress_description(8,_("Process audio"))
-            self.output()
 
-            for files in self.file_list:
-                os.remove(files)
-            self.output_progress_description(16, _("Start output"))
-            self._file_path = os.path.join(FileSystem.open_file(self.identify['name'],"output",const.File_Return_Type.PATH),f"{self.identify['order']}.{self.output_format}")
-            self.output_progress_description(17, _("Create output path"))
-            for audio in os.listdir(FileSystem.open_file(self.identify['name'],"audio_track",const.File_Return_Type.PATH)):
-                os.remove(os.path.join(FileSystem.open_file(self.identify['name'],"audio_track",const.File_Return_Type.PATH),audio))
-            self.output_progress_description(18, _("Remove audio track"))
-            res = [self.attachment_data_result, self._file_path]
-        except Exception:
-            traceback.print_exc()
-            #Todo: 别TM乱捕获异常啊！
-            # 或者获取堆栈字符串
-            error_msg = traceback.format_exc()
-            self.logger.critical(error_msg,tags=self.additional_tags)
-            res = error_msg
-        finally:
-            return res
+        try:
+            self._process()
+        except Exception as e:
+            # 获取异常信息
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+
+            if exc_traceback:
+                # 遍历到最深的 traceback（异常发生的位置）
+                deepest_tb = exc_traceback
+                while deepest_tb.tb_next:
+                    deepest_tb = deepest_tb.tb_next
+
+                # deepest_tb.tb_frame 就是异常发生的精确帧
+                exception_frame = deepest_tb.tb_frame
+
+                # 只转储异常发生的帧
+                coredumpy.dump(frame=exception_frame,
+                               description="Exception trigger frame only"
+                               ,path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
+
+                # 打印确认位置
+                print(f"异常发生在: {exception_frame.f_code.co_filename}:{exception_frame.f_lineno}")
+            else:
+                coredumpy.dump(description="No traceback available",path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
+            raise
+
+
+
+        # try:
+        #     # 可能出错的代码
+        #     self._process()
+        # except Exception as e:
+        #     # 获取异常发生时的帧信息
+        #     exc_type, exc_value, exc_traceback = sys.exc_info()
+        #
+        #     if exc_traceback:
+        #         # 使用异常发生时的帧
+        #         coredumpy.dump(frame=exc_traceback.tb_frame,path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
+        #     else:
+        #         # 如果没有 traceback，使用当前帧
+        #         coredumpy.dump(path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
+        #     raise
+
+    def _process(self):
+        raise RuntimeError("TEST")
+        self.logger.debug(f"Start processing {self.identify['order']},sort UUID {str(self.log_sort_uuid)}",tags=self.additional_tags)
+        self.output_progress_description(0,_("Start processing"))
+        FileSystem.create_workspace(self.identify['name'])
+        self.output_progress_description(1,_("Create workspace"))
+        FileSystem.create_directory(self.identify['name'],"extracted")
+        self.output_progress_description(2,_("Create extracted directory"))
+        self._extract_path = FileSystem.open_file(self.identify['name'],"extracted",const.File_Return_Type.PATH)
+        self.output_progress_description(3,_("Open extracted directory"))
+        self.logger.info(f"Extracted frames saved to {self._extract_path}",tags=self.additional_tags)
+        self.extract()
+        self.output_progress_description(4,_("Extract frames"))
+        for sing in FileSystem.ls_directory(self.identify['name'],"extracted"):
+            self.file_list.append(FileSystem.open_file(self.identify['name'],sing,const.File_Return_Type.PATH))
+        self.output_progress_description(5,_("Get extracted frames"))
+        print(self.file_list)
+        self.output_progress_description(6,_("Start stamping"))
+        self.stamp()
+        self.output_progress_description(7,_("Stamp frames"))
+        self.audio_process(self.file, self.video_range,self.logger,self.additional_tags)
+        self.output_progress_description(8,_("Process audio"))
+        self.output()
+
+        for files in self.file_list:
+            os.remove(files)
+        self.output_progress_description(16, _("Start output"))
+        self._file_path = os.path.join(FileSystem.open_file(self.identify['name'],"output",const.File_Return_Type.PATH),f"{self.identify['order']}.{self.output_format}")
+        self.output_progress_description(17, _("Create output path"))
+        for audio in os.listdir(FileSystem.open_file(self.identify['name'],"audio_track",const.File_Return_Type.PATH)):
+            os.remove(os.path.join(FileSystem.open_file(self.identify['name'],"audio_track",const.File_Return_Type.PATH),audio))
+        self.output_progress_description(18, _("Remove audio track"))
+        res = [self.attachment_data_result, self._file_path]
+        return res
 
 
 

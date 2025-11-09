@@ -227,7 +227,7 @@ class ProcessUnit(QObject):
         else:
             for ob in self.slice_list:
                 self.result_list.append(ob.process())
-        if not self.error_occured:
+        if not self.error_occured and self.result_list[0] != 'Terminated':
             self.set_stage(3)
             print(self.result_list)
             self.set_stage(4)
@@ -237,6 +237,9 @@ class ProcessUnit(QObject):
             self.set_stage(6)
             self.after_processing()
             self.sort_log()
+            return True
+        else:
+            return False
 
     def suspend(self):
         for i in self.scheduler.get_running_pids():

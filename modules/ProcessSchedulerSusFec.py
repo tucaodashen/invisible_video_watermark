@@ -3,6 +3,7 @@ import os
 import time
 import signal
 import traceback
+from concurrent.futures.process import BrokenProcessPool
 from typing import List, Any, Set
 from multiprocessing import Manager
 import threading
@@ -15,9 +16,6 @@ def _task_wrapper(obj, shared_pids):
     shared_pids.append(pid)  # 将PID添加到共享列表
     try:
         return obj.start()
-    except Exception as e:
-        # 捕获异常并返回，避免进程崩溃
-        return e
     finally:
         # 任务完成后从共享列表中移除PID
         if pid in shared_pids:
@@ -86,13 +84,15 @@ class ConcurrentExecutor:
                     break
                 try:
                     results.append(future.result())
+                except BrokenProcessPool as e:
+                    if "A process in the process pool was terminated abruptly while the future was running or pending." not in str(e):
+                        raise BrokenProcessPool(str(e))
+                    return ['Terminated']
                 except Exception as e:
                     print("ERRRRRRRROR")
                     stack_trace = traceback.format_exc()
                     frame = [e,stack_trace]
                     callback_report(frame)
-                    self._executor.shutdown(wait=False)
-                    self._executor = None
 
             # 等待监控线程结束
             monitor_future.result()

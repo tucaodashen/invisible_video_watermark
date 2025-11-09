@@ -18,6 +18,7 @@ from GUI import PrepareRequirements
 import gettext
 from PySide6.QtCore import Qt
 from modules import pltform
+from GUI import error_report
 
 
 
@@ -103,6 +104,7 @@ class SettingUi_L(QFrame,Ui_Setting):
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
+        self.error_window = []
         self.setUp_form = None
         self.pu_thread = None
         self.pu = None
@@ -121,7 +123,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def handle_error(self,err):
         print(err)
-        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        self.error_window.append(error_report.ErrorReportDialog(error=err))
+        self.error_window[-1].show()
 
 
 
@@ -140,6 +143,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setUp_form.close()
 
     def setButtons(self):
+        self.error_window = []
         self.StartButton.clicked.connect(self.start_render)
         self.StopButton.clicked.connect(self.terminal_all_task)
 
