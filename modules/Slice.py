@@ -250,16 +250,18 @@ class Slice():
 
                 # deepest_tb.tb_frame 就是异常发生的精确帧
                 exception_frame = deepest_tb.tb_frame
+                shallow_frame = exc_traceback.tb_frame
 
                 # 只转储异常发生的帧
                 coredumpy.dump(frame=exception_frame,
                                description="Exception trigger frame only"
-                               ,path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
+                               ,path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump",depth=4)
 
                 # 打印确认位置
                 print(f"异常发生在: {exception_frame.f_code.co_filename}:{exception_frame.f_lineno}")
             else:
-                coredumpy.dump(description="No traceback available",path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
+                pass
+                # coredumpy.dump(description="No traceback available",path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
             raise
 
 
@@ -279,8 +281,8 @@ class Slice():
         #         coredumpy.dump(path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
         #     raise
 
-    def _process(self):
-        raise RuntimeError("TEST")
+    def start(self):
+        # raise RuntimeError("TEST")
         self.logger.debug(f"Start processing {self.identify['order']},sort UUID {str(self.log_sort_uuid)}",tags=self.additional_tags)
         self.output_progress_description(0,_("Start processing"))
         FileSystem.create_workspace(self.identify['name'])
@@ -394,7 +396,7 @@ class Slice():
         self.object = multiprocessing.Process(target=self.process)
         return self.object
 
-    def start(self):
+    def _start(self):
         results = self.process()
         return results
 

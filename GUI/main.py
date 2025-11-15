@@ -1,5 +1,7 @@
 import os.path
 import random
+import time
+
 import cv2
 from BasicSystem import const
 from modules import ProcessUnit
@@ -117,8 +119,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setButtons()
         self.temporary = None
 
+
+        self.task_queue = []
+
     def set_slot(self):
         self.SingleInputSelector.receive_file.connect(self.create_single_task)
+
+    def sync_queue(self):
+        for i in self.task_queue:
+            name = os.path.basename(i.file).split(".")[0]
+            commit_time = str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(i.commit_time)))
+            watermark_agori = str()
+
 
 
     def handle_error(self,err):
@@ -140,6 +152,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def save_profile(self):
         self.temporary = self.setUp_form.save_watermark_profile()
+        self.task_queue.append(self.temporary)
         self.setUp_form.close()
 
     def setButtons(self):
