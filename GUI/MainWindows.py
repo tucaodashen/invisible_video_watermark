@@ -32,7 +32,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1600, 1200)
+        MainWindow.resize(1600, 1180)
         self.action = QAction(MainWindow)
         self.action.setObjectName(u"action")
         self.action_2 = QAction(MainWindow)
@@ -65,42 +65,66 @@ class Ui_MainWindow(object):
         self.action_13.setObjectName(u"action_13")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.gridLayout_2 = QGridLayout(self.centralwidget)
-        self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.QueueProgressBar = ProgressBar(self.centralwidget)
-        self.QueueProgressBar.setObjectName(u"QueueProgressBar")
-        self.QueueProgressBar.setValue(24)
-
-        self.gridLayout_2.addWidget(self.QueueProgressBar, 2, 0, 1, 4)
-
+        self.verticalLayout_7 = QVBoxLayout(self.centralwidget)
+        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
+        self.horizontalLayout_9 = QHBoxLayout()
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
         self.QueueLabel = SubtitleLabel(self.centralwidget)
         self.QueueLabel.setObjectName(u"QueueLabel")
 
-        self.gridLayout_2.addWidget(self.QueueLabel, 0, 0, 1, 1)
+        self.horizontalLayout_9.addWidget(self.QueueLabel)
 
-        self.QueueList = TableWidget(self.centralwidget)
-        self.QueueList.setObjectName(u"QueueList")
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.gridLayout_2.addWidget(self.QueueList, 1, 0, 1, 5)
-
-        self.StopButton = TransparentPushButton(self.centralwidget)
-        self.StopButton.setObjectName(u"StopButton")
-
-        self.gridLayout_2.addWidget(self.StopButton, 2, 4, 1, 1)
-
-        self.PauseButton = TransparentPushButton(self.centralwidget)
-        self.PauseButton.setObjectName(u"PauseButton")
-
-        self.gridLayout_2.addWidget(self.PauseButton, 0, 3, 1, 1)
+        self.horizontalLayout_9.addItem(self.horizontalSpacer)
 
         self.StartButton = PrimaryPushButton(self.centralwidget)
         self.StartButton.setObjectName(u"StartButton")
 
-        self.gridLayout_2.addWidget(self.StartButton, 0, 2, 1, 1)
+        self.horizontalLayout_9.addWidget(self.StartButton)
 
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.PauseButton = TransparentPushButton(self.centralwidget)
+        self.PauseButton.setObjectName(u"PauseButton")
 
-        self.gridLayout_2.addItem(self.horizontalSpacer, 0, 1, 1, 1)
+        self.horizontalLayout_9.addWidget(self.PauseButton)
+
+
+        self.verticalLayout_7.addLayout(self.horizontalLayout_9)
+
+        self.frame_2 = QFrame(self.centralwidget)
+        self.frame_2.setObjectName(u"frame_2")
+        self.frame_2.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame_2.setFrameShadow(QFrame.Shadow.Raised)
+        self.gridLayout_2 = QGridLayout(self.frame_2)
+        self.gridLayout_2.setObjectName(u"gridLayout_2")
+        self.QueueList = TableWidget(self.frame_2)
+        self.QueueList.setObjectName(u"QueueList")
+
+        self.gridLayout_2.addWidget(self.QueueList, 0, 0, 1, 1)
+
+
+        self.verticalLayout_7.addWidget(self.frame_2)
+
+        self.horizontalLayout_10 = QHBoxLayout()
+        self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
+        self.QueueProgressBar = ProgressBar(self.centralwidget)
+        self.QueueProgressBar.setObjectName(u"QueueProgressBar")
+        self.QueueProgressBar.setValue(24)
+
+        self.horizontalLayout_10.addWidget(self.QueueProgressBar)
+
+        self.L_TotalProgress = BodyLabel(self.centralwidget)
+        self.L_TotalProgress.setObjectName(u"L_TotalProgress")
+
+        self.horizontalLayout_10.addWidget(self.L_TotalProgress)
+
+        self.StopButton = TransparentPushButton(self.centralwidget)
+        self.StopButton.setObjectName(u"StopButton")
+
+        self.horizontalLayout_10.addWidget(self.StopButton)
+
+
+        self.verticalLayout_7.addLayout(self.horizontalLayout_10)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
@@ -466,9 +490,10 @@ class Ui_MainWindow(object):
         self.action_12.setText(QCoreApplication.translate("MainWindow", u"\u8bb8\u53ef\u8bc1", None))
         self.action_13.setText(QCoreApplication.translate("MainWindow", u"\u5173\u4e8e", None))
         self.QueueLabel.setText(QCoreApplication.translate("MainWindow", u"\u4efb\u52a1\u961f\u5217", None))
-        self.StopButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.PauseButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.StartButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
+        self.PauseButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
+        self.L_TotalProgress.setText(QCoreApplication.translate("MainWindow", u"0%", None))
+        self.StopButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.menu.setTitle(QCoreApplication.translate("MainWindow", u"\u6587\u4ef6", None))
         self.menu_2.setTitle(QCoreApplication.translate("MainWindow", u"\u7f16\u8f91", None))
         self.menu_3.setTitle(QCoreApplication.translate("MainWindow", u"\u89c6\u56fe", None))

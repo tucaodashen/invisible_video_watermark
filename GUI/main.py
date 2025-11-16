@@ -1,13 +1,16 @@
 import os.path
 import random
-import time
+import uuid
 
 import cv2
+from PySide6.QtGui import QPixmap, QImage
+
 from BasicSystem import const
 from modules import ProcessUnit
-from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout
+from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout, QTableWidgetItem, QProgressBar, \
+    QHeaderView
 from PySide6.QtCore import Qt, QTimer, Signal
-from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon
+from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel
 
 from GUI.Splash import Ui_SplashDesu
 from GUI.MainWindows import Ui_MainWindow
@@ -21,16 +24,29 @@ import gettext
 from PySide6.QtCore import Qt
 from modules import pltform
 from GUI import error_report
-
-
+from modules.ThreadingScheduler import ThreadPoolManager
 
 _ = gettext.gettext
-_devices = pltform.get_render_devices()
+_devices = {'AMD Ryzen 9 9955HX 16-Core Processor': 'cpu', 'AMD Radeon(TM) 610M': 'amd', 'NVIDIA GeForce RTX 5070 Laptop GPU': 'nvidia'}
+print(_devices)
 
 
 from qfluentwidgets import Dialog, setTheme, Theme, PrimaryPushButton, MessageBoxBase, SubtitleLabel, ProgressBar, BodyLabel
 
 
+def cv2_to_qpixmap(cv_img):
+    """将 OpenCV 图像转换为 QPixmap"""
+    # OpenCV 使用 BGR 格式，Qt 使用 RGB，需要转换
+    if len(cv_img.shape) == 3:  # 彩色图像
+        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgb_image.shape
+        bytes_per_line = ch * w
+        q_img = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+    else:  # 灰度图像
+        h, w = cv_img.shape
+        q_img = QImage(cv_img.data, w, h, w, QImage.Format_Grayscale8)
+
+    return QPixmap.fromImage(q_img)
 
 
 class SettingUi_L(QFrame,Ui_Setting):
@@ -104,6 +120,7 @@ class SettingUi_L(QFrame,Ui_Setting):
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
+    QueueProgressUpdater = QTimer()
     def __init__(self):
         super().__init__()
         self.error_window = []
@@ -121,22 +138,64 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
         self.task_queue = []
+        self.QueueProgressUpdater.timeout.connect(self.update_total_progress)
+        self.QueueProgressUpdater.start(250)
 
     def set_slot(self):
         self.SingleInputSelector.receive_file.connect(self.create_single_task)
 
     def sync_queue(self):
+        self.QueueList.setRowCount(0)
+        self.QueueList.clearContents()
         for i in self.task_queue:
+            index = i.index
             name = os.path.basename(i.file).split(".")[0]
-            commit_time = str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(i.commit_time)))
-            watermark_agori = str()
+            statue = i.status
+            output_path = i.output_path
+            metadata = {'index': index, 'name': name, 'status': statue, 'output_path': output_path, 'progress': 0,
+                        "thumbnail": cv2.imread("wallp.jpg")}
+            self.add_to_queue(metadata)
+
+
+    def update_progress(self,index,progress):
+        self.QueueList.setItem(index, 4, QTableWidgetItem(str(progress)))
+
+
+    def set_status(self):
+        for i in self.task_queue:
+            for row in range(self.QueueList.rowCount()):
+                if self.QueueList.item(row, 0).text() == str(i.index):
+                    self.QueueList.setItem(row, 2, QTableWidgetItem(i.statue))
+
+    def dummy_function(self,*args,**kwargs):
+        pass
 
 
 
-    def handle_error(self,err):
+
+
+
+
+    def handle_error(self,err,id):
         print(err)
         self.error_window.append(error_report.ErrorReportDialog(error=err))
         self.error_window[-1].show()
+        for i in self.task_queue:
+            if i.progress_identify == id:
+                i.statue = _("错误")
+                i.completed = True
+                i.update_progress.connect(self.dummy_function)
+                i.stop()
+                for row in range(self.QueueList.rowCount()):
+                    if self.QueueList.item(row, 0).text() == str(i.index):
+                        progressbar = self.QueueList.cellWidget(row, 4)
+                        progressbar.setValue(100)
+                        self.QueueList.setItem(row, 2, QTableWidgetItem(i.statue))
+                        print("OIIAI")
+
+        for ai in self.task_queue:
+            print(ai.statue)
+
 
 
 
@@ -152,13 +211,74 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def save_profile(self):
         self.temporary = self.setUp_form.save_watermark_profile()
+        self.temporary.index = len(self.task_queue)+1
+        self.temporary.progress_identify = str(uuid.uuid4())
         self.task_queue.append(self.temporary)
         self.setUp_form.close()
+        self.sync_queue()
 
     def setButtons(self):
         self.error_window = []
-        self.StartButton.clicked.connect(self.start_render)
-        self.StopButton.clicked.connect(self.terminal_all_task)
+        self.StartButton.clicked.connect(self.queue_start)
+        self.StopButton.clicked.connect(self.queue_stop)
+
+
+    def queue_start(self):
+        start_list = []
+        for task in self.task_queue:
+            if not task.running and task.status != 0 and task.completed != True:
+                task.running = True
+                task.statue = _("运行中")
+                task.update_progress.connect(self.update_queue_percentage)
+                task.OccurError.connect(self.handle_error)
+                start_list.append(task.run)
+        threading_pool = ThreadPoolManager(max_workers=2)
+        threading_pool.submit_tasks(start_list)
+        threading_pool.start()
+        self.set_status()
+
+    def queue_suspend(self):
+        for task in self.task_queue:
+            if task.running:
+                task.suspend()
+                task.running = False
+                task.statue = _("已暂停")
+        self.set_status()
+
+    def queue_resume(self):
+        for task in self.task_queue:
+            if not task.running and task.completed != True:
+                task.resume()
+                task.running = True
+                task.statue = _("运行中")
+        self.set_status()
+
+    def queue_stop(self):
+        for task in self.task_queue:
+            if task.running:
+                task.stop()
+                task.running = False
+                task.completed = _("已终止")
+        self.set_status()
+
+    def get_selected_rows(self):
+        """获取所有选中的行号"""
+        selected_ranges = self.QueueList.selectedRanges()
+        selected_rows = set()  # 使用集合避免重复
+
+        for range_ in selected_ranges:
+            selected_rows.update(range(range_.topRow(), range_.bottomRow() + 1))
+
+        return sorted(selected_rows)  # 返回排序后的列表
+
+
+    def start_selected_task(self):
+        for task in self.task_queue:
+            if task.running:
+                task.start()
+                task.running = True
+                task.update_progress.connect(self.update_queue_percentage)
+                task.OccurError.connect(self.handle_error)
 
 
 
@@ -166,18 +286,106 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # pu = ProcessUnit.ProcessUnit()
         # pu.update_progress.connect(self.set_progess_bar)
         # threading.Thread(target=pu.run).start()
-        self.temporary.update_progress.connect(self.set_progess_bar)
-        self.temporary.OccurError.connect(self.handle_error)
-        threading.Thread(target=self.temporary.run).start()
+
+        print(self.get_selected_rows())
+        # self.temporary.update_progress.connect(self.update_queue_percentage)
+        # self.temporary.OccurError.connect(self.handle_error)
+        # threading.Thread(target=self.temporary.run).start()
+
+
+
+
+    def update_queue_percentage(self,value,msg,id_uuid):
+        index = None
+        for task in self.task_queue:
+            if task.progress_identify == id_uuid:
+                index = task.index
+                break
+        for row in range(self.QueueList.rowCount()):
+            if self.QueueList.item(row, 0).text() == str(index):
+                progress_bar = self.QueueList.cellWidget(row, 4)
+                progress_bar.setValue(value*100)
+                break
+
+
+    def set_is_completed(self):
+        for task in self.task_queue:
+            if task.completed and task.status == 1:
+                for row in range(self.QueueList.rowCount()):
+                    if self.QueueList.item(row, 0).text() == str(task.index):
+                        self.QueueList.setItem(row, 2, QTableWidgetItem(_("已完成")))
+                        progress_bar = self.QueueList.cellWidget(row, 4)
+                        progress_bar.setValue(100)
+                        break
+            elif task.status == 0:
+                for row in range(self.QueueList.rowCount()):
+                    if self.QueueList.item(row, 0).text() == str(task.index):
+                        self.QueueList.setItem(row, 2, QTableWidgetItem(_("错误")))
+                        progress_bar = self.QueueList.cellWidget(row, 4)
+                        progress_bar.setValue(100)
+                        break
+
+    def update_total_progress(self):
+        total_progress = 0
+        tpb = 0
+        if self.QueueList.rowCount() != 0:
+            for task in self.task_queue:
+                total_progress += 1
+            for pb in range(self.QueueList.rowCount()):
+                progress_bar = self.QueueList.cellWidget(pb, 4)
+                tpb += progress_bar.value()
+            if total_progress != 0:
+                print(total_progress,tpb)
+                self.QueueProgressBar.setValue(tpb/total_progress)
+            self.set_is_completed()
+
 
     def terminal_all_task(self):
         self.temporary.stop()
 
-    def set_progess_bar(self, value, message):
+    def set_progess_bar(self, value, message,id_uuid):
         self.QueueProgressBar.setValue(value*100)
         self.statusbar.showMessage(message)
 
+    def add_to_queue(self,metadata):
+        row = self.QueueList.rowCount()
+        self.QueueList.insertRow(row)
+
+        index_item = QTableWidgetItem(str(metadata['index']))
+        index_item.setTextAlignment(Qt.AlignCenter)
+        self.QueueList.setItem(row, 0, index_item)
+
+        name_item = QTableWidgetItem(str(metadata['name']))
+        self.QueueList.setItem(row, 1, name_item)
+
+        status_item = QTableWidgetItem(str(metadata['status']))
+        status_item.setTextAlignment(Qt.AlignCenter)
+        self.QueueList.setItem(row, 2, status_item)
+
+        thumbnail_label = ImageLabel()
+        pixmap = cv2_to_qpixmap(metadata['thumbnail'])
+        if not pixmap.isNull():
+            # 缩放缩略图到合适大小
+            thumbnail_label.setPixmap(pixmap.scaled(60, 40, Qt.KeepAspectRatio))
+        else:
+            thumbnail_label.setText("无图片")
+        thumbnail_label.setAlignment(Qt.AlignCenter)
+        self.QueueList.setCellWidget(row, 3, thumbnail_label)
+
+        progress_bar = QProgressBar()
+        progress_bar.setValue(metadata['progress'])
+        progress_bar.setAlignment(Qt.AlignCenter)
+        self.QueueList.setCellWidget(row, 4, progress_bar)
+
+        output_path_item = QTableWidgetItem(str(metadata['output_path']))
+        self.QueueList.setItem(row, 5, output_path_item)
+
     def set_text(self):
+        self.QueueList.setColumnCount(6)
+        self.QueueList.setHorizontalHeaderLabels([_("索引"), _("名称"), _("状态"), _("缩略图"), _("进度条"),_("输出路径")])
+        header = self.QueueList.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)  # 所有列自适应内容
+        header.setSectionResizeMode(4, QHeaderView.Stretch)  # 名称列拉伸填充剩余空间
         self.QueueLabel.setText(_("渲染队列"))
         self.tabWidget.setTabText(0, _("快捷导入"))
         self.tabWidget.setTabText(1, _("媒体浏览器"))
@@ -376,7 +584,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                 }
                 self.processUnit.attachment_data = attachment_data
                 self.processUnit.watermark_content = cv2.imread(self.LE_WatermarkContent.text())
-                print(1)
             elif int(self.CB_WatermarkType.currentIndex()) == 1:
                 self.processUnit.watermark_method = const.WatermarkAlgorithm.TEXT_GOUFEI
                 if "," in str(self.LE_wmpara1):
@@ -425,7 +632,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                 "mod2": num4,
             }
             self.processUnit.watermark_content = cv2.imread(self.LE_WatermarkContent.text())
-            print(2)
             self.processUnit.attachment_data = attachment_data
         elif int(self.CB_WatermarkAgori.currentIndex()) == 2:
             self.processUnit.watermark_method = const.WatermarkAlgorithm.TEXT_FREQM

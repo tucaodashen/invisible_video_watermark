@@ -204,6 +204,7 @@ class Slice():
         #ECC
         self.correct = False
         self.audio_correct = False
+        self.ffmpeg_retry_count = 0
 
         #Progeress
         self.progress_id = progress_id
@@ -237,7 +238,8 @@ class Slice():
     def process(self):
 
         try:
-            self._process()
+            result = self._process()
+            return result
         except Exception as e:
             # 获取异常信息
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -250,18 +252,16 @@ class Slice():
 
                 # deepest_tb.tb_frame 就是异常发生的精确帧
                 exception_frame = deepest_tb.tb_frame
-                shallow_frame = exc_traceback.tb_frame
 
                 # 只转储异常发生的帧
                 coredumpy.dump(frame=exception_frame,
                                description="Exception trigger frame only"
-                               ,path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump",depth=4)
+                               ,path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
 
                 # 打印确认位置
                 print(f"异常发生在: {exception_frame.f_code.co_filename}:{exception_frame.f_lineno}")
             else:
-                pass
-                # coredumpy.dump(description="No traceback available",path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
+                coredumpy.dump(description="No traceback available",path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
             raise
 
 
@@ -281,8 +281,7 @@ class Slice():
         #         coredumpy.dump(path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
         #     raise
 
-    def start(self):
-        # raise RuntimeError("TEST")
+    def _process(self):
         self.logger.debug(f"Start processing {self.identify['order']},sort UUID {str(self.log_sort_uuid)}",tags=self.additional_tags)
         self.output_progress_description(0,_("Start processing"))
         FileSystem.create_workspace(self.identify['name'])
@@ -390,13 +389,19 @@ class Slice():
             if execute_command(["ffprobe", "-v", "error",output_video_path]) == 0:
                 self.correct = True
                 self.output_progress_description(15, _("Correct and Output"))
+            else:
+                self.ffmpeg_retry_count += 1
+                if self.ffmpeg_retry_count >= 15:
+                    self.output_progress_description(16, _("FFmpeg retry count exceeded"))
+                    raise SystemError(_("FFmpeg retry count exceeded"))
+                self.output_progress_description(16, _("FFmpeg error, retry"))
 
 
     def run(self):
         self.object = multiprocessing.Process(target=self.process)
         return self.object
 
-    def _start(self):
+    def start(self):
         results = self.process()
         return results
 

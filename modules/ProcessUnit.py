@@ -30,8 +30,8 @@ progress_path = "./progressCalc"
 
 
 class ProcessUnit(QObject):
-    update_progress = Signal(float,str)
-    OccurError = Signal(list)
+    update_progress = Signal(float,str,str)
+    OccurError = Signal(list,str)
     def __init__(self):
         super().__init__()
         self.error_occured = False
@@ -94,6 +94,15 @@ class ProcessUnit(QObject):
         setup_logger(default_tags=default_tags, enable_udp=True, enable_console=True)
         self.logger = get_logger()
 
+        #GUI
+
+        self.index = None
+        self.running = False
+        self.completed = False
+        self.status = _("等待中")
+        self.progress_identify = None
+
+
     def setup_ipc(self):
         with socket.socket() as s:
             s.bind(('', 0))  # 绑定到所有接口，端口0表示自动分配
@@ -125,7 +134,7 @@ class ProcessUnit(QObject):
             for i in list(self.progress_dict.values()):
                 cur_sum += i
             cur_percent = (cur_sum/len(self.slice_list))
-            self.update_progress.emit(cur_percent,f"Progress: {cur_percent}%")
+            self.update_progress.emit(cur_percent,f"Progress: {cur_percent}%",self.progress_identify)
             # print(f"Progress: {cur_percent*100}%___________________________________________________________________________________")
 
 
@@ -202,7 +211,7 @@ class ProcessUnit(QObject):
         # VideoProcessor.add_audio_to_video(f"{self.output_name}.{self.output_format}","test.mp3","ooout_with_audio.mp4")
 
     def report_error(self,error_list):
-        self.OccurError.emit(error_list)
+        self.OccurError.emit(error_list,self.progress_identify)
         self.error_occured = True
         print("?????????????????????????????????????????????????????????????????")
 
@@ -237,8 +246,14 @@ class ProcessUnit(QObject):
             self.set_stage(6)
             self.after_processing()
             self.sort_log()
+            self.completed = True
+            self.running = False
+            self.status = 1
             return True
         else:
+            self.completed = _("发生错误")
+            self.running = False
+            self.status = 0
             return False
 
     def suspend(self):
@@ -272,6 +287,7 @@ class ProcessUnit(QObject):
             f.write(data)
         print(recover_data)
         FileSystem.mapping_list = {}
+        self.stop()
 
 
     def set_stage(self,stage):
