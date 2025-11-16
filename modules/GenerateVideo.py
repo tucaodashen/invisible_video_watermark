@@ -54,7 +54,8 @@ def merge_sequences(input_files,
                     fc=False,
                     psy=False,
                     two_pass=False,
-                    output_format=None):
+                    output_format=None,
+                    debug=False):
     """
     Merges image sequences into a single video file using ffmpeg.
     """
@@ -241,7 +242,11 @@ def merge_sequences(input_files,
     args.append(output_file)
 
     logger.debug(f"FFmpeg command: {' '.join(args)}")
-    code = execute_command(args)
+    print(' '.join(args))
+    if not debug:
+        code = execute_command(args)
+    else:
+        code = 0
     return code
 
 

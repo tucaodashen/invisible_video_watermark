@@ -60,12 +60,12 @@ class ProcessUnit(QObject):
         self._temporary_path = None
 
         #FFMPEG
-        self.BitRateControl = const.BitRateControl.VBR
+        self.BitRateControl = None
         self.MaximumBitRate = "20M"
         self.TargetBitRate = "10M"
-        self.FFmpegEncoder = const.Encoder.NVIDIA_H264
-        self.FFmpegTune = const.FFmpegTune.NV_H264_HQ
-        self.FFmpegPresent = const.FFmpegPreset.NVIDIA_P5
+        self.FFmpegEncoder = None
+        self.FFmpegTune = None
+        self.FFmpegPresent = None
         self.FFmpegForeward = None
         self.FFmpegSelfAdaptive = None
         self.output_format = "mov"

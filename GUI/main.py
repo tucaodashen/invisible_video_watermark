@@ -211,6 +211,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def save_profile(self):
         self.temporary = self.setUp_form.save_watermark_profile()
+        print(self.temporary.FFmpegEncoder)
+        print(self.temporary.FFmpegPresent)
         self.temporary.index = len(self.task_queue)+1
         self.temporary.progress_identify = str(uuid.uuid4())
         self.task_queue.append(self.temporary)
@@ -674,22 +676,23 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         current_device = self.CB_RenderDevices.currentText()
         if self.render_device[current_device] == "cpu":
             if "DXV" in str(self.CB_VideoEncoder.currentText()):
-                self.processUnit.encoder = const.Encoder.Resolume_DXV
+                self.processUnit.FFmpegEncoder = const.Encoder.Resolume_DXV
             else:
-                self.processUnit.encoder = const.Encoder.X264
+                self.processUnit.FFmpegEncoder = const.Encoder.X264
+
         elif self.render_device[current_device] == "nvidia":
             if "H.264" in str(self.CB_VideoEncoder.currentText()):
-                self.processUnit.encoder = const.Encoder.NVIDIA_H264
+                self.processUnit.FFmpegEncoder = const.Encoder.NVIDIA_H264
             elif "HEVC" in str(self.CB_VideoEncoder.currentText()):
-                self.processUnit.encoder = const.Encoder.NVIDIA_HEVC
+                self.processUnit.FFmpegEncoder = const.Encoder.NVIDIA_HEVC
             elif "AV1" in str(self.CB_VideoEncoder.currentText()):
-                self.processUnit.encoder = const.Encoder.NVIDIA_AV1
+                self.processUnit.FFmpegEncoder = const.Encoder.NVIDIA_AV1
         elif self.render_device[current_device] == "amd":
             if "H.264" in str(self.CB_VideoEncoder.currentText()):
-                self.processUnit.encoder = const.Encoder.AMD_H264
+                self.processUnit.FFmpegEncoder = const.Encoder.AMD_H264
             elif "HEVC" in str(self.CB_VideoEncoder.currentText()):
-                self.processUnit.encoder = const.Encoder.AMD_HEVC
-
+                self.processUnit.FFmpegEncoder = const.Encoder.AMD_HEVC
+        print(self.processUnit.FFmpegEncoder)
         if int(self.CB_BitRateControl.currentIndex()) == 0:
             self.processUnit.bitrate_control = const.BitRateControl.VBR
         elif int(self.CB_BitRateControl.currentIndex()) == 1:
@@ -754,19 +757,19 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             else:
                 self.processUnit.two_pass = True
             if str(self.CB_FFmpegPresent.currentText()) == "P1":
-                self.processUnit.FFmpegTune = const.FFmpegPreset.NVIDIA_P1
+                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P1
             elif str(self.CB_FFmpegPresent.currentText()) == "P2":
-                self.processUnit.FFmpegTune = const.FFmpegPreset.NVIDIA_P2
+                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P2
             elif str(self.CB_FFmpegPresent.currentText()) == "P3":
-                self.processUnit.FFmpegTune = const.FFmpegPreset.NVIDIA_P3
+                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P3
             elif str(self.CB_FFmpegPresent.currentText()) == "P4":
-                self.processUnit.FFmpegTune = const.FFmpegPreset.NVIDIA_P4
+                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P4
             elif str(self.CB_FFmpegPresent.currentText()) == "P5":
-                self.processUnit.FFmpegTune = const.FFmpegPreset.NVIDIA_P5
+                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P5
             elif str(self.CB_FFmpegPresent.currentText()) == "P6":
-                self.processUnit.FFmpegTune = const.FFmpegPreset.NVIDIA_P6
+                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P6
             elif str(self.CB_FFmpegPresent.currentText()) == "P7":
-                self.processUnit.FFmpegTune = const.FFmpegPreset.NVIDIA_P7
+                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P7
             if "H.264" in str(self.CB_VideoEncoder.currentText()):
                 if str(self.CB_Tune.text()) == "High Quality":
                     self.processUnit.FFmpegTune = const.FFmpegTune.NV_H264_HQ
