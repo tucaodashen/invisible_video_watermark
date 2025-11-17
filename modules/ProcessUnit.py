@@ -103,6 +103,7 @@ class ProcessUnit(QObject):
         self.progress_identify = None
 
 
+
     def setup_ipc(self):
         with socket.socket() as s:
             s.bind(('', 0))  # 绑定到所有接口，端口0表示自动分配
@@ -126,7 +127,7 @@ class ProcessUnit(QObject):
                 self.logger.debug(f"Received message: {data['process_message']}")
             elif data['process_order'] is not None:
                 self.progress_dict.update({int(data['process_order']): float(data['process_progress'])})
-                print(f"Progress: {self.progress_dict}")
+                # print(self.FFmpegTune, self.FFmpegEncoder, self.FFmpegPresent, "IDENTIFY")
         except json.JSONDecodeError:
             self.logger.warning(f"Invalid JSON data: {data}")
         if self.progress_dict != {}:
@@ -179,7 +180,7 @@ class ProcessUnit(QObject):
                                          max_bitrate=self.MaximumBitRate,
                                          target_bitrate=self.TargetBitRate,
                                          tune=self.FFmpegTune,
-                                         preset=self.FFmpegPresent.NVIDIA_P5,
+                                         preset=self.FFmpegPresent,
                                          foreward=self.FFmpegForeward,
                                          self_adaptive=self.FFmpegSelfAdaptive,
                                          two_pass=True,

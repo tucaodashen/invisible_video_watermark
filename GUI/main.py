@@ -8,7 +8,7 @@ from PySide6.QtGui import QPixmap, QImage
 from BasicSystem import const
 from modules import ProcessUnit
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout, QTableWidgetItem, QProgressBar, \
-    QHeaderView
+    QHeaderView, QTableWidget
 from PySide6.QtCore import Qt, QTimer, Signal
 from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel
 
@@ -140,6 +140,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.task_queue = []
         self.QueueProgressUpdater.timeout.connect(self.update_total_progress)
         self.QueueProgressUpdater.start(250)
+        self.QueueList.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
 
     def set_slot(self):
         self.SingleInputSelector.receive_file.connect(self.create_single_task)
@@ -211,8 +212,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def save_profile(self):
         self.temporary = self.setUp_form.save_watermark_profile()
-        print(self.temporary.FFmpegEncoder)
-        print(self.temporary.FFmpegPresent)
         self.temporary.index = len(self.task_queue)+1
         self.temporary.progress_identify = str(uuid.uuid4())
         self.task_queue.append(self.temporary)
@@ -337,7 +336,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 progress_bar = self.QueueList.cellWidget(pb, 4)
                 tpb += progress_bar.value()
             if total_progress != 0:
-                print(total_progress,tpb)
                 self.QueueProgressBar.setValue(tpb/total_progress)
             self.set_is_completed()
 
