@@ -14,4 +14,3 @@ GenerateVideo.merge_sequences(
     const.FFmpegPreset.X264_PLACEBO,
     debug=True
 )
-# -ToDo: CPU编码器莫名错误记得解决

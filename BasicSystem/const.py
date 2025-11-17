@@ -110,5 +110,31 @@ class SamplerType(Enum):
     PSY = 3
     MANUAL = 4
 
+process_unit_template = {
+    "version":__version__,
+    "file":None,
+    "watermark_method":None,
+    "attachment_data":None,
+    "output_name":None,
+    "output_path":None,
+    "slice_length":None,
+    "sample_times":None,
+    "sample_extend":None,
+    "process_limit":None,
+    "sample_type":None,
+    "manual_sample_sheet":None,
+    "watermark_content":None,
+    "BitRateControl":None,
+    "MaximumBitRate":None,
+    "TargetBitRate":None,
+    "FFmpegEncoder":None,
+    "FFmpegTune":None,
+    "FFmpegPresent":None,
+    "FFmpegForeward":None,
+    "FFmpegSelfAdaptive":None,
+    "output_format":None,
+    "two_pass":None,
+}
+
 
 

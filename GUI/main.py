@@ -1,6 +1,7 @@
 import os.path
 import random
 import uuid
+from modules.PyAv import extract_video_frames
 
 import cv2
 from PySide6.QtGui import QPixmap, QImage
@@ -8,7 +9,7 @@ from PySide6.QtGui import QPixmap, QImage
 from BasicSystem import const
 from modules import ProcessUnit
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout, QTableWidgetItem, QProgressBar, \
-    QHeaderView, QTableWidget
+    QHeaderView, QTableWidget, QFileDialog
 from PySide6.QtCore import Qt, QTimer, Signal
 from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel
 
@@ -18,11 +19,9 @@ from GUI.Setting import Ui_Form as Ui_Setting
 from GUI.SetUp import Ui_SetUpNewForm
 
 import sys
-import threading
 from GUI import PrepareRequirements
 import gettext
 from PySide6.QtCore import Qt
-from modules import pltform
 from GUI import error_report
 from modules.ThreadingScheduler import ThreadPoolManager
 
@@ -118,7 +117,6 @@ class SettingUi_L(QFrame,Ui_Setting):
 
 
 
-
 class MainWindow(QMainWindow, Ui_MainWindow):
     QueueProgressUpdater = QTimer()
     def __init__(self):
@@ -144,6 +142,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def set_slot(self):
         self.SingleInputSelector.receive_file.connect(self.create_single_task)
+        self.SLBrowser.clicked.connect(self.browse_single_video_file)
+        self.SLOpen.clicked.connect(self.create_single_task_via_button)
+
+    def browse_single_video_file(self):
+        file_path, wtf = QFileDialog.getOpenFileName(
+            self,  # 父窗口
+            _("选择视频文件"),  # 对话框标题
+            "",  # 初始目录（空字符串表示当前目录）
+            _("视频文件 (*.mp4 *.avi *.mkv *.mov)")  # 文件过滤器
+        )
+        if file_path:
+            self.SLTL.setText(file_path)
+
+    def create_single_task_via_button(self):
+        if len(self.SLTL.text()) == 0:
+            return
+        self.create_single_task([self.SLTL.text()])
 
     def sync_queue(self):
         self.QueueList.setRowCount(0)
@@ -154,7 +169,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             statue = i.status
             output_path = i.output_path
             metadata = {'index': index, 'name': name, 'status': statue, 'output_path': output_path, 'progress': 0,
-                        "thumbnail": cv2.imread("wallp.jpg")}
+                        "thumbnail": extract_video_frames(i.file,[0])[0]}
             self.add_to_queue(metadata)
 
 
@@ -185,7 +200,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if i.progress_identify == id:
                 i.statue = _("错误")
                 i.completed = True
-                i.update_progress.connect(self.dummy_function)
+                i.update_progress.disconnect(self.update_queue_percentage)
                 i.stop()
                 for row in range(self.QueueList.rowCount()):
                     if self.QueueList.item(row, 0).text() == str(i.index):
@@ -211,7 +226,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.setUp_form.complete.connect(self.save_profile)
 
     def save_profile(self):
-        self.temporary = self.setUp_form.save_watermark_profile()
+        templ = self.setUp_form.save_watermark_profile()
+        self.temporary = ProcessUnit.ProcessUnit()
+        self.temporary.set_args(**templ)
         self.temporary.index = len(self.task_queue)+1
         self.temporary.progress_identify = str(uuid.uuid4())
         self.task_queue.append(self.temporary)
@@ -549,7 +566,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.checker = QTimer()
         self.checker.timeout.connect(self.setup_correct_setting_item)
         self.checker.start(50)
-        self.processUnit = None
+        self.template = None
         self.file_path = file_path
         self.PB_Confirm.clicked.connect(self.completed)
 
@@ -560,15 +577,38 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
 
     def save_watermark_profile(self):
         self.generate_profile()
-        return self.processUnit
+        return self.template
 
     def generate_profile(self):
 
-        self.processUnit = ProcessUnit.ProcessUnit()
-        self.processUnit.file = self.file_path
+
+        watermark_method = None
+
+        file = None
+        watermark_method = None
+        attachment_data = None
+        output_name = None
+        output_path = None
+        slice_length = None
+        sample_times = None
+        sample_extend = None
+        multi_process = None
+        sample_type = None
+        manual_sample_sheet = None
+        watermark_content = None
+        bitrate_control = None
+        MaximumBitRate = None
+        TargetBitRate = None
+        FFmpegEncoder = None
+        FFmpegTune = None
+        FFmpegPresent = None
+        FFmpegForeward = None
+        FFmpegSelfAdaptive = None
+        two_pass = None
+        file = self.file_path
         if int(self.CB_WatermarkAgori.currentIndex()) == 0:
             if int(self.CB_WatermarkType.currentIndex()) == 0:
-                self.processUnit.watermark_method = const.WatermarkAlgorithm.IMAGE_GUOFEI
+                watermark_method = const.WatermarkAlgorithm.IMAGE_GUOFEI
                 if "," in str(self.LE_wmpara1):
                     num1 = random.randint(int(self.LE_wmpara1.text().split(",")[0]),int(self.LE_wmpara1.text().split(",")[1]))
                 else:
@@ -582,10 +622,9 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                     "img_password":num1,
                     "wm_password":num2
                 }
-                self.processUnit.attachment_data = attachment_data
-                self.processUnit.watermark_content = cv2.imread(self.LE_WatermarkContent.text())
+                watermark_content = cv2.imread(self.LE_WatermarkContent.text())
             elif int(self.CB_WatermarkType.currentIndex()) == 1:
-                self.processUnit.watermark_method = const.WatermarkAlgorithm.TEXT_GOUFEI
+                watermark_method = const.WatermarkAlgorithm.TEXT_GOUFEI
                 if "," in str(self.LE_wmpara1):
                     num1 = random.randint(int(self.LE_wmpara1.text().split(",")[0]),int(self.LE_wmpara1.text().split(",")[1]))
                 else:
@@ -599,10 +638,9 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                     "img_password": num1,
                     "wm_password": num2
                 }
-                self.processUnit.attachment_data = attachment_data
-                self.processUnit.watermark_content = str(self.LE_WatermarkContent.text())
+                watermark_content = str(self.LE_WatermarkContent.text())
         elif int(self.CB_WatermarkAgori.currentIndex()) == 1:
-            self.processUnit.watermark_method = const.WatermarkAlgorithm.IMAGE_FIREKEEPER
+            watermark_method = const.WatermarkAlgorithm.IMAGE_FIREKEEPER
             if "," in str(self.LE_wmpara1):
                 num1 = random.randint(int(self.LE_wmpara1.text().split(",")[0]),
                                       int(self.LE_wmpara1.text().split(",")[1]))
@@ -631,178 +669,201 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                 "mod1": num3,
                 "mod2": num4,
             }
-            self.processUnit.watermark_content = cv2.imread(self.LE_WatermarkContent.text())
-            self.processUnit.attachment_data = attachment_data
+            watermark_content = cv2.imread(self.LE_WatermarkContent.text())
         elif int(self.CB_WatermarkAgori.currentIndex()) == 2:
-            self.processUnit.watermark_method = const.WatermarkAlgorithm.TEXT_FREQM
+            watermark_method = const.WatermarkAlgorithm.TEXT_FREQM
             attachment_data = {
                 'method':'dwtDct',
                 'wmType':'bytes'
             }
-            self.processUnit.attachment_data = attachment_data
-            self.processUnit.watermark_content = str(self.LE_WatermarkContent.text())
+            watermark_content = str(self.LE_WatermarkContent.text())
         elif int(self.CB_WatermarkAgori.currentIndex()) == 3:
-            self.processUnit.watermark_method = const.WatermarkAlgorithm.TEXT_RIVAGAN
+            watermark_method = const.WatermarkAlgorithm.TEXT_RIVAGAN
             attachment_data = {
                 'method':'rivaGan',
                 'wmType':'bytes'
             }
-            self.processUnit.watermark_content = str(self.LE_WatermarkContent.text())
-            self.processUnit.attachment_data = attachment_data
-        self.processUnit.output_name = "embedded"
-        self.processUnit.output_path = str(self.LE_VideoExportPath.text())
-        self.processUnit.slice_length = int(self.SB_Slicelength.value())
-        self.processUnit.sample_times = int(self.SB_SamplerTimes.value())
-        self.processUnit.sample_extend = int(self.SB_FrameExtend.value())
+            watermark_content = str(self.LE_WatermarkContent.text())
+        output_name = "embedded"
+        output_path = str(self.LE_VideoExportPath.text())
+        slice_length = int(self.SB_Slicelength.value())
+        sample_times = int(self.SB_SamplerTimes.value())
+        sample_extend = int(self.SB_FrameExtend.value())
         if self.CB_MultiProcess.isChecked():
             if int(self.SB_MultiProcess.value()) <= 61:
-                self.processUnit.multi_process = int(self.SB_MultiProcess.value())
+                multi_process = int(self.SB_MultiProcess.value())
             else:
-                self.processUnit.multi_process = 61
+                multi_process = 61
         else:
-            self.processUnit.multi_process = 1
+            multi_process = 1
         if int(self.CB_Sampler.currentIndex()) == 0:
-            self.processUnit.sample_type = const.SamplerType.RANDOM
+            sample_type = const.SamplerType.RANDOM
         elif int(self.CB_Sampler.currentIndex()) == 1:
-            self.processUnit.sample_type = const.SamplerType.AVERAGE
+            sample_type = const.SamplerType.AVERAGE
         elif int(self.CB_Sampler.currentIndex()) == 2:
-            self.processUnit.sample_type = const.SamplerType.MANUAL
-            self.processUnit.manual_sample_sheet = str(self.LE_SamplerSheet.text())
+            sample_type = const.SamplerType.MANUAL
+            manual_sample_sheet = str(self.LE_SamplerSheet.text())
         elif int(self.CB_Sampler.currentIndex()) == 3:
-            self.processUnit.sample_type = const.SamplerType.FULL
+            sample_type = const.SamplerType.FULL
 
         current_device = self.CB_RenderDevices.currentText()
         if self.render_device[current_device] == "cpu":
             if "DXV" in str(self.CB_VideoEncoder.currentText()):
-                self.processUnit.FFmpegEncoder = const.Encoder.Resolume_DXV
+                FFmpegEncoder = const.Encoder.Resolume_DXV
             else:
-                self.processUnit.FFmpegEncoder = const.Encoder.X264
+                FFmpegEncoder = const.Encoder.X264
 
         elif self.render_device[current_device] == "nvidia":
             if "H.264" in str(self.CB_VideoEncoder.currentText()):
-                self.processUnit.FFmpegEncoder = const.Encoder.NVIDIA_H264
+                FFmpegEncoder = const.Encoder.NVIDIA_H264
             elif "HEVC" in str(self.CB_VideoEncoder.currentText()):
-                self.processUnit.FFmpegEncoder = const.Encoder.NVIDIA_HEVC
+                FFmpegEncoder = const.Encoder.NVIDIA_HEVC
             elif "AV1" in str(self.CB_VideoEncoder.currentText()):
-                self.processUnit.FFmpegEncoder = const.Encoder.NVIDIA_AV1
+                FFmpegEncoder = const.Encoder.NVIDIA_AV1
         elif self.render_device[current_device] == "amd":
             if "H.264" in str(self.CB_VideoEncoder.currentText()):
-                self.processUnit.FFmpegEncoder = const.Encoder.AMD_H264
+                FFmpegEncoder = const.Encoder.AMD_H264
             elif "HEVC" in str(self.CB_VideoEncoder.currentText()):
-                self.processUnit.FFmpegEncoder = const.Encoder.AMD_HEVC
-        print(self.processUnit.FFmpegEncoder)
+                FFmpegEncoder = const.Encoder.AMD_HEVC
+        print(FFmpegEncoder)
         if int(self.CB_BitRateControl.currentIndex()) == 0:
-            self.processUnit.bitrate_control = const.BitRateControl.VBR
+            bitrate_control = const.BitRateControl.VBR
         elif int(self.CB_BitRateControl.currentIndex()) == 1:
-            self.processUnit.bitrate_control = const.BitRateControl.CBR
+            bitrate_control = const.BitRateControl.CBR
 
-        self.processUnit.MaximumBitRate = str(self.LE_MaxBitRate.text())
-        self.processUnit.TargetBitRate = str(self.LE_BitRate.text())
+        MaximumBitRate = str(self.LE_MaxBitRate.text())
+        TargetBitRate = str(self.LE_BitRate.text())
 
         if self.render_device[current_device] == "cpu":
             if str(self.CB_FFmpegPresent.text()) == "PLACEBO":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.X264_PLACEBO
+                FFmpegPresent = const.FFmpegPreset.X264_PLACEBO
             elif str(self.CB_FFmpegPresent.text()) == "VERYSLOW":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.X264_VERYSLOW
+                FFmpegPresent = const.FFmpegPreset.X264_VERYSLOW
             elif str(self.CB_FFmpegPresent.text()) == "SLOWER":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.X264_SLOWER
+                FFmpegPresent = const.FFmpegPreset.X264_SLOWER
             elif str(self.CB_FFmpegPresent.text()) == "SLOW":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.X264_SLOW
+                FFmpegPresent = const.FFmpegPreset.X264_SLOW
             elif str(self.CB_FFmpegPresent.text()) == "MEDIUM":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.X264_MEDIUM
+                FFmpegPresent = const.FFmpegPreset.X264_MEDIUM
             elif str(self.CB_FFmpegPresent.text()) == "FAST":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.X264_FAST
+                FFmpegPresent = const.FFmpegPreset.X264_FAST
             elif str(self.CB_FFmpegPresent.text()) == "FASTER":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.X264_FASTER
+                FFmpegPresent = const.FFmpegPreset.X264_FASTER
             elif str(self.CB_FFmpegPresent.text()) == "VERYFAST":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.X264_VERYFAST
+                FFmpegPresent = const.FFmpegPreset.X264_VERYFAST
             elif str(self.CB_FFmpegPresent.text()) == "SUPERFAST":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.X264_SUPERFAST
+                FFmpegPresent = const.FFmpegPreset.X264_SUPERFAST
             elif str(self.CB_FFmpegPresent.text()) == "ULTRAFAST":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.X264_UlTRAFAST
+                FFmpegPresent = const.FFmpegPreset.X264_UlTRAFAST
             elif str(self.CB_Tune.text()) == "FILM":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_FILM
+                FFmpegTune = const.FFmpegTune.X264_FILM
             elif str(self.CB_Tune.text()) == "ANIMATION":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_ANIMATION
+                FFmpegTune = const.FFmpegTune.X264_ANIMATION
             elif str(self.CB_Tune.text()) == "GRAIN":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_GRAIN
+                FFmpegTune = const.FFmpegTune.X264_GRAIN
             elif str(self.CB_Tune.text()) == "STILLIMAGE":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_STILLIMAGE
+                FFmpegTune = const.FFmpegTune.X264_STILLIMAGE
             elif str(self.CB_Tune.text()) == "PSNR":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_PSNR
+                FFmpegTune = const.FFmpegTune.X264_PSNR
             elif str(self.CB_Tune.text()) == "SSIM":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_SSIM
+                FFmpegTune = const.FFmpegTune.X264_SSIM
 
             if str(self.CB_Tune.text()) == "FILM":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_FILM
+                FFmpegTune = const.FFmpegTune.X264_FILM
             elif str(self.CB_Tune.text()) == "ANIMATION":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_ANIMATION
+                FFmpegTune = const.FFmpegTune.X264_ANIMATION
             elif str(self.CB_Tune.text()) == "GRAIN":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_GRAIN
+                FFmpegTune = const.FFmpegTune.X264_GRAIN
             elif str(self.CB_Tune.text()) == "STILLIMAGE":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_STILLIMAGE
+                FFmpegTune = const.FFmpegTune.X264_STILLIMAGE
             elif str(self.CB_Tune.text()) == "PSNR":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_PSNR
+                FFmpegTune = const.FFmpegTune.X264_PSNR
             elif str(self.CB_Tune.text()) == "SSIM":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_SSIM
+                FFmpegTune = const.FFmpegTune.X264_SSIM
             elif str(self.CB_Tune.text()) == "FASTDECODE":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_FASTDECODE
+                FFmpegTune = const.FFmpegTune.X264_FASTDECODE
             elif str(self.CB_Tune.text()) == "ZEROLANTENCY":
-                self.processUnit.FFmpegTune = const.FFmpegTune.X264_ZEROLANTENCY
+                FFmpegTune = const.FFmpegTune.X264_ZEROLANTENCY
         elif self.render_device[current_device] == "nvidia":
             if int(self.CB_EncodePattern.currentIndex()) == 0:
-                self.processUnit.two_pass = False
+                two_pass = False
             else:
-                self.processUnit.two_pass = True
+                two_pass = True
             if str(self.CB_FFmpegPresent.currentText()) == "P1":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P1
+                FFmpegPresent = const.FFmpegPreset.NVIDIA_P1
             elif str(self.CB_FFmpegPresent.currentText()) == "P2":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P2
+                FFmpegPresent = const.FFmpegPreset.NVIDIA_P2
             elif str(self.CB_FFmpegPresent.currentText()) == "P3":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P3
+                FFmpegPresent = const.FFmpegPreset.NVIDIA_P3
             elif str(self.CB_FFmpegPresent.currentText()) == "P4":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P4
+                FFmpegPresent = const.FFmpegPreset.NVIDIA_P4
             elif str(self.CB_FFmpegPresent.currentText()) == "P5":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P5
+                FFmpegPresent = const.FFmpegPreset.NVIDIA_P5
             elif str(self.CB_FFmpegPresent.currentText()) == "P6":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P6
+                FFmpegPresent = const.FFmpegPreset.NVIDIA_P6
             elif str(self.CB_FFmpegPresent.currentText()) == "P7":
-                self.processUnit.FFmpegPresent = const.FFmpegPreset.NVIDIA_P7
+                FFmpegPresent = const.FFmpegPreset.NVIDIA_P7
             if "H.264" in str(self.CB_VideoEncoder.currentText()):
                 if str(self.CB_Tune.text()) == "High Quality":
-                    self.processUnit.FFmpegTune = const.FFmpegTune.NV_H264_HQ
+                    FFmpegTune = const.FFmpegTune.NV_H264_HQ
                 elif str(self.CB_Tune.text()) == "Low Latency":
-                    self.processUnit.FFmpegTune = const.FFmpegTune.NV_H264_LL
+                    FFmpegTune = const.FFmpegTune.NV_H264_LL
                 elif str(self.CB_Tune.text()) == "Super Low Latency":
-                    self.processUnit.FFmpegTune = const.FFmpegTune.NV_H264_SLL
+                    FFmpegTune = const.FFmpegTune.NV_H264_SLL
             elif "HEVC" in str(self.CB_VideoEncoder.currentText()):
                 if str(self.CB_Tune.text()) == "Super High Quality":
-                    self.processUnit.FFmpegTune = const.FFmpegTune.NV_H265_SHQ
+                    FFmpegTune = const.FFmpegTune.NV_H265_SHQ
                 elif str(self.CB_Tune.text()) == "High Quality":
-                    self.processUnit.FFmpegTune = const.FFmpegTune.NV_H265_HQ
+                    FFmpegTune = const.FFmpegTune.NV_H265_HQ
                 elif str(self.CB_Tune.text()) == "Low Latency":
-                    self.processUnit.FFmpegTune = const.FFmpegTune.NV_H265_LL
+                    FFmpegTune = const.FFmpegTune.NV_H265_LL
                 elif str(self.CB_Tune.text()) == "Super Low Latency":
-                    self.processUnit.FFmpegTune = const.FFmpegTune.NV_H265_SLL
+                    FFmpegTune = const.FFmpegTune.NV_H265_SLL
             elif "AV1" in str(self.CB_VideoEncoder.currentText()):
                 if str(self.CB_Tune.text()) == "Super High Quality":
-                    self.processUnit.FFmpegTune = const.FFmpegTune.NV_AV1_SHQ
+                    FFmpegTune = const.FFmpegTune.NV_AV1_SHQ
                 elif str(self.CB_Tune.text()) == "High Quality":
-                    self.processUnit.FFmpegTune = const.FFmpegTune.NV_AV1_HQ
+                    FFmpegTune = const.FFmpegTune.NV_AV1_HQ
                 elif str(self.CB_Tune.text()) == "Low Latency":
-                    self.processUnit.FFmpegTune = const.FFmpegTune.NV_AV1_LL
+                    FFmpegTune = const.FFmpegTune.NV_AV1_LL
                 elif str(self.CB_Tune.text()) == "Super Low Latency":
-                    self.processUnit.FFmpegTune = const.FFmpegTune.NV_AV1_SLL
+                    FFmpegTune = const.FFmpegTune.NV_AV1_SLL
 
         if self.CB_Foreward.isChecked():
-            self.processUnit.FFmpegForeward = int(self.SB_Forward.value())
+            FFmpegForeward = int(self.SB_Forward.value())
         else:
-            self.processUnit.FFmpegForeward = None
+            FFmpegForeward = None
 
         if self.CB_AdjustiveNormalize.isChecked():
-            self.processUnit.FFmpegSelfAdaptive = int(self.SB_AN.value())
+            FFmpegSelfAdaptive = int(self.SB_AN.value())
         else:
-            self.processUnit.FFmpegSelfAdaptive = None
+            FFmpegSelfAdaptive = None
+        process_unit_template = {
+            "version": const.__version__,
+            "file": file,
+            "watermark_method": watermark_method,
+            "attachment_data": attachment_data,
+            "output_name": output_name,
+            "output_path": output_path,
+            "slice_length": slice_length,
+            "sample_times": sample_times,
+            "sample_extend": sample_extend,
+            "process_limit": multi_process,
+            "sample_type": sample_type,
+            "manual_sample_sheet": manual_sample_sheet,
+            "watermark_content": watermark_content,
+            "BitRateControl": bitrate_control,
+            "MaximumBitRate": MaximumBitRate,
+            "TargetBitRate": TargetBitRate,
+            "FFmpegEncoder": FFmpegEncoder,
+            "FFmpegTune": FFmpegTune,
+            "FFmpegPresent": FFmpegPresent,
+            "FFmpegForeward": FFmpegForeward,
+            "FFmpegSelfAdaptive": FFmpegSelfAdaptive,
+            "output_format": "mov",
+            "two_pass": two_pass,
+        }
+        self.template = process_unit_template
 
 
 

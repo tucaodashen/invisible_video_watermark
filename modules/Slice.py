@@ -241,6 +241,7 @@ class Slice():
             result = self._process()
             return result
         except Exception as e:
+            path = f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump"
             # 获取异常信息
             exc_type, exc_value, exc_traceback = sys.exc_info()
 
@@ -256,13 +257,14 @@ class Slice():
                 # 只转储异常发生的帧
                 coredumpy.dump(frame=exception_frame,
                                description="Exception trigger frame only"
-                               ,path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
+                               ,path=path)
 
                 # 打印确认位置
                 print(f"异常发生在: {exception_frame.f_code.co_filename}:{exception_frame.f_lineno}")
             else:
-                coredumpy.dump(description="No traceback available",path=f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}.dump")
+                coredumpy.dump(description="No traceback available",path=path)
             raise
+        # Todo: 通过网络回转存储dump文件的位置
 
 
 

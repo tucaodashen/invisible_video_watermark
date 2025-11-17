@@ -102,6 +102,15 @@ class ProcessUnit(QObject):
         self.status = _("等待中")
         self.progress_identify = None
 
+        self.dump_file = []
+        self.saved_file_path = [None,None]
+
+    def set_args(self,**kwargs):
+        for key, value in kwargs.items():
+            if key == "version" and value != const.__version__:
+                raise ValueError(_("版本号不匹配"))
+            setattr(self, key, value)
+
 
 
     def setup_ipc(self):
@@ -209,7 +218,8 @@ class ProcessUnit(QObject):
         merge_video_sequnece(lists,os.path.join(self._temporary_path,f"{self.output_name}.{self.output_format}"),logger=self.logger)
         if os.path.exists("input_list.txt"):
             os.remove("input_list.txt")
-        # VideoProcessor.add_audio_to_video(f"{self.output_name}.{self.output_format}","test.mp3","ooout_with_audio.mp4")
+        saved_path = FileSystem.open_file(f"{self.base_file_name}-merge",f"./output/{self.output_name}.{self.output_format}",const.File_Return_Type.PATH)
+        self.saved_file_path[0] = saved_path
 
     def report_error(self,error_list):
         self.OccurError.emit(error_list,self.progress_identify)
@@ -288,6 +298,7 @@ class ProcessUnit(QObject):
             f.write(data)
         print(recover_data)
         FileSystem.mapping_list = {}
+        self.saved_file_path[1] = json_path
         self.stop()
 
 
