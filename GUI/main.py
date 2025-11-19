@@ -1,6 +1,8 @@
+import copy
 import os.path
 import pickle
 import random
+import threading
 import uuid
 from modules.PyAv import extract_video_frames
 
@@ -122,6 +124,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     QueueProgressUpdater = QTimer()
     def __init__(self):
         super().__init__()
+        self.batch_setUp_form = None
         self.error_window = []
         self.setUp_form = None
         self.pu_thread = None
@@ -143,6 +146,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def set_slot(self):
         self.SingleInputSelector.receive_file.connect(self.create_single_task)
+        self.MultipleProcessSelector.receive_file.connect(self.add_batch_process)
         self.SLBrowser.clicked.connect(self.browse_single_video_file)
         self.SLOpen.clicked.connect(self.create_single_task_via_button)
 
@@ -245,8 +249,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.setUp_form.complete.connect(self.save_profile)
             self.setUp_form.create_preset.connect(self.receive_preset)
 
+    def add_batch_process(self, files):
+        self.batch_setUp_form = CreateNewProject(files, self)
+        self.batch_setUp_form.setWindowModality(Qt.ApplicationModal)
+        self.batch_setUp_form.show()
+        self.batch_setUp_form.complete.connect(self.set_batch_file)
+        self.batch_setUp_form.create_preset.connect(self.receive_preset)
 
 
+    def set_batch_file(self):
+        args = self.batch_setUp_form.save_watermark_profile()
+        origin = copy.deepcopy(args)
+        for i in self.batch_setUp_form.file_path:
+            args.update({'file': i})
+            args.update({'output_path': os.path.join(origin['output_path'],os.path.basename(i).split(".")[0])})
+            self.temporary = ProcessUnit.ProcessUnit()
+            self.temporary.set_args(**args)
+            self.temporary.index = len(self.task_queue)+1
+            self.temporary.progress_identify = str(uuid.uuid4())
+            self.temporary.dump_uuid = str(uuid.uuid4())
+            self.task_queue.append(self.temporary)
+        self.batch_setUp_form.close()
+        self.sync_queue()
+
+        
     def save_profile(self):
         templ = self.setUp_form.save_watermark_profile()
         self.temporary = ProcessUnit.ProcessUnit()
@@ -260,8 +286,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def setButtons(self):
         self.error_window = []
-        self.StartButton.clicked.connect(self.queue_start)
+        self.StartButton.clicked.connect(self.start_all_task)
         self.StopButton.clicked.connect(self.queue_stop)
+
+
+    def start_all_task(self):
+        corre_ = threading.Thread(target=self.queue_start)
+        corre_.start()
 
 
     def queue_start(self):
@@ -273,10 +304,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 task.update_progress.connect(self.update_queue_percentage)
                 task.OccurError.connect(self.handle_error)
                 start_list.append(task.run)
-        threading_pool = ThreadPoolManager(max_workers=2)
-        threading_pool.submit_tasks(start_list)
-        threading_pool.start()
-        self.set_status()
+        if start_list != []:
+            threading_pool = ThreadPoolManager(max_workers=2)
+            threading_pool.submit_tasks(start_list)
+            threading_pool.start()
+            self.set_status()
 
     def queue_suspend(self):
         for task in self.task_queue:

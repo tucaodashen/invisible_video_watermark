@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 
 import ffmpeg
@@ -345,7 +346,13 @@ class ProcessUnit(QObject):
         print("?????????????????????????????????????????????????????????????????")
 
     def output_packed_file(self):
-        self.output_path
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
+        shutil.move(str(self.saved_file_path[0]),self.output_path)
+        shutil.move(str(self.saved_file_path[1]),self.output_path)
+        self.logger.info(f"文件已保存到{self.output_path}")
+
+
 
 
 
@@ -380,6 +387,8 @@ class ProcessUnit(QObject):
             self.set_stage(6)
             self.after_processing()
             self.sort_log()
+            self.output_packed_file()
+            self.remove_workspace()
             self.completed = True
             self.running = False
             self.status = 1
@@ -388,7 +397,13 @@ class ProcessUnit(QObject):
             self.completed = _("发生错误")
             self.running = False
             self.status = 0
+            try:
+                self.remove_workspace()
+            except:
+                pass
             return False
+
+
 
     def suspend(self):
         for i in self.scheduler.get_running_pids():
@@ -460,6 +475,11 @@ class ProcessUnit(QObject):
                 list_data.append(i[0])
         self.logger.debug(f"Attachment data: {list_data}")
         return list_data
+
+    def remove_workspace(self):
+        vi = os.path.dirname(os.path.normpath(str(self.saved_file_path[0])))
+        root = os.path.dirname(os.path.normpath(vi))
+        shutil.rmtree(root)
 
     def sort_log(self):
         pass

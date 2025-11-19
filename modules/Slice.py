@@ -1,3 +1,4 @@
+import shutil
 import sys
 import uuid
 
@@ -176,7 +177,6 @@ class Slice():
             else:
                 coredumpy.dump(description="No traceback available",path=path,depth=4)
             raise
-        # Todo: 通过网络回转存储dump文件的位置
 
 
 
@@ -296,10 +296,11 @@ class Slice():
                 self.output_progress_description(15, _("Correct and Output"))
             else:
                 self.ffmpeg_retry_count += 1
-                if self.ffmpeg_retry_count >= 15:
+                if self.ffmpeg_retry_count >= 50:
                     self.output_progress_description(16, _("FFmpeg retry count exceeded"))
                     raise SystemError(_("FFmpeg retry count exceeded"))
                 self.output_progress_description(16, _("FFmpeg error, retry"))
+
 
 
     def run(self):
@@ -324,6 +325,11 @@ class Slice():
         }
         data = json.dumps(frame_format)
         networks.ipc_send(data,"127.0.0.1",self.ipc_port)
+
+    def after_process(self):
+        root_dir = FileSystem.open_file(self.identify['name'],"./",const.File_Return_Type.PATH)
+        print(root_dir,"delete")
+        shutil.rmtree(root_dir)
 
 
 
