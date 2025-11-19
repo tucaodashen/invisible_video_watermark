@@ -1,3 +1,6 @@
+"""
+请伟大的早濑优香大人保佑这段代码吧！
+"""
 import copy
 import os.path
 import pickle
