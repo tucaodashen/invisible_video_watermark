@@ -15,8 +15,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QPushButton,
-    QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QScrollArea,
+    QSizePolicy, QVBoxLayout, QWidget)
 
 from qfluentwidgets import (BodyLabel, CheckBox, ComboBox, ImageLabel,
     LineEdit, PrimaryPushButton, PushButton, Slider,
@@ -54,6 +54,11 @@ class Ui_SetUpNewForm(object):
         self.L_UsePresent.setObjectName(u"L_UsePresent")
 
         self.horizontalLayout_2.addWidget(self.L_UsePresent)
+
+        self.LE_PresetName = LineEdit(self.F_Present)
+        self.LE_PresetName.setObjectName(u"LE_PresetName")
+
+        self.horizontalLayout_2.addWidget(self.LE_PresetName)
 
         self.PB_saveaspreset = PushButton(self.F_Present)
         self.PB_saveaspreset.setObjectName(u"PB_saveaspreset")
@@ -134,7 +139,7 @@ class Ui_SetUpNewForm(object):
 
         self.horizontalLayout_13.addWidget(self.LE_WatermarkContent)
 
-        self.PB_wmcontent = QPushButton(self.F_Watermark)
+        self.PB_wmcontent = PushButton(self.F_Watermark)
         self.PB_wmcontent.setObjectName(u"PB_wmcontent")
 
         self.horizontalLayout_13.addWidget(self.PB_wmcontent)

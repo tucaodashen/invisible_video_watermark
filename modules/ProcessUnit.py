@@ -1,3 +1,7 @@
+import subprocess
+
+import ffmpeg
+
 from BasicSystem.log_client import setup_logger, get_logger
 from modules import VideoProcessor
 from pathlib import Path
@@ -26,14 +30,102 @@ progress_path = "./progressCalc"
 
 
 
+def extract_audio_to_flac(video_path,output_audio_path,
+                          audio_track=0, fps=None, bitrate=None):
+    """
+    从视频中提取指定帧范围的音频并保存为FLAC格式
+
+    参数:
+    video_path: 输入视频文件路径
+    output_audio_path: 输出FLAC音频文件路径
+    audio_track: 要提取的音轨索引(默认0，即第一个音轨)
+    fps: 视频帧率(可选，如果未提供则自动检测)
+    bitrate: FLAC编码的比特率(可选，默认使用ffmpeg的默认设置)
+    """
+
+    # 如果未提供fps，需要先获取视频信息
+    if fps is None:
+        try:
+            probe = ffmpeg.probe(video_path)
+            video_stream = next((stream for stream in probe['streams']
+                                 if stream['codec_type'] == 'video'), None)
+            if video_stream and 'r_frame_rate' in video_stream:
+                # 处理帧率字符串（可能是"30000/1001"这样的分数形式）
+                frame_rate = video_stream['r_frame_rate']
+                if '/' in frame_rate:
+                    num, den = map(int, frame_rate.split('/'))
+                    fps = num / den
+                else:
+                    fps = float(frame_rate)
+            else:
+                # 如果无法获取视频流信息，使用默认值
+                fps = 30.0
+                print(f"警告: 无法检测视频帧率，使用默认值 {fps}")
+        except Exception as e:
+            fps = 30.0
+            print(f"获取视频信息时出错: {e}，使用默认帧率 {fps}")
+
+
+    # 构建ffmpeg命令
+    cmd = [
+        'ffmpeg',
+        '-i', video_path,
+        '-map', f'0:a:{audio_track}',
+        '-acodec', 'flac',
+        '-ar', '44100',
+        '-compression_level', '5',"-y"
+    ]
+
+    # 如果指定了比特率，添加比特率参数
+    if bitrate:
+        cmd.extend(['-b:a', bitrate])
+
+    cmd.append(output_audio_path)
+
+    # 执行转换
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        print(f"成功提取音频到: {output_audio_path}")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"提取音频时出错: {e.stderr}")
+        return False
+
+
+def get_audio_tracks_info(video_path,logger):
+    """
+    获取视频中所有音频轨道的详细信息
+    """
+    try:
+        probe = ffmpeg.probe(video_path)
+        audio_streams = [stream for stream in probe['streams'] if stream['codec_type'] == 'audio']
+
+        logger.info("找到的音频轨道:")
+        for i, stream in enumerate(audio_streams):
+            logger.info(f"轨道 {i}:")
+            logger.info(f"  编码器: {stream.get('codec_name', '未知')}")
+            logger.info(f"  采样率: {stream.get('sample_rate', '未知')} Hz")
+            logger.info(f"  声道数: {stream.get('channels', '未知')}")
+            logger.info(f"  语言: {stream.get('tags', {}).get('language', '未知')}")
+            logger.info(f"  标题: {stream.get('tags', {}).get('title', '无标题')}")
+
+        return len(audio_streams)
+    except Exception as e:
+        logger.error(f"获取音频轨道信息时出错: {e}")
+        return 0
+
+
+
+
 
 
 
 class ProcessUnit(QObject):
     update_progress = Signal(float,str,str)
-    OccurError = Signal(list,str)
+    OccurError = Signal(list,str,list)
     def __init__(self):
         super().__init__()
+        self.audio_file_list = []
         self.error_occured = False
         self.scheduler = None
         self.file = "mul.mov"
@@ -104,12 +196,32 @@ class ProcessUnit(QObject):
 
         self.dump_file = []
         self.saved_file_path = [None,None]
+        self.dump_uuid = None
+        self.root_dir = None
+
+
+    def audio_process(self,input_video, path,tags=None):
+        track_count = get_audio_tracks_info(input_video,self.logger)
+        self.logger.info(f"视频{input_video}有{track_count}个音轨",tags=tags)
+        FileSystem.create_directory(self.identify['name'], "audio_track")
+        for i in range(track_count):
+            output_path = os.path.join(path, f"{int(i)}.flac")
+            extract_audio_to_flac(input_video, output_path,i)
 
     def set_args(self,**kwargs):
         for key, value in kwargs.items():
             if key == "version" and value != const.__version__:
                 raise ValueError(_("版本号不匹配"))
             setattr(self, key, value)
+
+
+    def search_dump_file(self):
+        file = os.listdir("./dumps")
+        for i in file:
+            if self.dump_uuid in str(i):
+                self.dump_file.append(i)
+        print(self.dump_file)
+        self.dump_file = list(set(self.dump_file))
 
 
 
@@ -195,6 +307,7 @@ class ProcessUnit(QObject):
                                          two_pass=True,
                                          progress_id=self.identify,
                                          ipc_port=self.ipc_port,
+                                         dump_uuid = self.dump_uuid
                                          ))
         print(len(self.slice_list),"Length of slice list")
 
@@ -202,6 +315,12 @@ class ProcessUnit(QObject):
 
         FileSystem.create_workspace(f"{self.base_file_name}-merge")
         FileSystem.create_directory(f"{self.base_file_name}-merge","./merge")
+        FileSystem.create_directory(f"{self.base_file_name}-merge", "./audio_track")
+        output_path = FileSystem.open_file(f"{self.base_file_name}-merge",f"./audio_track",const.File_Return_Type.PATH)
+        self.audio_process(self.file,output_path)
+        perfix = FileSystem.open_file(f"{self.base_file_name}-merge",f"./audio_track",const.File_Return_Type.PATH)
+        for i in os.listdir(perfix):
+            self.audio_file_list.append(os.path.join(perfix,i))
         for obj in self.result_list:
             FileSystem.import_file(f"{self.base_file_name}-merge",obj[1],"./merge")
             os.remove(obj[1])
@@ -215,16 +334,20 @@ class ProcessUnit(QObject):
         for i in range(1,ti+1):
             lists.append(FileSystem.open_file(f"{self.base_file_name}-merge",f"./merge/{i}.{self.output_format}",const.File_Return_Type.PATH))
         print(lists)
-        merge_video_sequnece(lists,os.path.join(self._temporary_path,f"{self.output_name}.{self.output_format}"),logger=self.logger)
-        if os.path.exists("input_list.txt"):
-            os.remove("input_list.txt")
+        merge_video_sequnece(lists,os.path.join(self._temporary_path,f"{self.output_name}.{self.output_format}"),logger=self.logger,audio_file=self.audio_file_list,output_format=self.output_format)
         saved_path = FileSystem.open_file(f"{self.base_file_name}-merge",f"./output/{self.output_name}.{self.output_format}",const.File_Return_Type.PATH)
         self.saved_file_path[0] = saved_path
 
     def report_error(self,error_list):
-        self.OccurError.emit(error_list,self.progress_identify)
+        self.search_dump_file()
+        self.OccurError.emit(error_list,self.progress_identify,self.dump_file)
         self.error_occured = True
         print("?????????????????????????????????????????????????????????????????")
+
+    def output_packed_file(self):
+        self.output_path
+
+
 
 
 

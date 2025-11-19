@@ -1,4 +1,5 @@
 import os.path
+import pickle
 import random
 import uuid
 from modules.PyAv import extract_video_frames
@@ -192,12 +193,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 
-    def handle_error(self,err,id):
+    def handle_error(self, err, _id,dump_file):
         print(err)
-        self.error_window.append(error_report.ErrorReportDialog(error=err))
+        print(dump_file,"DDDDUUUUMMMPPPP")
+        self.error_window.append(error_report.ErrorReportDialog(error=err,dump_file=dump_file))
         self.error_window[-1].show()
         for i in self.task_queue:
-            if i.progress_identify == id:
+            if i.progress_identify == _id:
                 i.statue = _("错误")
                 i.completed = True
                 i.update_progress.disconnect(self.update_queue_percentage)
@@ -212,6 +214,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for ai in self.task_queue:
             print(ai.statue)
 
+    def receive_preset(self,preset,name):
+        preset['file'] = None
+        preset['output_path'] = None
+        preset['watermark_content'] = None
+        self.save_preset(preset,name)
+
+
+    def save_preset(self,template,name):
+        if os.path.exists("preset"):
+            pass
+        else:
+            os.mkdir("preset")
+        if not os.path.exists(f"preset/{name}.pickle"):
+            with open(f"preset/{name}.pickle",'wb') as f:
+                pickle.dump(template,f)
+
+
 
 
 
@@ -224,6 +243,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.setUp_form.setWindowModality(Qt.ApplicationModal)
             self.setUp_form.show()
             self.setUp_form.complete.connect(self.save_profile)
+            self.setUp_form.create_preset.connect(self.receive_preset)
+
+
 
     def save_profile(self):
         templ = self.setUp_form.save_watermark_profile()
@@ -231,6 +253,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.temporary.set_args(**templ)
         self.temporary.index = len(self.task_queue)+1
         self.temporary.progress_identify = str(uuid.uuid4())
+        self.temporary.dump_uuid = str(uuid.uuid4())
         self.task_queue.append(self.temporary)
         self.setUp_form.close()
         self.sync_queue()
@@ -556,6 +579,7 @@ class FFmpegDownloadPage(MessageBoxBase):
 
 class CreateNewProject(QFrame,Ui_SetUpNewForm):
     complete = Signal()
+    create_preset = Signal(dict,str)
     def __init__(self, file_path,parent=None):
         super().__init__(parent, Qt.Window)
         self.setupUi(self)
@@ -569,6 +593,9 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.template = None
         self.file_path = file_path
         self.PB_Confirm.clicked.connect(self.completed)
+        self.PB_saveaspreset.clicked.connect(self.generate_preset)
+
+
 
     def completed(self):
         self.complete.emit()
@@ -578,6 +605,10 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
     def save_watermark_profile(self):
         self.generate_profile()
         return self.template
+
+    def generate_preset(self):
+        self.generate_profile()
+        self.create_preset.emit(self.template,self.LE_PresetName.text())
 
     def generate_profile(self):
 

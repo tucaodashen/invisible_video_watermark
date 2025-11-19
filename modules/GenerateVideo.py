@@ -1,5 +1,6 @@
 import os
 import subprocess
+import uuid
 
 from BasicSystem.log_client import setup_logger, get_logger
 from BasicSystem.const import Encoder, BitRateControl, FFmpegTune, FFmpegPreset
@@ -31,6 +32,7 @@ def execute_command(args,port=25565):
         #sys.stderr.write(line)
         sys.stderr.flush()
         logger.debug(str(line).replace('\n', ''))
+        print(str(line).replace('\n', ''))
 
     # 等待命令完成
     return_code = process.wait()
@@ -75,17 +77,7 @@ def merge_sequences(input_files,
     #input
     args.append('-i')
     args.append(input_files)
-    if audio_file is not None:
-        for i in audio_file:
-            args.append('-i')
-            args.append(i)
-    #mapping
-    if audio_file is not None:
-        args.append('-map')
-        args.append('0:v:0')
-        for i in range(len(audio_file)):
-            args.append('-map')
-            args.append(f'{i+1}:a:0')
+
     #encoder
     if video_encoder == Encoder.NVIDIA_AV1:
         args.append('-pix_fmt')
@@ -107,20 +99,7 @@ def merge_sequences(input_files,
         args.append('dxv')
     else:
         raise ValueError(f"Unsupported video encoder: {video_encoder}")
-    #audio_encoder
-    if audio_file is not None:
-        if output_format == 'mov':
-            for i in range(len(audio_file)):
-                args.append('-c:a')
-                args.append('aac')
-        elif output_format == 'mp4' or os.path.basename(output_file).split('.')[-1] == 'mkv':
-            for i in range(len(audio_file)):
-                args.append(f'-c:a:{i}')
-                args.append('copy')
-        else:
-            for i in range(len(audio_file)):
-                args.append('-c:a')
-                args.append('aac')
+
     if video_encoder != Encoder.Resolume_DXV:
         #bitratecontrol
 
@@ -263,15 +242,16 @@ def setup_sequence(path):
     return name
 
 
-def merge_video_sequnece(input_list, output_path,logger):
+def merge_video_sequnece(input_list, output_path,logger,audio_file,output_format):
+    name = str(uuid.uuid4())
     args = []
     strings = ""
     for i in input_list:
         temp = f"file '{i}'\n"
         strings += temp
-    if os.path.exists("input_list.txt"):
-        os.remove("input_list.txt")
-    with open("input_list.txt", 'w') as f:
+    if os.path.exists(f"{name}.txt"):
+        os.remove(f"{name}.txt")
+    with open(f"{name}.txt", 'w') as f:
         f.write(strings)
 
     args.append(ffmpeg_path)
@@ -280,17 +260,44 @@ def merge_video_sequnece(input_list, output_path,logger):
     args.append('-safe')
     args.append('0')
     args.append('-i')
-    args.append('input_list.txt')
+    args.append(f"{name}.txt")
+    if audio_file is not None:
+        for i in audio_file:
+            args.append('-i')
+            args.append(i)
+    #mapping
+    if audio_file is not None:
+        args.append('-map')
+        args.append('0:v:0')
+        for i in range(len(audio_file)):
+            args.append('-map')
+            args.append(f'{i+1}:a:0')
     args.append('-map')
     args.append("0")
     args.append('-c')
     args.append('copy')
+    # audio_encoder
+    if audio_file is not None:
+        if output_format == 'mov':
+            for i in range(len(audio_file)):
+                args.append('-c:a')
+                args.append('aac')
+        elif output_format == 'mp4' or output_format == 'mkv':
+            for i in range(len(audio_file)):
+                args.append(f'-c:a:{i}')
+                args.append('copy')
+        else:
+            for i in range(len(audio_file)):
+                args.append('-c:a')
+                args.append('aac')
     args.append(output_path)
-    logger.debug(f"FFmpeg command: {' '.join(args)}")
+    print(f"FFmpeg command: {' '.join(args)}")
     code = execute_command(args)
+    if os.path.exists(f"{name}.txt"):
+        os.remove(f"{name}.txt")
     return code
 
 
 
 if __name__ == '__main__':
-    merge_sequences(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, )
+    merge_video_sequnece(['1.mov','2.mov','3.mov'], 'output.mov', "logger", ['1.mp3', '2.mp3','3.mp3'], 'mov')
