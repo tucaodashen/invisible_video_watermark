@@ -7,13 +7,16 @@ import pickle
 import random
 import threading
 import uuid
+
+import numpy as np
+
 from modules.PyAv import extract_video_frames
 
 import cv2
 from PySide6.QtGui import QPixmap, QImage
 
 from BasicSystem import const
-from modules import ProcessUnit
+from modules import ProcessUnit, PyAv
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout, QTableWidgetItem, QProgressBar, \
     QHeaderView, QTableWidget, QFileDialog
 from PySide6.QtCore import Qt, QTimer, Signal
@@ -37,6 +40,30 @@ print(_devices)
 
 
 from qfluentwidgets import Dialog, setTheme, Theme, PrimaryPushButton, MessageBoxBase, SubtitleLabel, ProgressBar, BodyLabel
+
+
+def resize_image_to_fixed_height_simple(image, target_height=216):
+    h, w = image.shape[:2]
+
+    # 计算缩放比例和新宽度
+    scale = target_height / h
+    new_width = int(w * scale)
+
+    # 缩放图像
+    resized = cv2.resize(image, (new_width, target_height))
+
+    # 创建目标画布
+    canvas = np.zeros((target_height, 384, 3), dtype=np.uint8)
+
+    # 计算放置位置
+    if new_width < 384:
+        x_offset = (384 - new_width) // 2
+        canvas[:, x_offset:x_offset + new_width] = resized
+    else:
+        x_offset = (new_width - 384) // 2
+        canvas = resized[:, x_offset:x_offset + 384]
+
+    return canvas
 
 
 def cv2_to_qpixmap(cv_img):
@@ -141,6 +168,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setButtons()
         self.temporary = None
 
+        self.current_selected_task = None
+
 
         self.task_queue = []
         self.QueueProgressUpdater.timeout.connect(self.update_total_progress)
@@ -152,6 +181,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.MultipleProcessSelector.receive_file.connect(self.add_batch_process)
         self.SLBrowser.clicked.connect(self.browse_single_video_file)
         self.SLOpen.clicked.connect(self.create_single_task_via_button)
+        self.QueueList.itemSelectionChanged.connect(self.set_first_selected)
+
 
     def browse_single_video_file(self):
         file_path, wtf = QFileDialog.getOpenFileName(
@@ -193,6 +224,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def dummy_function(self,*args,**kwargs):
         pass
+
+    def update_details(self):
+        for i in self.task_queue:
+            if i.index == self.current_selected_task+1:
+                self.SourceLabel.setText(_("源文件:") + os.path.basename(i.file))
+                self.progressBar.setValue(i.progress*100)
+                self.FileNameLabel.setText(_("文件名:") + os.path.basename(i.file))
+                self.FilePathLabel.setText(_("文件路径:") + i.file)
+                self.FileFormatLabel.setText(_("格式:") + i.output_format)
+                self.ProjectPresentLabel.setText(_("项目预设:"))
+                self.VideoInfoLabel.setText(_("视频:"))
+                self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(i.MaximumBitRate)+" Target Bitrate:"+str(i.MaximumBitRate))
+                self.AudioLabel.setText(_("音频:"))
+        self.freq_update_status()
+
+    def freq_update_status(self):
+        for i in self.task_queue:
+            if i.index == self.current_selected_task+1:
+                self.label_10.setImage(cv2_to_qpixmap(resize_image_to_fixed_height_simple(PyAv.extract_video_frames(i.file,[int(i.progress*i.frame_count)])[0])))
+
 
 
 
@@ -336,6 +387,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 task.running = False
                 task.completed = _("已终止")
         self.set_status()
+
+    def set_first_selected(self):
+        all = self.get_selected_rows()
+        if all:
+            self.current_selected_task = all[0]
+            self.update_details()
 
     def get_selected_rows(self):
         """获取所有选中的行号"""

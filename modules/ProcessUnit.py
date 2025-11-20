@@ -155,7 +155,7 @@ class ProcessUnit(QObject):
         #FFMPEG
         self.BitRateControl = None
         self.MaximumBitRate = "20M"
-        self.TargetBitRate = "10M"
+        self.MaximumBitRate = "10M"
         self.FFmpegEncoder = None
         self.FFmpegTune = None
         self.FFmpegPresent = None
@@ -199,6 +199,8 @@ class ProcessUnit(QObject):
         self.saved_file_path = [None,None]
         self.dump_uuid = None
         self.root_dir = None
+        self.frame_count = VideoProcessor.get_frame_count(self.file)
+        self.progress = 0
 
 
     def audio_process(self,input_video, path,tags=None):
@@ -258,6 +260,7 @@ class ProcessUnit(QObject):
                 cur_sum += i
             cur_percent = (cur_sum/len(self.slice_list))
             self.update_progress.emit(cur_percent,f"Progress: {cur_percent}%",self.progress_identify)
+            self.progress = cur_percent
             # print(f"Progress: {cur_percent*100}%___________________________________________________________________________________")
 
 
@@ -275,7 +278,7 @@ class ProcessUnit(QObject):
         self._sample_list = VideoProcessor.video_sampler(self.file,self.sample_times,self.sample_extend,self.sample_type,self.manual_sample_sheet)
 
     def generate_queue(self):
-        count = VideoProcessor.get_frame_count(self.file)
+        count = self.frame_count
         print(count,self.file)
         self._sliced_list = VideoProcessor.spitter(count,self.slice_length)
         print(len(self._sliced_list))
