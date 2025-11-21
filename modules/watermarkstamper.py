@@ -14,7 +14,6 @@ def guofei_text(cv2_image, wm_text,attachment_data=None):
         bwm1.read_img(img=cv2_image)
         bwm1.read_wm(wm_text, mode='str')
         resu = bwm1.embed()
-        cv2.imshow('embed', resu)
         len_wm = len(bwm1.wm_bit)
         return_attachment_data = {
             'len_wm': len_wm,
@@ -26,7 +25,6 @@ def guofei_text(cv2_image, wm_text,attachment_data=None):
     bwm1.read_img(img=cv2_image)
     bwm1.read_wm(wm_text, mode='str')
     resu = bwm1.embed()
-    cv2.imshow('embed', resu)
     len_wm = len(bwm1.wm_bit)
     return_attachment_data = {
         'len_wm': len_wm,

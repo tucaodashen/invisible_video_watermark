@@ -6,6 +6,7 @@ import os.path
 import pickle
 import random
 import threading
+import time
 import uuid
 
 import numpy as np
@@ -33,6 +34,8 @@ import gettext
 from PySide6.QtCore import Qt
 from GUI import error_report
 from modules.ThreadingScheduler import ThreadPoolManager
+import os
+os.environ['OPENCV_IO_ENABLE_OPENEXR'] = 'TRUE'
 
 _ = gettext.gettext
 _devices = {'AMD Ryzen 9 9955HX 16-Core Processor': 'cpu', 'AMD Radeon(TM) 610M': 'amd', 'NVIDIA GeForce RTX 5070 Laptop GPU': 'nvidia'}
@@ -152,8 +155,10 @@ class SettingUi_L(QFrame,Ui_Setting):
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     QueueProgressUpdater = QTimer()
+    freq_detail = QTimer()
     def __init__(self):
         super().__init__()
+        self.update_image_thread = None
         self.batch_setUp_form = None
         self.error_window = []
         self.setUp_form = None
@@ -176,12 +181,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.QueueProgressUpdater.start(250)
         self.QueueList.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
 
+
     def set_slot(self):
         self.SingleInputSelector.receive_file.connect(self.create_single_task)
         self.MultipleProcessSelector.receive_file.connect(self.add_batch_process)
         self.SLBrowser.clicked.connect(self.browse_single_video_file)
         self.SLOpen.clicked.connect(self.create_single_task_via_button)
         self.QueueList.itemSelectionChanged.connect(self.set_first_selected)
+        self.freq_update_status()
 
 
     def browse_single_video_file(self):
@@ -237,12 +244,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.VideoInfoLabel.setText(_("视频:"))
                 self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(i.MaximumBitRate)+" Target Bitrate:"+str(i.MaximumBitRate))
                 self.AudioLabel.setText(_("音频:"))
-        self.freq_update_status()
 
-    def freq_update_status(self):
-        for i in self.task_queue:
-            if i.index == self.current_selected_task+1:
-                self.label_10.setImage(cv2_to_qpixmap(resize_image_to_fixed_height_simple(PyAv.extract_video_frames(i.file,[int(i.progress*i.frame_count)])[0])))
+    def prepare_thumbnail(self,):
+        index = range(1,101)
+        # todo: 把更新缩略图改为缓存式的
+
 
 
 
@@ -317,7 +323,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for i in self.batch_setUp_form.file_path:
             args.update({'file': i})
             args.update({'output_path': os.path.join(origin['output_path'],os.path.basename(i).split(".")[0])})
-            self.temporary = ProcessUnit.ProcessUnit()
+            self.temporary = ProcessUnit.ProcessUnit(i)
             self.temporary.set_args(**args)
             self.temporary.index = len(self.task_queue)+1
             self.temporary.progress_identify = str(uuid.uuid4())
@@ -329,7 +335,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
     def save_profile(self):
         templ = self.setUp_form.save_watermark_profile()
-        self.temporary = ProcessUnit.ProcessUnit()
+        self.temporary = ProcessUnit.ProcessUnit(templ['file'])
         self.temporary.set_args(**templ)
         self.temporary.index = len(self.task_queue)+1
         self.temporary.progress_identify = str(uuid.uuid4())
@@ -393,6 +399,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if all:
             self.current_selected_task = all[0]
             self.update_details()
+        else:
+            self.current_selected_task = None
 
     def get_selected_rows(self):
         """获取所有选中的行号"""
@@ -730,14 +738,14 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         two_pass = None
         file = self.file_path
         if int(self.CB_WatermarkAgori.currentIndex()) == 0:
-            if int(self.CB_WatermarkType.currentIndex()) == 0:
+            if self.CB_IW.isChecked():
                 watermark_method = const.WatermarkAlgorithm.IMAGE_GUOFEI
-                if "," in str(self.LE_wmpara1):
+                if "," in str(self.LE_wmpara1.text()):
                     num1 = random.randint(int(self.LE_wmpara1.text().split(",")[0]),int(self.LE_wmpara1.text().split(",")[1]))
                 else:
                     num1 = int(self.LE_wmpara1.text())
 
-                if "," in str(self.LE_wmpara2):
+                if "," in str(self.LE_wmpara2.text()):
                     num2 = random.randint(int(self.LE_wmpara2.text().split(",")[0]),int(self.LE_wmpara2.text().split(",")[1]))
                 else:
                     num2 = int(self.LE_wmpara2.text())
@@ -746,14 +754,14 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                     "wm_password":num2
                 }
                 watermark_content = cv2.imread(self.LE_WatermarkContent.text())
-            elif int(self.CB_WatermarkType.currentIndex()) == 1:
+            else:
                 watermark_method = const.WatermarkAlgorithm.TEXT_GOUFEI
-                if "," in str(self.LE_wmpara1):
+                if "," in str(self.LE_wmpara1.text()):
                     num1 = random.randint(int(self.LE_wmpara1.text().split(",")[0]),int(self.LE_wmpara1.text().split(",")[1]))
                 else:
                     num1 = int(self.LE_wmpara1.text())
 
-                if "," in str(self.LE_wmpara2):
+                if "," in str(self.LE_wmpara2.text()):
                     num2 = random.randint(int(self.LE_wmpara2.text().split(",")[0]),int(self.LE_wmpara2.text().split(",")[1]))
                 else:
                     num2 = int(self.LE_wmpara2.text())
@@ -764,24 +772,24 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                 watermark_content = str(self.LE_WatermarkContent.text())
         elif int(self.CB_WatermarkAgori.currentIndex()) == 1:
             watermark_method = const.WatermarkAlgorithm.IMAGE_FIREKEEPER
-            if "," in str(self.LE_wmpara1):
+            if "," in str(self.LE_wmpara1.text()):
                 num1 = random.randint(int(self.LE_wmpara1.text().split(",")[0]),
                                       int(self.LE_wmpara1.text().split(",")[1]))
             else:
                 num1 = int(self.LE_wmpara1.text())
 
-            if "," in str(self.LE_wmpara2):
+            if "," in str(self.LE_wmpara2.text()):
                 num2 = random.randint(int(self.LE_wmpara2.text().split(",")[0]),
                                       int(self.LE_wmpara2.text().split(",")[1]))
             else:
                 num2 = int(self.LE_wmpara2.text())
-            if "," in str(self.LE_wmpara3):
+            if "," in str(self.LE_wmpara3.text()):
                 num3 = random.randint(int(self.LE_wmpara3.text().split(",")[0]),
                                       int(self.LE_wmpara3.text().split(",")[1]))
             else:
                 num3 = int(self.LE_wmpara3.text())
 
-            if "," in str(self.LE_wmpara4):
+            if "," in str(self.LE_wmpara4.text()):
                 num4 = random.randint(int(self.LE_wmpara4.text().split(",")[0]),
                                       int(self.LE_wmpara4.text().split(",")[1]))
             else:
@@ -961,6 +969,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             FFmpegSelfAdaptive = int(self.SB_AN.value())
         else:
             FFmpegSelfAdaptive = None
+        print(watermark_method)
         process_unit_template = {
             "version": const.__version__,
             "file": file,
@@ -1015,7 +1024,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.CB_VideoEncoder.currentIndexChanged.connect(self.DXV_OPT)
         self.CB_BitRateControl.currentIndexChanged.connect(self.bitrate_control_changed)
         self.CB_VideoEncoder.currentIndexChanged.connect(self.set_tune_options)
-        self.CB_WatermarkAgori.currentIndexChanged.connect(self.set_watermark_method)
         self.HS_FrameExtend.valueChanged.connect(self.sync_frame_set_HS)
         self.SB_FrameExtend.valueChanged.connect(self.sync_frame_set_SB)
         self.CB_Sampler.currentIndexChanged.connect(self.sample_set)
@@ -1099,6 +1107,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.LE_wmpara3.show()
         self.L_wmpara4.show()
         self.LE_wmpara4.show()
+        self.CB_IW.show()
         if current_wm_method == _("GuoFei"):
             self.L_wmpara1.setText(_("图片密码"))
             self.LE_wmpara1.setPlaceholderText(_("输入两个以半角逗号分割的数字以在选定范围内随机"))
@@ -1108,6 +1117,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             self.LE_wmpara3.hide()
             self.L_wmpara4.hide()
             self.LE_wmpara4.hide()
+            self.CB_IW.setEnabled(True)
         elif current_wm_method == _("FireKeeper"):
             self.L_wmpara1.setText(_("种子1"))
             self.LE_wmpara1.setPlaceholderText(_("输入两个以半角逗号分割的数字以在选定范围内随机"))
@@ -1117,7 +1127,12 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             self.LE_wmpara3.setPlaceholderText(_("除数越大鲁棒性越强，但图片失真越严重。输入两个以半角逗号分割的数字以在选定范围内随机"))
             self.L_wmpara4.setText(_("除数2"))
             self.LE_wmpara4.setPlaceholderText(_("除数越大鲁棒性越强，但图片失真越严重。输入两个以半角逗号分割的数字以在选定范围内随机"))
+            self.CB_IW.setEnabled(True)
+            self.CB_IW.setChecked(True)
+            self.CB_IW.setEnabled(False)
         elif "DCT" in current_wm_method or "RivaGan" in current_wm_method:
+            self.CB_IW.setEnabled(False)
+            self.CB_IW.hide()
             self.L_wmpara1.hide()
             self.LE_wmpara1.hide()
             self.L_wmpara2.hide()
@@ -1212,7 +1227,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             self.L_EncodePattern.show()
             self.CB_EncodePattern.show()
         self.set_tune_options()
-        self.set_watermark_method()
 
     def set_tune_options(self):
         current_encoder = self.CB_VideoEncoder.currentText()
@@ -1248,18 +1262,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             self.CB_Tune.addItem(_("FASTDECODE"))
             self.CB_Tune.addItem(_("None"))
 
-    def set_watermark_method(self):
-        current_wm_method = self.CB_WatermarkAgori.currentText()
-        if "Shield" in current_wm_method:
-            self.CB_WatermarkType.clear()
-            self.CB_WatermarkType.addItem(_("文字水印"))
-        elif "GuoFei" in current_wm_method:
-            self.CB_WatermarkType.clear()
-            self.CB_WatermarkType.addItem(_("图片水印"))
-            self.CB_WatermarkType.addItem(_("文字水印"))
-        else:
-            self.CB_WatermarkType.clear()
-            self.CB_WatermarkType.addItem(_("图片水印"))
 
 
 
@@ -1327,6 +1329,73 @@ def showFlyout(self,target,icon,content,title):
         isClosable=True
     )
 
+
+import os
+
+
+def is_larger_than_1gb(file_path):
+    """
+    检测文件大小是否大于1GB
+
+    参数:
+        file_path (str): 文件路径
+
+    返回:
+        bool: 如果文件大小大于1GB返回True，否则返回False
+        str: 如果文件不存在或路径错误，返回错误信息
+    """
+    try:
+        # 检查文件是否存在
+        if not os.path.exists(file_path):
+            return False, f"文件不存在: {file_path}"
+
+        # 检查是否为文件（不是目录）
+        if not os.path.isfile(file_path):
+            return False, f"路径不是文件: {file_path}"
+
+        # 获取文件大小（字节）
+        file_size = os.path.getsize(file_path)
+
+        # 1GB = 1024 * 1024 * 1024 字节
+        gb_size = 1024 * 1024 * 1024
+
+        # 返回比较结果
+        return file_size > gb_size, f"文件大小: {file_size} 字节 ({file_size / gb_size:.2f} GB)"
+
+    except Exception as e:
+        return False, f"检测文件大小时出错: {str(e)}"
+
+
+# 更简洁的版本（只返回布尔值）
+def is_file_larger_than_1gb(file_path):
+    """
+    检测文件大小是否大于1GB（简化版）
+
+    参数:
+        file_path (str): 文件路径
+
+    返回:
+        bool: 如果文件大小大于1GB返回True，否则返回False
+    """
+    try:
+        if os.path.isfile(file_path):
+            file_size = os.path.getsize(file_path)
+            return file_size > (1024 * 1024 * 1024)
+        return False
+    except:
+        return False
+
+
+# 支持自定义大小的通用版本
+def is_file_larger_than(file_path, size_gb=1):
+    try:
+        if os.path.isfile(file_path):
+            file_size = os.path.getsize(file_path)
+            threshold = size_gb * 1024 * 1024 * 1024
+            return file_size > threshold
+        return False
+    except:
+        return False
 
 
 

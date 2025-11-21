@@ -124,13 +124,13 @@ def get_audio_tracks_info(video_path,logger):
 class ProcessUnit(QObject):
     update_progress = Signal(float,str,str)
     OccurError = Signal(list,str,list)
-    def __init__(self):
+    def __init__(self,file):
         super().__init__()
         self.audio_file_list = []
         self.error_occured = False
         self.scheduler = None
-        self.file = "mul.mov"
-        self.watermark_method = const.WatermarkAlgorithm.IMAGE_GUOFEI
+        self.file = file
+        self.watermark_method = None
         self.attachment_data = {'img_password':1145,'wm_password':1919}
         self.output_name = "coded_mul_"
         self.output_path = "./"
@@ -199,8 +199,9 @@ class ProcessUnit(QObject):
         self.saved_file_path = [None,None]
         self.dump_uuid = None
         self.root_dir = None
-        self.frame_count = VideoProcessor.get_frame_count(self.file)
+        self.frame_count = VideoProcessor.get_frame_count(file)
         self.progress = 0
+        self.batch_files = []
 
 
     def audio_process(self,input_video, path,tags=None):

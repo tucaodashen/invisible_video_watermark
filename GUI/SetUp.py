@@ -34,7 +34,7 @@ class Ui_SetUpNewForm(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, -493, 377, 1142))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 377, 1118))
         self.verticalLayout_7 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.L_CreateProject = TitleLabel(self.scrollAreaWidgetContents)
@@ -109,21 +109,16 @@ class Ui_SetUpNewForm(object):
 
         self.horizontalLayout_11.addWidget(self.CB_WatermarkAgori)
 
+        self.CB_IW = CheckBox(self.F_Watermark)
+        self.CB_IW.setObjectName(u"CB_IW")
+
+        self.horizontalLayout_11.addWidget(self.CB_IW)
+
 
         self.verticalLayout_10.addLayout(self.horizontalLayout_11)
 
         self.horizontalLayout_12 = QHBoxLayout()
         self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
-        self.L_WatermarkType = BodyLabel(self.F_Watermark)
-        self.L_WatermarkType.setObjectName(u"L_WatermarkType")
-
-        self.horizontalLayout_12.addWidget(self.L_WatermarkType)
-
-        self.CB_WatermarkType = ComboBox(self.F_Watermark)
-        self.CB_WatermarkType.setObjectName(u"CB_WatermarkType")
-
-        self.horizontalLayout_12.addWidget(self.CB_WatermarkType)
-
 
         self.verticalLayout_10.addLayout(self.horizontalLayout_12)
 
@@ -663,7 +658,7 @@ class Ui_SetUpNewForm(object):
         self.L_ProjectType.setText(QCoreApplication.translate("SetUpNewForm", u"\u5de5\u7a0b\u7c7b\u578b", None))
         self.L_WatermarkSetting.setText(QCoreApplication.translate("SetUpNewForm", u"\u6c34\u5370\u8bbe\u7f6e", None))
         self.L_WatermarkAgori.setText(QCoreApplication.translate("SetUpNewForm", u"\u6c34\u5370\u7b97\u6cd5", None))
-        self.L_WatermarkType.setText(QCoreApplication.translate("SetUpNewForm", u"\u6c34\u5370\u7c7b\u578b", None))
+        self.CB_IW.setText(QCoreApplication.translate("SetUpNewForm", u"\u56fe\u7247\u6c34\u5370", None))
         self.L_WatermarkContent.setText(QCoreApplication.translate("SetUpNewForm", u"\u6c34\u5370\u5185\u5bb9", None))
         self.PB_wmcontent.setText(QCoreApplication.translate("SetUpNewForm", u"\u6d4f\u89c8", None))
         self.L_wmpara1.setText(QCoreApplication.translate("SetUpNewForm", u"TextLabel", None))

@@ -23,9 +23,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-493</y>
+        <y>0</y>
         <width>377</width>
-        <height>1142</height>
+        <height>1118</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -111,21 +111,17 @@
             <item>
              <widget class="ComboBox" name="CB_WatermarkAgori"/>
             </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_12">
             <item>
-             <widget class="BodyLabel" name="L_WatermarkType">
+             <widget class="CheckBox" name="CB_IW">
               <property name="text">
-               <string>水印类型</string>
+               <string>图片水印</string>
               </property>
              </widget>
             </item>
-            <item>
-             <widget class="ComboBox" name="CB_WatermarkType"/>
-            </item>
            </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_12"/>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_13">
