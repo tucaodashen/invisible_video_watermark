@@ -3,6 +3,8 @@ import modules.BlindWatermark_FireKeeper as firekeeper
 import modules.imwatermark_ShieldMnt as SM
 import cv2
 
+from modules.imwatermark_ShieldMnt import WatermarkDecoder
+
 """
 all the functions' input are cv2 images and output are cv2 images
 
@@ -30,12 +32,20 @@ def firekeeper_image_decoder(img,attachment_data):
         return result, YUV
 
 def freqm_text_decoder(img,attachment_data):
-    pass
-    # TODO: implement freq method decoder
+    decoder = WatermarkDecoder('bytes', attachment_data['length'])
+    watermark = decoder.decode(img, 'dwtDct')
+    if b'\x00' in watermark:
+        is_valid = False
+    else:
+        is_valid = True
+    return watermark.decode('utf-8'),is_valid
 
 def rivagan_text_decoder(img,attachment_data):
-    pass
-    # TODO: implement riv_gan decoder
+    decoder = WatermarkDecoder('bytes', attachment_data['length'])
+    decoder.loadModel()
+    watermark = decoder.decode(img, 'rivaGan')
+    print(watermark.decode('utf-8'))
+    return watermark.decode('utf-8')
 
 
 

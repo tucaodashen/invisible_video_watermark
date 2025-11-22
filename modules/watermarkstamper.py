@@ -108,11 +108,11 @@ def freqmethod_text(cv2_image,wm_text,attachment_data=None):
         return bgr_encoded, return_attachment_data
     else:
         encoder = SM.WatermarkEncoder()
-        encoder.set_watermark('bytes', wm_text.encode('utf-8'))
+        encoder.set_watermark('bits', wm_text.encode('utf-8'))
         bgr_encoded = encoder.encode(cv2_image, 'dwtDct')
         length = int(encoder.get_length())
         return_attachment_data = {
-            'wmType': 'bytes',
+            'wmType': 'bits',
             'method': 'dwtDct',
             'length': length,
         }

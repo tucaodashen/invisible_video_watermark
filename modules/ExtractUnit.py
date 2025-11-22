@@ -23,6 +23,8 @@ def remove_duplicates(lst):
             unique.append(d)
     return unique
 
+def dummy(*args, **kwargs):
+    print(*args, **kwargs)
 class ExtracUnit:
     def __init__(self,video,pkl):
         self.executor = ConcurrentExecutor()
@@ -30,10 +32,13 @@ class ExtracUnit:
         self.frame_count = get_frame_count(video)
         self.video = video
         self._slice_list = []
-        self._slice_length = 10
+        self._slice_length = 4
 
     def generate_slice(self):
-        for ranges in spitter(self.frame_count,self._slice_length):
+        print("0")
+        a = spitter(self.frame_count,self._slice_length)
+        print(a)
+        for ranges in a:
             self._slice_list.append(ExtractSlice(
                 video=self.video,
                 frame_range=ranges,
@@ -42,9 +47,11 @@ class ExtracUnit:
             ))
 
     def run(self):
+        print("1")
         self.generate_slice()
-        result = self.executor.execute_concurrently(self._slice_list, 32)
-        return self.post_process(result)
+        result = self.executor.execute_concurrently(self._slice_list, 61,dummy)
+        #return self.post_process(result)
+        return result
 
     def run_debug(self):
         result = []
@@ -92,6 +99,7 @@ class ExtractSlice:
         self.method = method
 
     def start(self):
+        print("2")
         frame_list = []
         for i in range(self.frame_range[0],self.frame_range[1]+1):
             frame_list.append(i)
@@ -111,6 +119,29 @@ class ExtractSlice:
                         self._result.append(yuv[0])
                         self._result.append(yuv[1])
                         self._result.append(yuv[2])
+                    elif self.method == WatermarkAlgorithm.TEXT_FREQM:
+                        result,valid = freqm_text_decoder(arr,atta)
+                        if valid:
+                            self._result.append(result)
+                    elif self.method == WatermarkAlgorithm.TEXT_GOUFEI:
+                        try:
+                            print("GUOFEI")
+                            result = goufei_text_decoder(arr,atta)
+                            # self._result.append(result)
+                            if not result.count("�")/len(result) >= 0.8:
+                                self._result.append(result)
+                        except (ValueError,ZeroDivisionError):
+                            pass
+                        except:
+                            raise
+                    elif self.method == WatermarkAlgorithm.TEXT_RIVAGAN:
+                        try:
+                            result = rivagan_text_decoder(arr,atta)
+                        except UnicodeDecodeError:
+                            result = None
+                        except:
+                            raise
+                        self._result.append(result)
         del self._frame_data
 
 
@@ -125,6 +156,11 @@ class ExtractSlice:
 #     s = float(60 * t * v)
 #
 # print("移动的距离为",s,"秒")
+if __name__ == '__main__':
+    eu = ExtracUnit(r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\xinbaodao_test\embedded.mov",
+                    r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\xinbaodao_test\recover.pkl")
+    result = eu.run()
+    print(result)
 
 
 
