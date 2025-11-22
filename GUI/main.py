@@ -252,9 +252,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     if not i.completed:
                         self.default_detail_show = i
                         return
-            else:
-                self.default_detail_show = None
-                return
 
     def update_details(self):
         if self.task_queue:

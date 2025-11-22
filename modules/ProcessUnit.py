@@ -317,7 +317,8 @@ class ProcessUnit(QObject):
         print(len(self.slice_list),"Length of slice list")
 
     def prepare_for_merge(self):
-
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
         FileSystem.create_workspace(f"{self.base_file_name}-merge")
         FileSystem.create_directory(f"{self.base_file_name}-merge","./merge")
         FileSystem.create_directory(f"{self.base_file_name}-merge", "./audio_track")
@@ -329,32 +330,23 @@ class ProcessUnit(QObject):
         for obj in self.result_list:
             FileSystem.import_file(f"{self.base_file_name}-merge",obj[1],"./merge")
             os.remove(obj[1])
-        FileSystem.create_directory(f"{self.base_file_name}-merge", "./output")
-        self._temporary_path = FileSystem.open_file(f"{self.base_file_name}-merge",f"./output",const.File_Return_Type.PATH)
+        self._temporary_path = self.output_path
 
 
     def merge(self):
         lists = []
         ti = len(self.slice_list)
         for i in range(1,ti+1):
+            self.saved_file_path = FileSystem.open_file(f"{self.base_file_name}-merge",f"./merge/{i}.{self.output_format}",const.File_Return_Type.PATH)
             lists.append(FileSystem.open_file(f"{self.base_file_name}-merge",f"./merge/{i}.{self.output_format}",const.File_Return_Type.PATH))
         print(lists)
         merge_video_sequnece(lists,os.path.join(self._temporary_path,f"{self.output_name}.{self.output_format}"),logger=self.logger,audio_file=self.audio_file_list,output_format=self.output_format)
-        saved_path = FileSystem.open_file(f"{self.base_file_name}-merge",f"./output/{self.output_name}.{self.output_format}",const.File_Return_Type.PATH)
-        self.saved_file_path[0] = saved_path
 
     def report_error(self,error_list):
         self.search_dump_file()
         self.OccurError.emit(error_list,self.progress_identify,self.dump_file)
         self.error_occured = True
         print("?????????????????????????????????????????????????????????????????")
-
-    def output_packed_file(self):
-        if not os.path.exists(self.output_path):
-            os.makedirs(self.output_path)
-        shutil.move(str(self.saved_file_path[0]),self.output_path)
-        shutil.move(str(self.saved_file_path[1]),self.output_path)
-        self.logger.info(f"文件已保存到{self.output_path}")
 
 
 
@@ -391,7 +383,6 @@ class ProcessUnit(QObject):
             self.set_stage(6)
             self.after_processing()
             self.sort_log()
-            self.output_packed_file()
             self.remove_workspace()
             self.completed = True
             self.running = False
@@ -440,7 +431,6 @@ class ProcessUnit(QObject):
             f.write(data)
         print(recover_data)
         FileSystem.mapping_list = {}
-        self.saved_file_path[1] = json_path
         self.stop()
 
 
@@ -481,7 +471,7 @@ class ProcessUnit(QObject):
         return list_data
 
     def remove_workspace(self):
-        vi = os.path.dirname(os.path.normpath(str(self.saved_file_path[0])))
+        vi = os.path.dirname(os.path.normpath(str(self.saved_file_path)))
         root = os.path.dirname(os.path.normpath(vi))
         shutil.rmtree(root)
 
