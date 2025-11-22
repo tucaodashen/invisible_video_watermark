@@ -156,6 +156,7 @@ class SettingUi_L(QFrame,Ui_Setting):
 class MainWindow(QMainWindow, Ui_MainWindow):
     QueueProgressUpdater = QTimer()
     freq_detail = QTimer()
+    update_detail = QTimer()
     def __init__(self):
         super().__init__()
         self.update_image_thread = None
@@ -182,6 +183,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.QueueList.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.thumbnail_cache = {}
 
+        self.thumbnail_thread = None
+        self.thumbnail_lock = threading.Lock()  # 防止竞态条件
+        self.default_detail_show = None
+
 
     def set_slot(self):
         self.SingleInputSelector.receive_file.connect(self.create_single_task)
@@ -192,6 +197,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.freq_detail.timeout.connect(self.clear_useless_cache)
         self.freq_detail.timeout.connect(self.prepare_thumbnail)
         self.freq_detail.start(2500)
+        self.update_detail.timeout.connect(self.update_details)
+        self.update_detail.start(500)
 
 
     def browse_single_video_file(self):
@@ -235,26 +242,63 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def dummy_function(self,*args,**kwargs):
         pass
 
+    def update_default(self):
+        if self.current_selected_task is None:
+            status_list = []
+            for i in self.task_queue:
+                status_list.append(i.completed)
+            if False in status_list:
+                for i in self.task_queue:
+                    if not i.completed:
+                        self.default_detail_show = i
+                        return
+            else:
+                self.default_detail_show = None
+                return
+
     def update_details(self):
-        for i in self.task_queue:
-            if i.index == self.current_selected_task+1:
-                self.SourceLabel.setText(_("源文件:") + os.path.basename(i.file))
-                self.progressBar.setValue(i.progress*100)
-                self.FileNameLabel.setText(_("文件名:") + os.path.basename(i.file))
-                self.FilePathLabel.setText(_("文件路径:") + i.file)
-                self.FileFormatLabel.setText(_("格式:") + i.output_format)
+        if self.task_queue:
+            if self.current_selected_task is None:
+                self.update_default()
+                self.SourceLabel.setText(_("源文件:") + os.path.basename(self.default_detail_show.file))
+                self.progressBar.setValue(self.default_detail_show.progress*100)
+                self.FileNameLabel.setText(_("文件名:") + os.path.basename(self.default_detail_show.file))
+                self.FilePathLabel.setText(_("文件路径:") + self.default_detail_show.file)
+                self.FileFormatLabel.setText(_("格式:") + self.default_detail_show.output_format)
                 self.ProjectPresentLabel.setText(_("项目预设:"))
                 self.VideoInfoLabel.setText(_("视频:"))
-                self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(i.MaximumBitRate)+" Target Bitrate:"+str(i.MaximumBitRate))
+                self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(self.default_detail_show.MaximumBitRate)+" Target Bitrate:"+str(self.default_detail_show.MaximumBitRate))
                 self.AudioLabel.setText(_("音频:"))
-                self.label_10.setImage(cv2_to_qpixmap(self.get_thumbnail(i)))
+                self.label_10.setImage(cv2_to_qpixmap(self.get_thumbnail(self.default_detail_show)))
+            else:
+                for i in self.task_queue:
+                    if i.index == self.current_selected_task+1:
+                        self.SourceLabel.setText(_("源文件:") + os.path.basename(i.file))
+                        self.progressBar.setValue(i.progress*100)
+                        self.FileNameLabel.setText(_("文件名:") + os.path.basename(i.file))
+                        self.FilePathLabel.setText(_("文件路径:") + i.file)
+                        self.FileFormatLabel.setText(_("格式:") + i.output_format)
+                        self.ProjectPresentLabel.setText(_("项目预设:"))
+                        self.VideoInfoLabel.setText(_("视频:"))
+                        self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(i.MaximumBitRate)+" Target Bitrate:"+str(i.MaximumBitRate))
+                        self.AudioLabel.setText(_("音频:"))
+                        self.label_10.setImage(cv2_to_qpixmap(self.get_thumbnail(i)))
 
     def prepare_thumbnail(self):
+        with self.thumbnail_lock:
+            if self.thumbnail_thread is not None and self.thumbnail_thread.is_alive():
+                return  # 线程已在运行
+
+            self.thumbnail_thread = threading.Thread(target=self._prepare_thumbnail)
+            self.thumbnail_thread.start()
+
+    def _prepare_thumbnail(self):
+
         index = range(1, 102)
         if self.task_queue:
             for i in self.task_queue:
-                print(i.progress_identify)
                 if str(i.progress_identify) not in list(self.thumbnail_cache.keys()):
+                    self.statusbar.showMessage(_("正在生成缩略图..."))
                     spf_list = []
                     for ind in index:
                         # 确保帧号不超过视频总帧数-1（0-based索引）
@@ -279,6 +323,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
                     if thu:
                         self.thumbnail_cache.update({str(i.progress_identify): thu})
+                        self.statusbar.showMessage(_("准备就绪"))
                     else:
                         print(f"Error: No thumbnails generated for {i.progress_identify}")
 
@@ -293,7 +338,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if str(task.progress_identify) in list(self.thumbnail_cache.keys()):
             if len(self.thumbnail_cache[str(task.progress_identify)]) <= 2:
                 return self.thumbnail_cache[str(task.progress_identify)][0]
-            return (self.thumbnail_cache[str(task.progress_identify)])[int(task.progress)]
+            return (self.thumbnail_cache[str(task.progress_identify)])[int(task.progress*100)]
         else:
             return None
 
