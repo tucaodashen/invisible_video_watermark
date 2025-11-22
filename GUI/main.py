@@ -180,6 +180,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.QueueProgressUpdater.timeout.connect(self.update_total_progress)
         self.QueueProgressUpdater.start(250)
         self.QueueList.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.thumbnail_cache = {}
 
 
     def set_slot(self):
@@ -188,7 +189,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.SLBrowser.clicked.connect(self.browse_single_video_file)
         self.SLOpen.clicked.connect(self.create_single_task_via_button)
         self.QueueList.itemSelectionChanged.connect(self.set_first_selected)
-        self.freq_update_status()
+        self.freq_detail.timeout.connect(self.clear_useless_cache)
+        self.freq_detail.timeout.connect(self.prepare_thumbnail)
+        self.freq_detail.start(2500)
 
 
     def browse_single_video_file(self):
@@ -244,17 +247,55 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.VideoInfoLabel.setText(_("视频:"))
                 self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(i.MaximumBitRate)+" Target Bitrate:"+str(i.MaximumBitRate))
                 self.AudioLabel.setText(_("音频:"))
+                self.label_10.setImage(cv2_to_qpixmap(self.get_thumbnail(i)))
 
-    def prepare_thumbnail(self,):
-        index = range(1,101)
-        # todo: 把更新缩略图改为缓存式的
+    def prepare_thumbnail(self):
+        index = range(1, 102)
+        if self.task_queue:
+            for i in self.task_queue:
+                print(i.progress_identify)
+                if str(i.progress_identify) not in list(self.thumbnail_cache.keys()):
+                    spf_list = []
+                    for ind in index:
+                        # 确保帧号不超过视频总帧数-1（0-based索引）
+                        frame_index = min(int(i.frame_count * (ind / 101)), i.frame_count - 1)
+                        spf_list.append(frame_index)
 
+                    frames = PyAv.extract_video_frames(i.file, spf_list)
+                    thu = []
+                    for idx, fra in enumerate(frames):
+                        if fra is not None:
+                            try:
+                                resized_frame = resize_image_to_fixed_height_simple(fra)
+                                if resized_frame is not None:
+                                    thu.append(resized_frame)
+                                else:
+                                    print(
+                                        f"Warning: resize_image_to_fixed_height_simple returned None for frame {spf_list[idx]}")
+                            except Exception as e:
+                                print(f"Error resizing frame {spf_list[idx]}: {e}")
+                        else:
+                            print(f"Warning: Frame {spf_list[idx]} extraction failed")
 
+                    if thu:
+                        self.thumbnail_cache.update({str(i.progress_identify): thu})
+                    else:
+                        print(f"Error: No thumbnails generated for {i.progress_identify}")
 
+    def clear_useless_cache(self):
+        if self.task_queue:
+            for i in self.task_queue:
+                if str(i.progress_identify) in list(self.thumbnail_cache.keys()) and i.completed:
+                    cache = self.thumbnail_cache[str(i.progress_identify)][-1]
+                    self.thumbnail_cache[str(i.progress_identify)] = [cache]
 
-
-
-
+    def get_thumbnail(self,task):
+        if str(task.progress_identify) in list(self.thumbnail_cache.keys()):
+            if len(self.thumbnail_cache[str(task.progress_identify)]) <= 2:
+                return self.thumbnail_cache[str(task.progress_identify)][0]
+            return (self.thumbnail_cache[str(task.progress_identify)])[int(task.progress)]
+        else:
+            return None
 
 
     def handle_error(self, err, _id,dump_file):
@@ -519,6 +560,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         output_path_item = QTableWidgetItem(str(metadata['output_path']))
         self.QueueList.setItem(row, 5, output_path_item)
+
 
     def set_text(self):
         self.QueueList.setColumnCount(6)
