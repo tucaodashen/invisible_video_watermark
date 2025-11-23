@@ -2,6 +2,37 @@ import numpy as np
 import cv2
 import os
 import time
+import onnxruntime as ort
+
+def create_onnx_session(model_path, device_id=0):
+    # 获取可用提供程序
+    available_providers = ort.get_available_providers()
+
+    providers = []
+    if 'CUDAExecutionProvider' in available_providers:
+        providers.append(('CUDAExecutionProvider', {'device_id': device_id}))
+    elif 'DmlExecutionProvider' in available_providers:
+        providers.append(('DmlExecutionProvider', {'device_id': device_id}))
+
+    # 总是添加CPU作为备用
+    providers.append('CPUExecutionProvider')
+
+    # 创建session
+    session = ort.InferenceSession(model_path, providers=providers)
+
+    print(f"Using providers: {session.get_providers()}")
+    return session
+
+
+
+
+modelDir = os.path.dirname(os.path.abspath(__file__))
+enc_mod = create_onnx_session(
+            os.path.join(modelDir, 'rivagan_encoder.onnx'))
+dec_mod = create_onnx_session(
+            os.path.join(modelDir, 'rivagan_decoder.onnx'))
+
+
 
 
 class RivaWatermark(object):
@@ -17,21 +48,10 @@ class RivaWatermark(object):
 
     @classmethod
     def loadModel(cls):
-        try:
-            import onnxruntime
-        except ImportError:
-            raise ImportError(
-                "The `RivaWatermark` class requires onnxruntime to be installed. "
-                "You can install it with pip: `pip install onnxruntime`."
-            )
-
         if RivaWatermark.encoder and RivaWatermark.decoder:
             return
-        modelDir = os.path.dirname(os.path.abspath(__file__))
-        RivaWatermark.encoder = onnxruntime.InferenceSession(
-            os.path.join(modelDir, 'rivagan_encoder.onnx'))
-        RivaWatermark.decoder = onnxruntime.InferenceSession(
-            os.path.join(modelDir, 'rivagan_decoder.onnx'))
+        RivaWatermark.encoder = enc_mod
+        RivaWatermark.decoder = dec_mod
 
     def encode(self, frame):
         if not RivaWatermark.encoder:

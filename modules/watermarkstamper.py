@@ -93,11 +93,13 @@ def firekeeper_image(cv2_image, cv2_watermark,attachment_data=None):
         return result, return_attachment_data
 
 def freqmethod_text(cv2_image,wm_text,attachment_data=None):
+    print(attachment_data, "attachment_data")
     if attachment_data is not None:
         encoder = SM.WatermarkEncoder()
         encoder.set_watermark(attachment_data['wmType'], wm_text.encode('utf-8'))
         if attachment_data['method'] == 'rivaGan':
             encoder.loadModel()
+            print("Loading model...")
         bgr_encoded = encoder.encode(cv2_image, attachment_data['method'])
         length = int(encoder.get_length())
         return_attachment_data = {

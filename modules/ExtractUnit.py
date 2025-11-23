@@ -1,5 +1,8 @@
 import uuid
 
+from av.error import InvalidDataError
+
+from modules.text_postprocess import group_text
 from modules.PyAv import extract_video_frames as get_video_frames
 from modules.PyAv import group_similar_images
 from modules.VideoProcessor import spitter, get_frame_count
@@ -49,9 +52,8 @@ class ExtracUnit:
     def run(self):
         print("1")
         self.generate_slice()
-        result = self.executor.execute_concurrently(self._slice_list, 61,dummy)
-        #return self.post_process(result)
-        return result
+        result = self.executor.execute_concurrently(self._slice_list, 32,dummy)
+        return self.post_process(result)
 
     def run_debug(self):
         result = []
@@ -61,15 +63,23 @@ class ExtracUnit:
         return self.sort_result(result)
 
     def post_process(self,result):
-        pp = []
-        for aa in result:
-            for ig in aa:
-                pp.append(ig)
-        sorted = group_similar_images(pp)
-        ret_result = []
-        for imgset in sorted:
-            if len(imgset) >= 1:
-                ret_result += imgset
+        if self.plk_data['watermark_method'] == WatermarkAlgorithm.IMAGE_GUOFEI or self.plk_data['watermark_method'] == WatermarkAlgorithm.IMAGE_FIREKEEPER:
+            pp = []
+            for aa in result:
+                for ig in aa:
+                    pp.append(ig)
+            sorted = group_similar_images(pp)
+            ret_result = []
+            for imgset in sorted:
+                if len(imgset) >= 1:
+                    ret_result += imgset
+        else:
+            text_result = []
+            for texts in result:
+                if texts:
+                    for item in texts:
+                        text_result.append(item)
+            ret_result = group_text(text_result)
         return ret_result
 
 
@@ -120,15 +130,20 @@ class ExtractSlice:
                         self._result.append(yuv[1])
                         self._result.append(yuv[2])
                     elif self.method == WatermarkAlgorithm.TEXT_FREQM:
-                        result,valid = freqm_text_decoder(arr,atta)
-                        if valid:
-                            self._result.append(result)
+                        try:
+                            result,valid = freqm_text_decoder(arr,atta)
+                            if valid:
+                                self._result.append(result)
+                        except (UnicodeDecodeError,InvalidDataError):
+                            pass
+                        except:
+                            raise
                     elif self.method == WatermarkAlgorithm.TEXT_GOUFEI:
                         try:
                             print("GUOFEI")
                             result = goufei_text_decoder(arr,atta)
                             # self._result.append(result)
-                            if not result.count("�")/len(result) >= 0.8:
+                            if not result.count("�")/len(result) >= 0.2:
                                 self._result.append(result)
                         except (ValueError,ZeroDivisionError):
                             pass
@@ -157,10 +172,11 @@ class ExtractSlice:
 #
 # print("移动的距离为",s,"秒")
 if __name__ == '__main__':
-    eu = ExtracUnit(r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\xinbaodao_test\embedded.mov",
-                    r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\xinbaodao_test\recover.pkl")
+    eu = ExtracUnit(r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\tet_ruia\embedded.mov",
+                    r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\tet_ruia\recover.pkl")
     result = eu.run()
-    print(result)
+    for i in result:
+        print(i)
 
 
 

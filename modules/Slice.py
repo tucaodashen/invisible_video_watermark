@@ -250,6 +250,9 @@ class Slice():
                 elif self.stamp_method == const.WatermarkAlgorithm.TEXT_FREQM:
                     self._result, self.attachment_data_result = watermarkstamper.freqmethod_text(image, self.watermark,
                                                                                    self.attachment_data)
+                elif self.stamp_method == const.WatermarkAlgorithm.TEXT_RIVAGAN:
+                    self._result, self.attachment_data_result = watermarkstamper.freqmethod_text(image, self.watermark,
+                                                                                   self.attachment_data)
                 else:
                     self._result = image
                 os.remove(file)
