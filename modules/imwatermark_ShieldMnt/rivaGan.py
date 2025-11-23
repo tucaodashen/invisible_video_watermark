@@ -5,7 +5,6 @@ import time
 import onnxruntime as ort
 
 def create_onnx_session(model_path, device_id=0):
-    # 获取可用提供程序
     available_providers = ort.get_available_providers()
 
     providers = []
@@ -14,10 +13,8 @@ def create_onnx_session(model_path, device_id=0):
     elif 'DmlExecutionProvider' in available_providers:
         providers.append(('DmlExecutionProvider', {'device_id': device_id}))
 
-    # 总是添加CPU作为备用
     providers.append('CPUExecutionProvider')
 
-    # 创建session
     session = ort.InferenceSession(model_path, providers=providers)
 
     print(f"Using providers: {session.get_providers()}")

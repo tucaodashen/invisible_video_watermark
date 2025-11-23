@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import uuid
@@ -5,6 +6,7 @@ import uuid
 from BasicSystem.log_client import setup_logger, get_logger
 from BasicSystem.const import Encoder, BitRateControl, FFmpegTune, FFmpegPreset
 import sys
+
 
 ffmpeg_path = r'D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\ffmpeg\ffmpeg-8.0-essentials_build\bin\ffmpeg.exe'
 
@@ -296,6 +298,156 @@ def merge_video_sequnece(input_list, output_path,logger,audio_file,output_format
     if os.path.exists(f"{name}.txt"):
         os.remove(f"{name}.txt")
     return code
+
+
+def get_video_parameters_simple(video_path: str) -> str:
+    """
+    获取简化的视频参数（只包含关键信息）
+
+    Args:
+        video_path: 视频文件路径
+
+    Returns:
+        包含关键视频参数的易读字符串
+    """
+    if not os.path.exists(video_path):
+        return f"错误: 视频文件不存在: {video_path}"
+
+    try:
+        # 修复1：去掉路径的双引号，直接传递路径
+        # 修复2：使用正确的命令格式处理包含空格和中文的路径
+        cmd = [
+            'ffprobe', '-v', 'quiet', '-print_format', 'json',
+            '-show_format', '-show_streams', video_path  # 直接传递，不要加引号
+        ]
+
+        # 修复3：使用更安全的子进程调用方式
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+            text=True,
+            encoding='utf-8',
+            errors='replace'
+        )
+
+        data = json.loads(result.stdout)
+
+        # 获取基本信息
+        file_size_mb = round(os.path.getsize(video_path) / (1024 * 1024), 2)
+
+        # 查找视频流
+        video_stream = None
+        audio_stream = None
+        for stream in data.get('streams', []):
+            if stream['codec_type'] == 'video':
+                video_stream = stream
+            elif stream['codec_type'] == 'audio':
+                audio_stream = stream
+
+        result_str = "视频关键参数:\n"
+        result_str += f"    文件: {os.path.basename(video_path)}\n"
+        result_str += f"    大小: {file_size_mb} MB\n"
+
+        if video_stream:
+            width = video_stream.get('width', '未知')
+            height = video_stream.get('height', '未知')
+            duration = round(float(video_stream.get('duration', 0)), 2)
+            fps = video_stream.get('r', video_stream.get('avg_frame_rate', '未知'))
+
+            result_str += f"    分辨率: {width}×{height}\n"
+            result_str += f"    时长: {duration}秒\n"
+            result_str += f"    帧率: {fps}\n"
+            result_str += f"    编码: {video_stream.get('codec_name', '未知')}"
+
+        return result_str
+
+    except subprocess.CalledProcessError as e:
+        # 尝试解码错误输出
+        try:
+            error_msg = e.stderr.decode('utf-8', errors='replace')
+        except:
+            error_msg = e.stderr.decode('gbk', errors='replace') if isinstance(e.stderr, bytes) else str(e.stderr)
+
+        return f"ffprobe 执行失败: {e}\n错误输出: {error_msg}"
+
+    except json.JSONDecodeError as e:
+        return f"解析JSON数据失败: {e}"
+
+    except Exception as e:
+        return f"获取视频参数时出错: {e}"
+
+def get_audio_parameters_simple(video_path: str) -> str:
+    """
+    获取简化的视频参数（只包含关键信息）
+
+    Args:
+        video_path: 视频文件路径
+
+    Returns:
+        包含关键视频参数的易读字符串
+    """
+    if not os.path.exists(video_path):
+        return f"错误: 视频文件不存在: {video_path}"
+
+    try:
+        # 修复1：去掉路径的双引号，直接传递路径
+        # 修复2：使用正确的命令格式处理包含空格和中文的路径
+        cmd = [
+            'ffprobe', '-v', 'quiet', '-print_format', 'json',
+            '-show_format', '-show_streams', video_path  # 直接传递，不要加引号
+        ]
+
+        # 修复3：使用更安全的子进程调用方式
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+            text=True,
+            encoding='utf-8',
+            errors='replace'
+        )
+
+        data = json.loads(result.stdout)
+
+        # 获取基本信息
+        file_size_mb = round(os.path.getsize(video_path) / (1024 * 1024), 2)
+
+        # 查找视频流
+        video_stream = None
+        audio_stream = None
+        for stream in data.get('streams', []):
+            if stream['codec_type'] == 'video':
+                video_stream = stream
+            elif stream['codec_type'] == 'audio':
+                audio_stream = stream
+
+        result_str = ""
+
+        if audio_stream:
+            result_str += f"    音频: {audio_stream.get('codec_name', '未知')} "
+            result_str += f"    {audio_stream.get('sample_rate', '未知')}Hz "
+            result_str += f"    {audio_stream.get('channels', '未知')}声道\n"
+
+        return result_str
+
+    except subprocess.CalledProcessError as e:
+        # 尝试解码错误输出
+        try:
+            error_msg = e.stderr.decode('utf-8', errors='replace')
+        except:
+            error_msg = e.stderr.decode('gbk', errors='replace') if isinstance(e.stderr, bytes) else str(e.stderr)
+
+        return f"ffprobe 执行失败: {e}\n错误输出: {error_msg}"
+
+    except json.JSONDecodeError as e:
+        return f"解析JSON数据失败: {e}"
+
+    except Exception as e:
+        return f"获取视频参数时出错: {e}"
+
 
 
 

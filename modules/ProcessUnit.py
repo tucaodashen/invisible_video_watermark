@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+import traceback
 
 import ffmpeg
 
@@ -154,8 +155,8 @@ class ProcessUnit(QObject):
 
         #FFMPEG
         self.BitRateControl = None
-        self.MaximumBitRate = "20M"
-        self.MaximumBitRate = "10M"
+        self.MaximumBitRate = None
+        self.MaximumBitRate = None
         self.FFmpegEncoder = None
         self.FFmpegTune = None
         self.FFmpegPresent = None
@@ -202,6 +203,10 @@ class ProcessUnit(QObject):
         self.frame_count = VideoProcessor.get_frame_count(file)
         self.progress = 0
         self.batch_files = []
+        self.stopped = False
+        self.paused = False
+        self.start_time = None
+        self.consumed_timer = None
 
 
     def audio_process(self,input_video, path,tags=None):
@@ -366,13 +371,19 @@ class ProcessUnit(QObject):
         self.generate_queue()
         self.set_stage(2)
         self.start_ipc()
+        # 多进程和单进程行为要一致
         if self.process_limit != 1:
             self.scheduler = None
             self.scheduler = ConcurrentExecutor()
             self.result_list = self.scheduler.execute_concurrently(self.slice_list,self.process_limit,self.report_error)
         else:
-            for ob in self.slice_list:
-                self.result_list.append(ob.process())
+            try:
+                for ob in self.slice_list:
+                    self.result_list.append(ob.process())
+            except Exception as e:
+                stack_trace = traceback.format_exc()
+                frame = [e, stack_trace]
+                self.report_error(frame)
         if not self.error_occured and self.result_list[0] != 'Terminated':
             self.set_stage(3)
             print(self.result_list)
@@ -412,6 +423,7 @@ class ProcessUnit(QObject):
         for i in self.scheduler.get_running_pids():
             manage_process_by_pid(i, "terminate")
         manage_process_by_pid(self.scheduler.manager_pid, "terminate")
+        self.stopped = True
 
     def after_processing(self):
         print(self.result_list)

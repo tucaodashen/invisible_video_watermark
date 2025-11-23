@@ -8,11 +8,11 @@ import random
 import threading
 import time
 import uuid
-
+from functools import partial
 import numpy as np
 
 from modules.PyAv import extract_video_frames
-
+from modules.GenerateVideo import get_video_parameters_simple,get_audio_parameters_simple
 import cv2
 from PySide6.QtGui import QPixmap, QImage
 
@@ -21,7 +21,8 @@ from modules import ProcessUnit, PyAv
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout, QTableWidgetItem, QProgressBar, \
     QHeaderView, QTableWidget, QFileDialog
 from PySide6.QtCore import Qt, QTimer, Signal
-from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel
+from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel, RoundMenu, Action, \
+    FluentIcon
 
 from GUI.Splash import Ui_SplashDesu
 from GUI.MainWindows import Ui_MainWindow
@@ -40,7 +41,7 @@ os.environ['OPENCV_IO_ENABLE_OPENEXR'] = 'TRUE'
 _ = gettext.gettext
 _devices = {'AMD Ryzen 9 9955HX 16-Core Processor': 'cpu', 'AMD Radeon(TM) 610M': 'amd', 'NVIDIA GeForce RTX 5070 Laptop GPU': 'nvidia'}
 print(_devices)
-
+preset_path = "./preset"
 
 from qfluentwidgets import Dialog, setTheme, Theme, PrimaryPushButton, MessageBoxBase, SubtitleLabel, ProgressBar, BodyLabel
 
@@ -196,9 +197,153 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.QueueList.itemSelectionChanged.connect(self.set_first_selected)
         self.freq_detail.timeout.connect(self.clear_useless_cache)
         self.freq_detail.timeout.connect(self.prepare_thumbnail)
+        self.freq_detail.timeout.connect(self.scan_preset)
         self.freq_detail.start(2500)
         self.update_detail.timeout.connect(self.update_details)
         self.update_detail.start(500)
+        self.QueueList.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.QueueList.customContextMenuRequested.connect(self.show_context_menu)
+
+
+    def show_context_menu(self, pos):
+        row = self.QueueList.rowAt(pos.y())
+        col = self.QueueList.columnAt(pos.x())
+        has_selection = row >= 0 and col >= 0
+
+        menu = RoundMenu(parent=self)
+
+        delete_action = Action(FluentIcon.DELETE, _("删除"), self)
+        start_action = Action(FluentIcon.PLAY, _("开始"), self)
+        pause_action = Action(FluentIcon.PAUSE, _("暂停"), self)
+        resum_action = Action(FluentIcon.PLAY, _("继续"), self)
+        stop_action = Action(FluentIcon.REMOVE_FROM, _("停止"), self)
+
+        # 设置动作状态
+        if not has_selection:
+
+            start_action.setEnabled(False)
+            pause_action.setEnabled(False)
+            stop_action.setEnabled(False)
+            delete_action.setEnabled(False)
+
+
+        # 添加动作到菜单
+        if has_selection:
+            index = int(self.QueueList.item(row, 0).text())
+            print(row,index)
+            for i in self.task_queue:
+                if int(i.index) == index:
+                    start_action.setEnabled(False)
+                    stop_action.setEnabled(False)
+                    pause_action.setEnabled(False)
+                    delete_action.setEnabled(False)
+                    if i.running:
+                        start_action.setEnabled(False)
+                        stop_action.setEnabled(True)
+                        pause_action.setEnabled(True)
+                        delete_action.setEnabled(False)
+                    else:
+                        start_action.setEnabled(True)
+                        delete_action.setEnabled(True)
+                    if i.completed:
+                        pause_action.setEnabled(False)
+                        stop_action.setEnabled(False)
+                        start_action.setEnabled(False)
+                        delete_action.setEnabled(True)
+                    if i.paused:
+                        start_action.setEnabled(True)
+                        stop_action.setEnabled(False)
+                        pause_action.setEnabled(False)
+                        delete_action.setEnabled(False)
+                    if i.error_occured:
+                        start_action.setEnabled(False)
+                        stop_action.setEnabled(False)
+                        pause_action.setEnabled(False)
+                        delete_action.setEnabled(True)
+
+
+            menu.addAction(start_action)
+            menu.addAction(pause_action)
+            menu.addAction(stop_action)
+            menu.addAction(delete_action)
+
+        # 连接信号
+        actions = {
+            start_action: partial(self.launch_selected_task, row),
+            pause_action: partial(self.suspend_selected_task, row),
+            stop_action: partial(self.terminate_selected_task, row),
+            delete_action: partial(self.delete_selected_task,row),
+        }
+
+        for action, slot in actions.items():
+            action.triggered.connect(slot)
+
+        menu.exec_(self.QueueList.mapToGlobal(pos))
+
+    def delete_selected_task(self,row_index,checked=False):
+        index = int(self.QueueList.item(row_index, 0).text())
+        for i in self.task_queue:
+            if i.index == index:
+                self.task_queue.remove(i)
+                self.sync_queue()
+    def suspend_selected_task(self,row_index,checked=False):
+        has_single = False
+        print(row_index)
+        index = int(self.QueueList.item(row_index, 0).text())
+        for task in self.task_queue:
+            if int(task.index) == index:
+                if task.process_limit == 1:
+                    has_single = True
+                if task.running and task.process_limit != 1:
+                    task.suspend()
+                    task.running = False
+                    task.statue = _("已暂停")
+            self.set_status()
+        if has_single:
+            showFlyout(self, self.QueueList, InfoBarIcon.WARNING, _("此任务无法暂停"),
+                       _("单进程任务暂时无法暂停"))
+    def launch_selected_task(self,row_index, checked=False):
+        print(row_index)
+        index = int(self.QueueList.item(row_index, 0).text())
+        sl = None
+        for task in self.task_queue:
+            if task.index == index:
+                if not task.paused:
+                    if not task.running and task.status != 0 and task.completed != True and task.stopped != True:
+                        task.running = True
+                        task.consumed_timer = time.time()
+                        task.start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                        task.statue = _("运行中")
+                        task.update_progress.connect(self.update_queue_percentage)
+                        task.OccurError.connect(self.handle_error)
+                        sl = task.run
+                    else:
+                        sl = None
+
+            if not task.paused:
+                if sl is not None:
+                    threading_pool = ThreadPoolManager(max_workers=1)
+                    threading_pool.submit_tasks([sl])
+                    threading_pool.start()
+                    self.set_status()
+                    return 0
+            else:
+                task.resume()
+                task.running = True
+                task.statue = _("运行中")
+                self.set_status()
+                return 0
+
+    def terminate_selected_task(self,row_index,checked=False):
+        index = int(self.QueueList.item(row_index, 0).text())
+        for i in self.task_queue:
+            if i.index == index:
+                i.stop()
+                i.running = False
+                i.stopped = True
+                i.statue = _("已终止")
+                self.set_status()
+
 
 
     def browse_single_video_file(self):
@@ -215,6 +360,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if len(self.SLTL.text()) == 0:
             return
         self.create_single_task([self.SLTL.text()])
+
+    def scan_preset(self):
+        preset_list = os.listdir(preset_path)
+        if preset_list:
+            self.PresentList.clear()
+            for i in preset_list:
+                self.PresentList.addItem(i.split(".")[0])
+
+    def create_new_preset(self):
+        self.create_single_task(["DummyFile"],True)
 
     def sync_queue(self):
         self.QueueList.setRowCount(0)
@@ -263,10 +418,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.FilePathLabel.setText(_("文件路径:") + self.default_detail_show.file)
                 self.FileFormatLabel.setText(_("格式:") + self.default_detail_show.output_format)
                 self.ProjectPresentLabel.setText(_("项目预设:"))
-                self.VideoInfoLabel.setText(_("视频:"))
-                self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(self.default_detail_show.MaximumBitRate)+" Target Bitrate:"+str(self.default_detail_show.MaximumBitRate))
-                self.AudioLabel.setText(_("音频:"))
+                self.VideoInfoLabel.setText(_(f"视频:{get_video_parameters_simple(self.default_detail_show.file)}"))
+                self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(self.default_detail_show.MaximumBitRate)+" Target Bitrate:"+str(self.default_detail_show.TargetBitRate))
+                self.AudioLabel.setText(_(f"音频:{get_audio_parameters_simple(self.default_detail_show.file)}"))
                 self.label_10.setImage(cv2_to_qpixmap(self.get_thumbnail(self.default_detail_show)))
+                if self.default_detail_show.start_time is not None:
+                    self.StartTimeLabel.setText(_("开始时间:") + self.default_detail_show.start_time)
+                else:
+                    self.StartTimeLabel.setText(_("开始时间:未开始"))
+                if self.default_detail_show.consumed_timer is not None and self.default_detail_show.running:
+                    self.ComsumedTimeLabel.setText(_("消耗时间:") + str(round(time.time() - self.default_detail_show.consumed_timer, 2)) + "s")
+
             else:
                 for i in self.task_queue:
                     if i.index == self.current_selected_task+1:
@@ -276,10 +438,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         self.FilePathLabel.setText(_("文件路径:") + i.file)
                         self.FileFormatLabel.setText(_("格式:") + i.output_format)
                         self.ProjectPresentLabel.setText(_("项目预设:"))
-                        self.VideoInfoLabel.setText(_("视频:"))
-                        self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(i.MaximumBitRate)+" Target Bitrate:"+str(i.MaximumBitRate))
-                        self.AudioLabel.setText(_("音频:"))
+                        self.VideoInfoLabel.setText(_(f"视频:{get_video_parameters_simple(i.file)}"))
+                        self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(i.MaximumBitRate)+" Target Bitrate:"+str(i.TargetBitRate))
+                        self.AudioLabel.setText(_(f"音频:{get_audio_parameters_simple(i.file)}"))
                         self.label_10.setImage(cv2_to_qpixmap(self.get_thumbnail(i)))
+                        if i.start_time is not None:
+                            self.StartTimeLabel.setText(_("开始时间:") + i.start_time)
+                        else:
+                            self.StartTimeLabel.setText(_("开始时间:未开始"))
+                        if i.consumed_timer is not None and i.running:
+                            self.ComsumedTimeLabel.setText(_("消耗时间:") + str(
+                                round(time.time() - i.consumed_timer, 2)) + "s")
+        else:
+            self.label_10.setImage(cv2_to_qpixmap(self.get_thumbnail(None)))
 
     def prepare_thumbnail(self):
         with self.thumbnail_lock:
@@ -330,14 +501,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if str(i.progress_identify) in list(self.thumbnail_cache.keys()) and i.completed:
                     cache = self.thumbnail_cache[str(i.progress_identify)][-1]
                     self.thumbnail_cache[str(i.progress_identify)] = [cache]
+        # print(self.task_queue)
+        if not self.task_queue:
+            self.thumbnail_cache = {}
+
 
     def get_thumbnail(self,task):
-        if str(task.progress_identify) in list(self.thumbnail_cache.keys()):
-            if len(self.thumbnail_cache[str(task.progress_identify)]) <= 2:
-                return self.thumbnail_cache[str(task.progress_identify)][0]
-            return (self.thumbnail_cache[str(task.progress_identify)])[int(task.progress*100)]
-        else:
-            return None
+        if self.task_queue:
+            if str(task.progress_identify) in list(self.thumbnail_cache.keys()):
+                if len(self.thumbnail_cache[str(task.progress_identify)]) <= 2:
+                    return self.thumbnail_cache[str(task.progress_identify)][0]
+                return (self.thumbnail_cache[str(task.progress_identify)])[int(task.progress*100)]
+            else:
+                return resize_image_to_fixed_height_simple(cv2.imread("reisa.jpg"))
+        if task is None:
+            return resize_image_to_fixed_height_simple(cv2.imread("reisa.jpg"))
+
+
 
 
     def handle_error(self, err, _id,dump_file):
@@ -381,16 +561,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 
-    def create_single_task(self, files):
+    def create_single_task(self, files,preset=False):
         if len(files) > 1:
             showFlyout(self,self.SingleInputSelector,InfoBarIcon.WARNING,_("请勿拖入多个文件"),_("非法操作"))
         else:
-            file = files[0]
-            self.setUp_form = CreateNewProject(file,self)
-            self.setUp_form.setWindowModality(Qt.ApplicationModal)
-            self.setUp_form.show()
-            self.setUp_form.complete.connect(self.save_profile)
-            self.setUp_form.create_preset.connect(self.receive_preset)
+            if not preset:
+                file = files[0]
+                self.setUp_form = CreateNewProject(file,self)
+                self.setUp_form.setWindowModality(Qt.ApplicationModal)
+                self.setUp_form.show()
+                self.setUp_form.complete.connect(self.save_profile)
+                self.setUp_form.create_preset.connect(self.receive_preset)
+            else:
+                file = files[0]
+                self.setUp_form = CreateNewProject(file, self)
+                self.setUp_form.setWindowModality(Qt.ApplicationModal)
+                self.setUp_form.PB_Confirm.hide()
+                self.setUp_form.PB_Cancel.hide()
+                self.setUp_form.L_CreateProject.setText(_("新建预设"))
+                self.setUp_form.setWindowTitle(_("创建预设"))
+                self.setUp_form.show()
+                self.setUp_form.create_preset.connect(self.receive_preset)
 
     def add_batch_process(self, files):
         self.batch_setUp_form = CreateNewProject(files, self)
@@ -411,6 +602,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.temporary.index = len(self.task_queue)+1
             self.temporary.progress_identify = str(uuid.uuid4())
             self.temporary.dump_uuid = str(uuid.uuid4())
+
             self.task_queue.append(self.temporary)
         self.batch_setUp_form.close()
         self.sync_queue()
@@ -431,6 +623,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.error_window = []
         self.StartButton.clicked.connect(self.start_all_task)
         self.StopButton.clicked.connect(self.queue_stop)
+        self.PauseButton.clicked.connect(self.queue_suspend)
+        self.CreatePresentButton.clicked.connect(self.create_new_preset)
+
 
 
     def start_all_task(self):
@@ -438,36 +633,44 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         corre_.start()
 
 
-    def queue_start(self):
+    def queue_start(self,resume_task=False):
         start_list = []
         for task in self.task_queue:
-            if not task.running and task.status != 0 and task.completed != True:
+            if not task.running and task.status != 0 and task.completed != True and task.stopped != True:
+                if not task.paused:
+                    task.running = True
+                    task.statue = _("运行中")
+                    task.consumed_timer = time.time()
+                    task.start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    task.update_progress.connect(self.update_queue_percentage)
+                    task.OccurError.connect(self.handle_error)
+                    start_list.append(task.run)
+            if not task.running and task.status != 0 and task.completed != True and task.stopped != True and task.paused == True:
                 task.running = True
                 task.statue = _("运行中")
                 task.update_progress.connect(self.update_queue_percentage)
                 task.OccurError.connect(self.handle_error)
-                start_list.append(task.run)
+                task.resume()
         if start_list != []:
             threading_pool = ThreadPoolManager(max_workers=2)
             threading_pool.submit_tasks(start_list)
             threading_pool.start()
-            self.set_status()
+        self.set_status()
 
     def queue_suspend(self):
+        has_single = False
         for task in self.task_queue:
-            if task.running:
+            if task.process_limit == 1:
+                has_single = True
+            if task.running and task.process_limit != 1:
                 task.suspend()
                 task.running = False
+                task.paused = True
                 task.statue = _("已暂停")
         self.set_status()
+        if has_single:
+            showFlyout(self, self.QueueList, InfoBarIcon.WARNING, _("已暂停所有可暂停任务"), _("单进程任务暂时无法暂停"))
 
-    def queue_resume(self):
-        for task in self.task_queue:
-            if not task.running and task.completed != True:
-                task.resume()
-                task.running = True
-                task.statue = _("运行中")
-        self.set_status()
 
     def queue_stop(self):
         for task in self.task_queue:
@@ -501,6 +704,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if task.running:
                 task.start()
                 task.running = True
+                self.temporary.consumed_timer = time.time()
+
                 task.update_progress.connect(self.update_queue_percentage)
                 task.OccurError.connect(self.handle_error)
 
@@ -544,7 +749,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             elif task.status == 0:
                 for row in range(self.QueueList.rowCount()):
                     if self.QueueList.item(row, 0).text() == str(task.index):
-                        self.QueueList.setItem(row, 2, QTableWidgetItem(_("错误")))
+                        if task.stopped:
+                            self.QueueList.setItem(row, 2, QTableWidgetItem(_("已终止")))
+                        else:
+                            self.QueueList.setItem(row, 2, QTableWidgetItem(_("错误")))
                         progress_bar = self.QueueList.cellWidget(row, 4)
                         progress_bar.setValue(100)
                         break
