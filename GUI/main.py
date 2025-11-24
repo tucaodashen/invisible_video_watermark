@@ -9,6 +9,8 @@ import threading
 import time
 import uuid
 from functools import partial
+from typing import Optional
+
 import numpy as np
 
 from modules.PyAv import extract_video_frames
@@ -45,6 +47,32 @@ preset_path = "./preset"
 
 from qfluentwidgets import Dialog, setTheme, Theme, PrimaryPushButton, MessageBoxBase, SubtitleLabel, ProgressBar, BodyLabel
 
+
+def _get_duration_opencv(video_path: str) -> Optional[float]:
+    """使用OpenCV获取视频时长"""
+    try:
+        cap = cv2.VideoCapture(video_path)
+
+        if not cap.isOpened():
+            return None
+
+        # 获取帧率和总帧数
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+
+        cap.release()
+
+        if fps > 0 and frame_count > 0:
+            return frame_count / fps
+        else:
+            return None
+
+    except ImportError:
+        print("OpenCV未安装，请运行: pip install opencv-python")
+        return None
+    except Exception as e:
+        print(f"OpenCV错误: {e}")
+        return None
 
 def resize_image_to_fixed_height_simple(image, target_height=216):
     h, w = image.shape[:2]
@@ -972,6 +1000,7 @@ class FFmpegDownloadPage(MessageBoxBase):
 class CreateNewProject(QFrame,Ui_SetUpNewForm):
     complete = Signal()
     create_preset = Signal(dict,str)
+    detail_timer = QTimer()
     def __init__(self, file_path,parent=None):
         super().__init__(parent, Qt.Window)
         self.setupUi(self)
@@ -986,12 +1015,102 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.file_path = file_path
         self.PB_Confirm.clicked.connect(self.completed)
         self.PB_saveaspreset.clicked.connect(self.generate_preset)
+        self.detail_timer.timeout.connect(self.display_detail)
+        self.detail_timer.start(100)
 
 
 
     def completed(self):
         self.complete.emit()
         self.hide()
+
+    # Todo: 别忘了完善这个  还有  预设的加载
+    def calculate_file_size(self,target_bitrate, max_bitrate, encoding, duration_minutes):
+        """
+        计算VBR编码的视频文件大小
+
+        参数:
+        target_bitrate: 目标比特率 (Mbps)
+        max_bitrate: 最大比特率 (Mbps)
+        encoding: 编码方式 ('AV1', 'DXV', 'H264', 'HEVC')
+        duration_minutes: 视频时长 (分钟)
+
+        返回:
+        file_size_mb: 文件大小 (MB)
+        file_size_gb: 文件大小 (GB)
+        """
+
+        # 验证编码方式
+        valid_encodings = ['AV1', 'DXV', 'H264', 'HEVC']
+        if encoding.upper() not in valid_encodings:
+            raise ValueError(f"不支持的编码方式。支持的编码方式: {valid_encodings}")
+
+        # 验证比特率合理性
+        if target_bitrate <= 0 or max_bitrate <= 0:
+            raise ValueError("比特率必须为正数")
+
+        if target_bitrate > max_bitrate:
+            raise ValueError("目标比特率不能大于最大比特率")
+
+        # 不同编码方式的效率系数（基于实际压缩效率）
+        efficiency_factors = {
+            'AV1': 1.4,  # AV1效率最高
+            'HEVC': 1.2,  # HEVC次之
+            'H264': 1.0,  # H264作为基准
+            'DXV': 0.8  # DXV通常用于无损或高质量压缩，效率较低
+        }
+
+        # 计算VBR平均比特率（目标比特率和最大比特率的加权平均）
+        # 对于VBR编码，我们使用目标比特率作为主要参考，但考虑最大比特率的影响
+        vbr_average_bitrate = (target_bitrate * 0.7 + max_bitrate * 0.3)
+
+        # 应用编码效率系数
+        efficiency_factor = efficiency_factors[encoding.upper()]
+        effective_bitrate = vbr_average_bitrate * efficiency_factor
+
+        # 计算文件大小（比特 -> 字节转换）
+        # 公式: (比特率 × 时长) / 8 = 文件大小(字节)
+        duration_seconds = duration_minutes * 60
+        file_size_bits = effective_bitrate * 1e6 * duration_seconds  # 转换为比特
+        file_size_bytes = file_size_bits / 8  # 转换为字节
+        file_size_mb = file_size_bytes / (1024 * 1024)  # 转换为MB
+        file_size_gb = file_size_mb / 1024  # 转换为GB
+
+        return {
+            'encoding': encoding.upper(),
+            'duration_minutes': duration_minutes,
+            'target_bitrate_mbps': target_bitrate,
+            'max_bitrate_mbps': max_bitrate,
+            'calculated_average_bitrate_mbps': vbr_average_bitrate,
+            'file_size_mb': round(file_size_mb, 2),
+            'file_size_gb': round(file_size_gb, 2)
+        }
+
+    def display_detail(self):
+        try:
+            preview_content = self.generate_profile(True)
+        except ValueError:
+            return
+        except:
+            raise
+        stt = ""
+        stt += "参数   参数值\n"
+        stt += "----------\n"
+        for key, value in preview_content.items():
+
+            stt += f"{key}:{value}\n"
+        self.TB_S_Detail.setText(stt)
+        self.L_D_OutputPath.setText(f"输出路径:{self.LE_VideoExportPath.text()}")
+        self.L_D_CalculateOccupation.setText(f"预计占用空间:{self.calculate_occupation()}")
+
+    def calculate_occupation(self):
+        if os.path.exists(self.file_path):
+            seconds = _get_duration_opencv(self.file_path)
+            minutes = seconds / 60
+            occupation = os.path.getsize(self.file_path) / (1024 * 1024) * minutes
+
+
+
 
 
     def save_watermark_profile(self):
@@ -1002,7 +1121,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.generate_profile()
         self.create_preset.emit(self.template,self.LE_PresetName.text())
 
-    def generate_profile(self):
+    def generate_profile(self,previews=False):
 
 
         watermark_method = None
@@ -1045,7 +1164,10 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                     "img_password":num1,
                     "wm_password":num2
                 }
-                watermark_content = cv2.imread(self.LE_WatermarkContent.text())
+                if not previews:
+                    watermark_content = cv2.imread(self.LE_WatermarkContent.text())
+                else:
+                    watermark_content = self.LE_WatermarkContent.text()
             else:
                 watermark_method = const.WatermarkAlgorithm.TEXT_GOUFEI
                 if "," in str(self.LE_wmpara1.text()):
@@ -1092,7 +1214,10 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                 "mod1": num3,
                 "mod2": num4,
             }
-            watermark_content = cv2.imread(self.LE_WatermarkContent.text())
+            if not previews:
+                watermark_content = cv2.imread(self.LE_WatermarkContent.text())
+            else:
+                watermark_content = self.LE_WatermarkContent.text()
         elif int(self.CB_WatermarkAgori.currentIndex()) == 2:
             watermark_method = const.WatermarkAlgorithm.TEXT_FREQM
             attachment_data = {
@@ -1287,7 +1412,10 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             "output_format": "mov",
             "two_pass": two_pass,
         }
-        self.template = process_unit_template
+        if not previews:
+            self.template = process_unit_template
+        else:
+            return process_unit_template
 
 
 
