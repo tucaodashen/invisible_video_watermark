@@ -1,5 +1,5 @@
 import uuid
-
+from modules.decorator import timer_decorator
 from av.error import InvalidDataError
 
 from modules.text_postprocess import group_text
@@ -48,11 +48,11 @@ class ExtracUnit:
                 attachment_data=self.plk_data['attachment_data'],
                 method=self.plk_data['watermark_method']
             ))
-
+    @timer_decorator
     def run(self):
         print("1")
         self.generate_slice()
-        result = self.executor.execute_concurrently(self._slice_list, 32,dummy)
+        result = self.executor.execute_concurrently(self._slice_list, 6,dummy)
         return self.post_process(result)
 
     def run_debug(self):
@@ -172,8 +172,8 @@ class ExtractSlice:
 #
 # print("移动的距离为",s,"秒")
 if __name__ == '__main__':
-    eu = ExtracUnit(r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\tet_ruia\embedded.mov",
-                    r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\tet_ruia\recover.pkl")
+    eu = ExtracUnit(r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\full_test\embedded.mov",
+                    r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\full_test\recover.pkl")
     result = eu.run()
     for i in result:
         print(i)

@@ -21,7 +21,7 @@ from PySide6.QtGui import QPixmap, QImage
 from BasicSystem import const
 from modules import ProcessUnit, PyAv
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout, QTableWidgetItem, QProgressBar, \
-    QHeaderView, QTableWidget, QFileDialog
+    QHeaderView, QTableWidget, QFileDialog, QAbstractItemView
 from PySide6.QtCore import Qt, QTimer, Signal
 from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel, RoundMenu, Action, \
     FluentIcon
@@ -30,6 +30,7 @@ from GUI.Splash import Ui_SplashDesu
 from GUI.MainWindows import Ui_MainWindow
 from GUI.Setting import Ui_Form as Ui_Setting
 from GUI.SetUp import Ui_SetUpNewForm
+from GUI.PresetApplyConfirm import Ui_AP_Form
 
 import sys
 from GUI import PrepareRequirements
@@ -119,6 +120,7 @@ class SettingUi_L(QFrame,Ui_Setting):
         self.setupUi(self)
         self.set_text()
 
+
     def set_text(self):
         self.setWindowTitle(_("设置"))
         self.SettingTitleLabel.setText(_("设置"))
@@ -180,6 +182,36 @@ class SettingUi_L(QFrame,Ui_Setting):
         self.SoftwareVersionLabel.setText(_("软件版本"))
         self.SoftwareVersionCheckButton.setText(_("检查更新"))
 
+class Preset_Confirm(QFrame,Ui_AP_Form):
+    save = Signal(dict)
+    save_batch = Signal(list)
+    def __init__(self,preset_name,file,parent = None):
+        super().__init__(parent,Qt.Window)
+        self.setupUi(self)
+        self.L_title.setText(_("预设应用确认"))
+        self.L_outputPath.setText(_("输出路径"))
+        self.L_WatermarkContent.setText(_("水印内容"))
+        self.setWindowTitle(_("预设应用确认"))
+        self.PB_OP.setText(_("浏览"))
+        self.PB_OP.setText(_("浏览"))
+        self.preset_name = preset_name
+        self.file = file
+        self.Confirm.clicked.connect(self.generate_template)
+        self.Cancel.clicked.connect(self.close)
+
+    def generate_template(self):
+        with open(os.path.join(preset_path, f"{self.preset_name}.pickle"), "rb") as f:
+            template = pickle.load(f)
+        if template['watermark_method'] in [const.WatermarkAlgorithm.IMAGE_GUOFEI, const.WatermarkAlgorithm.IMAGE_FIREKEEPER]:
+            template.update({"output_path": self.LE_OP.text(), "watermark_content": cv2.imread(self.LE_WC.text())})
+        else:
+            template.update({"output_path": self.LE_OP.text(), "watermark_content": str(self.LE_WC.text())})
+        if len(self.file) == 1:
+            template.update({"file": self.file})
+            self.save.emit(template)
+        else:
+            self.save.emit([template,self.file])
+
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -188,12 +220,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     update_detail = QTimer()
     def __init__(self):
         super().__init__()
+        self.confirm_preset_form = None
         self.update_image_thread = None
         self.batch_setUp_form = None
         self.error_window = []
         self.setUp_form = None
         self.pu_thread = None
         self.pu = None
+        self.preset_list = []
         self.setupUi(self)
         self.statusbar.showMessage(_("准备就绪"))
         self.set_text()
@@ -231,6 +265,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.update_detail.start(500)
         self.QueueList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.QueueList.customContextMenuRequested.connect(self.show_context_menu)
+        self.SLOpen.rightClicked.connect(self.apply_preset)
+        self.MFOpen.rightClicked.connect(self.apply_preset_multi)
 
 
     def show_context_menu(self, pos):
@@ -390,11 +426,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.create_single_task([self.SLTL.text()])
 
     def scan_preset(self):
+        plo = []
         preset_list = os.listdir(preset_path)
         if preset_list:
-            self.PresentList.clear()
             for i in preset_list:
-                self.PresentList.addItem(i.split(".")[0])
+                plo.append(i.split(".")[0])
+            if self.preset_list != plo:
+                self.PresentList.clear()
+                self.PresentList.addItems(plo)
+            self.preset_list = plo
+
 
     def create_new_preset(self):
         self.create_single_task(["DummyFile"],True)
@@ -618,11 +659,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.batch_setUp_form.complete.connect(self.set_batch_file)
         self.batch_setUp_form.create_preset.connect(self.receive_preset)
 
+    def rec_pre_batch(self,args,files):
+        self.set_batch_file([args,files])
+        self.confirm_preset_form.close()
 
-    def set_batch_file(self):
-        args = self.batch_setUp_form.save_watermark_profile()
-        origin = copy.deepcopy(args)
-        for i in self.batch_setUp_form.file_path:
+    def rec_pre(self,args):
+        self.save_profile(args)
+        self.confirm_preset_form.close()
+
+
+    def set_batch_file(self,preset_data = None):
+        if not preset_data:
+            args = self.batch_setUp_form.save_watermark_profile()
+        else:
+            args = preset_data
+        origin = copy.deepcopy(args[0])
+        if not preset_data:
+            meiji_obj = copy.deepcopy(args[1])
+        else:
+            meiji_obj = self.batch_setUp_form.file_path
+        for i in meiji_obj:
             args.update({'file': i})
             args.update({'output_path': os.path.join(origin['output_path'],os.path.basename(i).split(".")[0])})
             self.temporary = ProcessUnit.ProcessUnit(i)
@@ -632,19 +688,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.temporary.dump_uuid = str(uuid.uuid4())
 
             self.task_queue.append(self.temporary)
-        self.batch_setUp_form.close()
+        if not preset_data:
+            self.batch_setUp_form.close()
         self.sync_queue()
 
         
-    def save_profile(self):
-        templ = self.setUp_form.save_watermark_profile()
+    def save_profile(self,preset = None):
+        if not preset:
+            templ = self.setUp_form.save_watermark_profile()
+        else:
+            templ = preset
         self.temporary = ProcessUnit.ProcessUnit(templ['file'])
         self.temporary.set_args(**templ)
         self.temporary.index = len(self.task_queue)+1
         self.temporary.progress_identify = str(uuid.uuid4())
         self.temporary.dump_uuid = str(uuid.uuid4())
         self.task_queue.append(self.temporary)
-        self.setUp_form.close()
+        if not preset:
+            self.setUp_form.close()
         self.sync_queue()
 
     def setButtons(self):
@@ -736,6 +797,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
                 task.update_progress.connect(self.update_queue_percentage)
                 task.OccurError.connect(self.handle_error)
+
+    def apply_preset(self):
+        self.confirm_preset_form = Preset_Confirm(parent=self, file=self.SLTL.text(), preset_name=self.get_current_selection())
+        self.confirm_preset_form.setWindowModality(Qt.ApplicationModal)
+        self.confirm_preset_form.show()
+        self.confirm_preset_form.save.connect(self.rec_pre)
+
+    def apply_preset_multi(self):
+        file_list = os.listdir(self.MLTL.text())
+        path_list = []
+        for i in file_list:
+            path_list.append(os.path.join(self.MLTL.text(),i))
+        self.confirm_preset_form = Preset_Confirm(parent=self,file=path_list,preset_name=self.get_current_selection())
+        self.confirm_preset_form.setWindowModality(Qt.ApplicationModal)
+        self.confirm_preset_form.show()
+        self.confirm_preset_form.save.connect(self.rec_pre_batch)
+
+    def get_current_selection(self):
+        """获取列表组件的当前选择"""
+        current_item = self.PresentList.currentItem()
+        if current_item:
+            return current_item.text()
+        return None
 
 
 
@@ -851,7 +935,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tabWidget.setTabText(1, _("媒体浏览器"))
         self.label_Present.setText(_("预设"))
         self.CreatePresentButton.setText(_("创建新模板"))
-        self.EditPresentButton.setText(_("编辑模板"))
         self.DeletePresentButton.setText(_("删除模板"))
         self.MediaSelectorTips.setText(_("请选择媒体文件"))
         self.DeleteSelected.setText(_("删除选中"))
@@ -1003,11 +1086,15 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
     detail_timer = QTimer()
     def __init__(self, file_path,parent=None):
         super().__init__(parent, Qt.Window)
+        self.video_length = None
         self.setupUi(self)
         self.render_device = _devices
         self.set_text()
         self.set_connections()
         self.initial_CB()
+        self.prev_review = None
+        self._prev_temp = None
+        self.size = None
         self.checker = QTimer()
         self.checker.timeout.connect(self.setup_correct_setting_item)
         self.checker.start(50)
@@ -1020,12 +1107,21 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
 
 
 
+
     def completed(self):
         self.complete.emit()
         self.hide()
 
+    def get_length(self):
+        if type(self.file_path) == str:
+            if os.path.exists(self.file_path):
+                self.video_length = float(_get_duration_opencv(self.file_path) / 60)
+        else:
+            if os.path.exists(self.file_path[0]):
+                self.video_length = float(_get_duration_opencv(self.file_path[0]) / 60)
+
     # Todo: 别忘了完善这个  还有  预设的加载
-    def calculate_file_size(self,target_bitrate, max_bitrate, encoding, duration_minutes):
+    def calculate_file_size(self):
         """
         计算VBR编码的视频文件大小
 
@@ -1041,16 +1137,44 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         """
 
         # 验证编码方式
+        if self.video_length is None:
+            self.get_length()
+        if self._prev_temp is None:
+            return None
+        if self._prev_temp['FFmpegEncoder'] == const.Encoder.NVIDIA_AV1:
+            encoding = "AV1"
+        elif self._prev_temp['FFmpegEncoder'] == const.Encoder.NVIDIA_HEVC or self._prev_temp['FFmpegEncoder'] == const.FFmpegEncoder.AMD_HW_HEVC:
+            encoding = "HEVC"
+        elif self._prev_temp['FFmpegEncoder'] == const.Encoder.NVIDIA_H264 or self._prev_temp['FFmpegEncoder'] == const.Encoder.X264 or self._prev_temp['FFmpegEncoder'] == const.Encoder.AMD_H264:
+            encoding = "H264"
+        elif self._prev_temp['FFmpegEncoder'] == const.Encoder.Resolume_DXV:
+            encoding = "DXV"
+
+
         valid_encodings = ['AV1', 'DXV', 'H264', 'HEVC']
         if encoding.upper() not in valid_encodings:
             raise ValueError(f"不支持的编码方式。支持的编码方式: {valid_encodings}")
-
+        if str(self._prev_temp['TargetBitRate'])[-1].upper() != "K" and str(self._prev_temp['TargetBitRate'])[-1].upper() != "M":
+            return None
+        if str(self._prev_temp['MaximumBitRate'])[-1].upper() != "K" and str(self._prev_temp['MaximumBitRate'])[-1].upper() != "M":
+            return None
+        if str(self._prev_temp['TargetBitRate'])[-1].upper() == "K":
+            target_bitrate = int(int(self._prev_temp['TargetBitRate'][:-1]) / 1000)
+        else:
+            target_bitrate = self._prev_temp['TargetBitRate'][:-1]
+        if str(self._prev_temp['MaximumBitRate'])[-1].upper() == "K":
+            max_bitrate = int(int(self._prev_temp['MaximumBitRate'][:-1]) / 1000)
+        else:
+            max_bitrate = self._prev_temp['MaximumBitRate'][:-1]
+        duration_minutes = self.video_length
+        target_bitrate = int(target_bitrate)
+        max_bitrate = int(max_bitrate)
         # 验证比特率合理性
         if target_bitrate <= 0 or max_bitrate <= 0:
-            raise ValueError("比特率必须为正数")
+            return None
 
         if target_bitrate > max_bitrate:
-            raise ValueError("目标比特率不能大于最大比特率")
+            return None
 
         # 不同编码方式的效率系数（基于实际压缩效率）
         efficiency_factors = {
@@ -1099,15 +1223,18 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         for key, value in preview_content.items():
 
             stt += f"{key}:{value}\n"
-        self.TB_S_Detail.setText(stt)
-        self.L_D_OutputPath.setText(f"输出路径:{self.LE_VideoExportPath.text()}")
-        self.L_D_CalculateOccupation.setText(f"预计占用空间:{self.calculate_occupation()}")
+        if stt == self.prev_review:
+            pass
+        else:
+            self.TB_S_Detail.setText(stt)
+        self.prev_review = stt
+        self.L_D_OutputPath.setText(f"{self.LE_VideoExportPath.text()}")
+        size = self.calculate_file_size()
+        if size is not None:
+            self.L_D_CalculateOccupation.setText(f"预计占用空间:{size['file_size_mb']} MB")
 
-    def calculate_occupation(self):
-        if os.path.exists(self.file_path):
-            seconds = _get_duration_opencv(self.file_path)
-            minutes = seconds / 60
-            occupation = os.path.getsize(self.file_path) / (1024 * 1024) * minutes
+
+
 
 
 
@@ -1120,6 +1247,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
     def generate_preset(self):
         self.generate_profile()
         self.create_preset.emit(self.template,self.LE_PresetName.text())
+
 
     def generate_profile(self,previews=False):
 
@@ -1273,7 +1401,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                 FFmpegEncoder = const.Encoder.AMD_H264
             elif "HEVC" in str(self.CB_VideoEncoder.currentText()):
                 FFmpegEncoder = const.Encoder.AMD_HEVC
-        print(FFmpegEncoder)
         if int(self.CB_BitRateControl.currentIndex()) == 0:
             bitrate_control = const.BitRateControl.VBR
         elif int(self.CB_BitRateControl.currentIndex()) == 1:
@@ -1386,7 +1513,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             FFmpegSelfAdaptive = int(self.SB_AN.value())
         else:
             FFmpegSelfAdaptive = None
-        print(watermark_method)
         process_unit_template = {
             "version": const.__version__,
             "file": file,
@@ -1415,6 +1541,8 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         if not previews:
             self.template = process_unit_template
         else:
+            process_unit_template.update({"attachment_data":"To be added"})
+            self._prev_temp = process_unit_template
             return process_unit_template
 
 

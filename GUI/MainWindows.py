@@ -22,10 +22,10 @@ from PySide6.QtWidgets import (QApplication, QDockWidget, QFrame, QGridLayout,
     QStatusBar, QTabWidget, QTableWidgetItem, QVBoxLayout,
     QWidget)
 
-from CustomGUI import DropFrame
+from CustomGUI import (DropFrame, DropList, RightClickButton)
 from qfluentwidgets import (BodyLabel, CaptionLabel, ImageLabel, LineEdit,
-    ListWidget, PrimaryPushButton, ProgressBar, PushButton,
-    SubtitleLabel, TableWidget, TitleLabel, TransparentPushButton)
+    PrimaryPushButton, ProgressBar, PushButton, SubtitleLabel,
+    TableWidget, TitleLabel, TransparentPushButton)
 from . import allin_rc
 
 class Ui_MainWindow(object):
@@ -182,7 +182,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_5.addLayout(self.horizontalLayout_7)
 
-        self.SLOpen = PrimaryPushButton(self.SingleInputSelector)
+        self.SLOpen = RightClickButton(self.SingleInputSelector)
         self.SLOpen.setObjectName(u"SLOpen")
 
         self.verticalLayout_5.addWidget(self.SLOpen)
@@ -216,7 +216,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_6.addLayout(self.horizontalLayout_8)
 
-        self.MFOpen = PrimaryPushButton(self.MultipleProcessSelector)
+        self.MFOpen = RightClickButton(self.MultipleProcessSelector)
         self.MFOpen.setObjectName(u"MFOpen")
 
         self.verticalLayout_6.addWidget(self.MFOpen)
@@ -285,7 +285,7 @@ class Ui_MainWindow(object):
 
         self.gridLayout_3.addWidget(self.label_Present, 0, 0, 1, 1)
 
-        self.PresentList = ListWidget(self.dockWidgetContents_3)
+        self.PresentList = DropList(self.dockWidgetContents_3)
         self.PresentList.setObjectName(u"PresentList")
 
         self.gridLayout_3.addWidget(self.PresentList, 1, 0, 1, 1)
@@ -296,11 +296,6 @@ class Ui_MainWindow(object):
         self.CreatePresentButton.setObjectName(u"CreatePresentButton")
 
         self.horizontalLayout_6.addWidget(self.CreatePresentButton)
-
-        self.EditPresentButton = PushButton(self.dockWidgetContents_3)
-        self.EditPresentButton.setObjectName(u"EditPresentButton")
-
-        self.horizontalLayout_6.addWidget(self.EditPresentButton)
 
         self.DeletePresentButton = PushButton(self.dockWidgetContents_3)
         self.DeletePresentButton.setObjectName(u"DeletePresentButton")
@@ -512,7 +507,6 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.browser), QCoreApplication.translate("MainWindow", u"\u5a92\u4f53\u6d4f\u89c8\u5668", None))
         self.label_Present.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
         self.CreatePresentButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.EditPresentButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.DeletePresentButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.SourceLabel.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
         self.StartTimeLabel.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))

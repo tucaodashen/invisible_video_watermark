@@ -195,7 +195,7 @@
              </layout>
             </item>
             <item>
-             <widget class="PrimaryPushButton" name="SLOpen">
+             <widget class="RightClickButton" name="SLOpen">
               <property name="text">
                <string>PushButton</string>
               </property>
@@ -235,7 +235,7 @@
              </layout>
             </item>
             <item>
-             <widget class="PrimaryPushButton" name="MFOpen">
+             <widget class="RightClickButton" name="MFOpen">
               <property name="text">
                <string>PushButton</string>
               </property>
@@ -321,19 +321,12 @@
       </widget>
      </item>
      <item row="1" column="0">
-      <widget class="ListWidget" name="PresentList"/>
+      <widget class="DropList" name="PresentList"/>
      </item>
      <item row="2" column="0">
       <layout class="QHBoxLayout" name="horizontalLayout_6">
        <item>
         <widget class="PrimaryPushButton" name="CreatePresentButton">
-         <property name="text">
-          <string>PushButton</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="PushButton" name="EditPresentButton">
          <property name="text">
           <string>PushButton</string>
          </property>
@@ -681,11 +674,6 @@
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
-   <class>ListWidget</class>
-   <extends>QListWidget</extends>
-   <header>qfluentwidgets</header>
-  </customwidget>
-  <customwidget>
    <class>TableWidget</class>
    <extends>QTableWidget</extends>
    <header>qfluentwidgets</header>
@@ -700,6 +688,16 @@
    <class>ImageLabel</class>
    <extends>QLabel</extends>
    <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>DropList</class>
+   <extends>QListWidget</extends>
+   <header>CustomGUI</header>
+  </customwidget>
+  <customwidget>
+   <class>RightClickButton</class>
+   <extends>QPushButton</extends>
+   <header>CustomGUI</header>
   </customwidget>
  </customwidgets>
  <resources>
