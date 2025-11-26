@@ -207,6 +207,7 @@ class ProcessUnit(QObject):
         self.paused = False
         self.start_time = None
         self.consumed_timer = None
+        self.statue = None
 
 
     def audio_process(self,input_video, path,tags=None):
@@ -398,6 +399,7 @@ class ProcessUnit(QObject):
             self.completed = True
             self.running = False
             self.status = 1
+
             return True
         else:
             self.completed = _("发生错误")

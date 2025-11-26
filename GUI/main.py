@@ -39,6 +39,9 @@ from PySide6.QtCore import Qt
 from GUI import error_report
 from modules.ThreadingScheduler import ThreadPoolManager
 import os
+
+from modules.audio import AudioPlayer
+
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = 'TRUE'
 
 _ = gettext.gettext
@@ -193,7 +196,7 @@ class Preset_Confirm(QFrame,Ui_AP_Form):
         self.L_WatermarkContent.setText(_("水印内容"))
         self.setWindowTitle(_("预设应用确认"))
         self.PB_OP.setText(_("浏览"))
-        self.PB_OP.setText(_("浏览"))
+        self.PB_WC.setText(_("浏览"))
         self.preset_name = preset_name
         self.file = file
         self.Confirm.clicked.connect(self.generate_template)
@@ -210,7 +213,7 @@ class Preset_Confirm(QFrame,Ui_AP_Form):
             template.update({"file": self.file})
             self.save.emit(template)
         else:
-            self.save.emit([template,self.file])
+            self.save_batch.emit([template,self.file])
 
 
 
@@ -220,6 +223,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     update_detail = QTimer()
     def __init__(self):
         super().__init__()
+        self.played = False
+        self.audio_player = AudioPlayer()
         self.confirm_preset_form = None
         self.update_image_thread = None
         self.batch_setUp_form = None
@@ -237,6 +242,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setButtons()
         self.temporary = None
 
+
         self.current_selected_task = None
 
 
@@ -249,6 +255,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.thumbnail_thread = None
         self.thumbnail_lock = threading.Lock()  # 防止竞态条件
         self.default_detail_show = None
+        self.started = False
 
 
     def set_slot(self):
@@ -260,6 +267,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.freq_detail.timeout.connect(self.clear_useless_cache)
         self.freq_detail.timeout.connect(self.prepare_thumbnail)
         self.freq_detail.timeout.connect(self.scan_preset)
+        self.freq_detail.timeout.connect(self.is_task_over)
         self.freq_detail.start(2500)
         self.update_detail.timeout.connect(self.update_details)
         self.update_detail.start(500)
@@ -267,6 +275,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.QueueList.customContextMenuRequested.connect(self.show_context_menu)
         self.SLOpen.rightClicked.connect(self.apply_preset)
         self.MFOpen.rightClicked.connect(self.apply_preset_multi)
+        self.MFOpen.clicked.connect(self.create_batch_via_button)
+
+
+    def is_task_over(self):
+        if int(self.QueueProgressBar.value()) == 100 and self.started and not self.played:
+            print("PLAY!!!!!!!!!!!!")
+            self.audio_player.load(r"assest\sound\complete.wav")
+            self.audio_player.play()
+            self.played = True
+
+
+    def create_batch_via_button(self):
+        if os.path.exists(self.MLTL.text()):
+            list_files = os.listdir(self.MLTL.text())
+            if len(list_files) == 0:
+                showFlyout(self,target = self.MLTL,icon = InfoBarIcon.WARNING, title = _("目录为空"), content = _("请先放入视频文件"))
+            else:
+                res = []
+                for i in list_files:
+                    if i.split(".")[-1] in ["mp4","mkv","mov","avi"]:
+                        res.append(os.path.join(self.MLTL.text(),i))
+                self.add_batch_process(res)
+        else:
+            showFlyout(self,target = self.MLTL,icon = InfoBarIcon.WARNING, title = _("目录不存在"), content = _("请先创建目录"))
 
 
     def show_context_menu(self, pos):
@@ -367,7 +399,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             showFlyout(self, self.QueueList, InfoBarIcon.WARNING, _("此任务无法暂停"),
                        _("单进程任务暂时无法暂停"))
     def launch_selected_task(self,row_index, checked=False):
-        print(row_index)
+        self.started = True
+        self.played = False
         index = int(self.QueueList.item(row_index, 0).text())
         sl = None
         for task in self.task_queue:
@@ -435,10 +468,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.PresentList.clear()
                 self.PresentList.addItems(plo)
             self.preset_list = plo
+        else:
+            self.PresentList.clear()
 
 
     def create_new_preset(self):
-        self.create_single_task(["DummyFile"],True)
+        self.create_single_task(["Dummy"],True)
 
     def sync_queue(self):
         self.QueueList.setRowCount(0)
@@ -582,9 +617,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     return self.thumbnail_cache[str(task.progress_identify)][0]
                 return (self.thumbnail_cache[str(task.progress_identify)])[int(task.progress*100)]
             else:
-                return resize_image_to_fixed_height_simple(cv2.imread("reisa.jpg"))
+                return resize_image_to_fixed_height_simple(cv2.imread(r"assest\image\reisa.jpg"))
         if task is None:
-            return resize_image_to_fixed_height_simple(cv2.imread("reisa.jpg"))
+            return resize_image_to_fixed_height_simple(cv2.imread(r"assest\image\reisa.jpg"))
 
 
 
@@ -659,8 +694,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.batch_setUp_form.complete.connect(self.set_batch_file)
         self.batch_setUp_form.create_preset.connect(self.receive_preset)
 
-    def rec_pre_batch(self,args,files):
-        self.set_batch_file([args,files])
+    #处理批量模板任务的函数，但是以前的名字和qt内部函数冲突。WTF？？？
+    def idkwant_but_the_function_name_have_conflict_with_qt(self,arg):
+        print(arg)
+        self.set_batch_file([arg[0],arg[1]])
         self.confirm_preset_form.close()
 
     def rec_pre(self,args):
@@ -672,12 +709,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not preset_data:
             args = self.batch_setUp_form.save_watermark_profile()
         else:
-            args = preset_data
-        origin = copy.deepcopy(args[0])
+            args = preset_data[0]
+        origin = copy.deepcopy(args)
         if not preset_data:
-            meiji_obj = copy.deepcopy(args[1])
-        else:
             meiji_obj = self.batch_setUp_form.file_path
+        else:
+            meiji_obj = copy.deepcopy(preset_data[1])
         for i in meiji_obj:
             args.update({'file': i})
             args.update({'output_path': os.path.join(origin['output_path'],os.path.basename(i).split(".")[0])})
@@ -714,10 +751,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.StopButton.clicked.connect(self.queue_stop)
         self.PauseButton.clicked.connect(self.queue_suspend)
         self.CreatePresentButton.clicked.connect(self.create_new_preset)
+        self.DeletePresentButton.clicked.connect(self.remove_selected_preset)
 
 
 
     def start_all_task(self):
+        self.started = True
+        self.played = False
         corre_ = threading.Thread(target=self.queue_start)
         corre_.start()
 
@@ -799,20 +839,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 task.OccurError.connect(self.handle_error)
 
     def apply_preset(self):
-        self.confirm_preset_form = Preset_Confirm(parent=self, file=self.SLTL.text(), preset_name=self.get_current_selection())
-        self.confirm_preset_form.setWindowModality(Qt.ApplicationModal)
-        self.confirm_preset_form.show()
-        self.confirm_preset_form.save.connect(self.rec_pre)
+        if self.get_current_selection() is not None:
+            self.confirm_preset_form = Preset_Confirm(parent=self, file=self.SLTL.text(), preset_name=self.get_current_selection())
+            self.confirm_preset_form.setWindowModality(Qt.ApplicationModal)
+            self.confirm_preset_form.show()
+            self.confirm_preset_form.save.connect(self.rec_pre)
 
     def apply_preset_multi(self):
-        file_list = os.listdir(self.MLTL.text())
-        path_list = []
-        for i in file_list:
-            path_list.append(os.path.join(self.MLTL.text(),i))
-        self.confirm_preset_form = Preset_Confirm(parent=self,file=path_list,preset_name=self.get_current_selection())
-        self.confirm_preset_form.setWindowModality(Qt.ApplicationModal)
-        self.confirm_preset_form.show()
-        self.confirm_preset_form.save.connect(self.rec_pre_batch)
+        if self.get_current_selection() is not None:
+            if os.path.exists(self.MLTL.text()):
+                file_list = os.listdir(self.MLTL.text())
+                path_list = []
+                for i in file_list:
+                    path_list.append(os.path.join(self.MLTL.text(),i))
+                self.confirm_preset_form = Preset_Confirm(parent=self,file=path_list,preset_name=self.get_current_selection())
+                self.confirm_preset_form.setWindowModality(Qt.ApplicationModal)
+                self.confirm_preset_form.show()
+                self.confirm_preset_form.save_batch.connect(self.idkwant_but_the_function_name_have_conflict_with_qt)
 
     def get_current_selection(self):
         """获取列表组件的当前选择"""
@@ -847,6 +890,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 progress_bar = self.QueueList.cellWidget(row, 4)
                 progress_bar.setValue(value*100)
                 break
+
+    def remove_selected_preset(self):
+        if os.path.exists(os.path.join(preset_path,f"{self.get_current_selection()}.pickle")):
+            os.remove(os.path.join(preset_path,f"{self.get_current_selection()}.pickle"))
 
 
     def set_is_completed(self):
@@ -1120,6 +1167,8 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             if os.path.exists(self.file_path[0]):
                 self.video_length = float(_get_duration_opencv(self.file_path[0]) / 60)
 
+
+
     # Todo: 别忘了完善这个  还有  预设的加载
     def calculate_file_size(self):
         """
@@ -1137,8 +1186,11 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         """
 
         # 验证编码方式
+
         if self.video_length is None:
             self.get_length()
+        if self.video_length is None:
+            return None
         if self._prev_temp is None:
             return None
         if self._prev_temp['FFmpegEncoder'] == const.Encoder.NVIDIA_AV1:

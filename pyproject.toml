@@ -1,0 +1,59 @@
+[project]
+name = "invisiblevideowatermarknext"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "argparse>=1.4.0",
+    "av>=16.0.1",
+    "coredumpy==0.4.3",
+    "datasketch>=1.6.5",
+    "dtcwt>=0.13.0",
+    "fake-useragent>=2.2.0",
+    "faker>=37.5.3",
+    "fastapi>=0.116.1",
+    "ffmpeg-python>=0.2.0",
+    "fs>=2.4.16",
+    "fsspec>=2025.7.0",
+    "gputil>=1.4.0",
+    "loguru>=0.7.3",
+    "lupa>=2.5",
+    "matplotlib>=3.10.7",
+    "moviepy>=2.2.1",
+    "nuitka>=2.7.12",
+    "numba>=0.62.1",
+    "numpy>=2.2.6",
+    "onnxruntime>=1.22.1",
+    "onnxruntime-directml>=1.23.0",
+    "onnxruntime-gpu>=1.23.2",
+    "opencv-python>=4.12.0.88",
+    "pillow>=11.3.0",
+    "psutil>=7.0.0",
+    "py-cpuinfo>=9.0.0",
+    "pyadl>=0.1",
+    "pyaudio>=0.2.14",
+    "pyinstaller>=6.14.2",
+    "pyoxidizer>=0.24.0",
+    "pyside6>=6.9.1",
+    "pyside6-fluent-widgets[full]>=1.8.3",
+    "pytest>=8.4.1",
+    "python-i18n>=0.3.9",
+    "python-levenshtein>=0.27.1",
+    "pythonnet>=3.0.5",
+    "pywavelets>=1.8.0",
+    "rich>=14.1.0",
+    "rollbar>=1.3.0",
+    "scalene>=1.5.55",
+    "scikit-learn>=1.7.2",
+    "stopit>=1.1.2",
+    "ultralytics>=8.3.228",
+    "viztracer>=1.0.4",
+]
+
+[[tool.uv.index]]
+url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+default = true
+ 
+[tool.uv.pip]
+index-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
