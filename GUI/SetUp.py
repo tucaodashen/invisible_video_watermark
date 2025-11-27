@@ -34,7 +34,7 @@ class Ui_SetUpNewForm(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 377, 1118))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, -417, 377, 1066))
         self.verticalLayout_7 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.L_CreateProject = TitleLabel(self.scrollAreaWidgetContents)
@@ -552,16 +552,6 @@ class Ui_SetUpNewForm(object):
 
         self.verticalLayout_4.addWidget(self.F_VideoEncoder)
 
-        self.L_OutputFormat = SubtitleLabel(self.F_Video)
-        self.L_OutputFormat.setObjectName(u"L_OutputFormat")
-
-        self.verticalLayout_4.addWidget(self.L_OutputFormat)
-
-        self.CB_OutputFormat = ComboBox(self.F_Video)
-        self.CB_OutputFormat.setObjectName(u"CB_OutputFormat")
-
-        self.verticalLayout_4.addWidget(self.CB_OutputFormat)
-
 
         self.verticalLayout_7.addWidget(self.F_Video)
 
@@ -691,7 +681,6 @@ class Ui_SetUpNewForm(object):
         self.L_EncodePattern.setText(QCoreApplication.translate("SetUpNewForm", u"\u7f16\u7801\u6a21\u5f0f", None))
         self.CB_Foreward.setText(QCoreApplication.translate("SetUpNewForm", u"\u524d\u5411\u8003\u8651", None))
         self.CB_AdjustiveNormalize.setText(QCoreApplication.translate("SetUpNewForm", u"\u81ea\u9002\u5e94\u91cf\u5316", None))
-        self.L_OutputFormat.setText(QCoreApplication.translate("SetUpNewForm", u"\u8f93\u51fa\u683c\u5f0f", None))
         self.L_PreviewImage.setText("")
         self.L_S_OutputPath.setText(QCoreApplication.translate("SetUpNewForm", u"\u8f93\u51fa\u8def\u5f84", None))
         self.L_D_OutputPath.setText(QCoreApplication.translate("SetUpNewForm", u"TextLabel", None))

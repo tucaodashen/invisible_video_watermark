@@ -209,7 +209,7 @@ class Preset_Confirm(QFrame,Ui_AP_Form):
             template.update({"output_path": self.LE_OP.text(), "watermark_content": cv2.imread(self.LE_WC.text())})
         else:
             template.update({"output_path": self.LE_OP.text(), "watermark_content": str(self.LE_WC.text())})
-        if len(self.file) == 1:
+        if len(self.file) == 1 or type(self.file) == str:
             template.update({"file": self.file})
             self.save.emit(template)
         else:
@@ -276,11 +276,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.SLOpen.rightClicked.connect(self.apply_preset)
         self.MFOpen.rightClicked.connect(self.apply_preset_multi)
         self.MFOpen.clicked.connect(self.create_batch_via_button)
+        self.PresentList.receive_file.connect(self.receive_preset_drag)
 
 
     def is_task_over(self):
         if int(self.QueueProgressBar.value()) == 100 and self.started and not self.played:
-            print("PLAY!!!!!!!!!!!!")
             self.audio_player.load(r"assest\sound\complete.wav")
             self.audio_player.play()
             self.played = True
@@ -838,24 +838,47 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 task.update_progress.connect(self.update_queue_percentage)
                 task.OccurError.connect(self.handle_error)
 
-    def apply_preset(self):
+    def apply_preset(self,drag_trigger=False):
         if self.get_current_selection() is not None:
-            self.confirm_preset_form = Preset_Confirm(parent=self, file=self.SLTL.text(), preset_name=self.get_current_selection())
-            self.confirm_preset_form.setWindowModality(Qt.ApplicationModal)
-            self.confirm_preset_form.show()
-            self.confirm_preset_form.save.connect(self.rec_pre)
-
-    def apply_preset_multi(self):
-        if self.get_current_selection() is not None:
-            if os.path.exists(self.MLTL.text()):
-                file_list = os.listdir(self.MLTL.text())
-                path_list = []
-                for i in file_list:
-                    path_list.append(os.path.join(self.MLTL.text(),i))
-                self.confirm_preset_form = Preset_Confirm(parent=self,file=path_list,preset_name=self.get_current_selection())
+            if drag_trigger or len(self.SLTL.text()) > 0:
+                if not drag_trigger:
+                    self.confirm_preset_form = Preset_Confirm(parent=self, file=self.SLTL.text(), preset_name=self.get_current_selection())
+                else:
+                    self.confirm_preset_form = Preset_Confirm(parent=self, file=drag_trigger,
+                                                              preset_name=self.get_current_selection())
                 self.confirm_preset_form.setWindowModality(Qt.ApplicationModal)
                 self.confirm_preset_form.show()
-                self.confirm_preset_form.save_batch.connect(self.idkwant_but_the_function_name_have_conflict_with_qt)
+                self.confirm_preset_form.save.connect(self.rec_pre)
+
+    def apply_preset_multi(self,drag_trigger=False):
+        if self.get_current_selection() is not None:
+            if drag_trigger != False or len(self.MLTL.text()) > 0:
+                if not drag_trigger:
+                    if os.path.exists(self.MLTL.text()):
+                        file_list = os.listdir(self.MLTL.text())
+                        path_list = []
+                        for i in file_list:
+                            path_list.append(os.path.join(self.MLTL.text(),i))
+                else:
+                    path_list = drag_trigger
+                    self.confirm_preset_form = Preset_Confirm(parent=self,file=path_list,preset_name=self.get_current_selection())
+                    self.confirm_preset_form.setWindowModality(Qt.ApplicationModal)
+                    self.confirm_preset_form.show()
+                    self.confirm_preset_form.save_batch.connect(self.idkwant_but_the_function_name_have_conflict_with_qt)
+
+    def receive_preset_drag(self,file):
+        if self.get_current_selection() is None:
+            showFlyout(self, self.PresentList, InfoBarIcon.ERROR, _("请先选择一个预设"),_("错误"))
+            return
+        for i in file:
+            if str(i).split(".")[-1] not in ["mp4","avi","mov","mkv"]:
+                showFlyout(self, self.PresentList, InfoBarIcon.ERROR, _("仅支持视频文件"), _("错误"))
+                return
+        if len(file) == 1:
+            self.apply_preset(drag_trigger=file)
+        elif len(file) > 1:
+            self.apply_preset_multi(drag_trigger=file)
+
 
     def get_current_selection(self):
         """获取列表组件的当前选择"""
@@ -1156,8 +1179,9 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
 
 
     def completed(self):
-        self.complete.emit()
-        self.hide()
+        if self.check_validity():
+            self.complete.emit()
+            self.hide()
 
     def get_length(self):
         if type(self.file_path) == str:
@@ -1169,7 +1193,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
 
 
 
-    # Todo: 别忘了完善这个  还有  预设的加载
     def calculate_file_size(self):
         """
         计算VBR编码的视频文件大小
@@ -1297,8 +1320,9 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         return self.template
 
     def generate_preset(self):
-        self.generate_profile()
-        self.create_preset.emit(self.template,self.LE_PresetName.text())
+        if self.check_validity():
+            self.generate_profile()
+            self.create_preset.emit(self.template,self.LE_PresetName.text())
 
 
     def generate_profile(self,previews=False):
@@ -1327,6 +1351,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         FFmpegForeward = None
         FFmpegSelfAdaptive = None
         two_pass = None
+        output_format = None
         file = self.file_path
         if int(self.CB_WatermarkAgori.currentIndex()) == 0:
             if self.CB_IW.isChecked():
@@ -1460,7 +1485,12 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
 
         MaximumBitRate = str(self.LE_MaxBitRate.text())
         TargetBitRate = str(self.LE_BitRate.text())
-
+        if self.CB_VideoExportFormat.text() == "MP4":
+            output_format = "mp4"
+        elif self.CB_VideoExportFormat == "MKV":
+            output_format = "mkv"
+        elif self.CB_VideoExportFormat.text() == "MOV":
+            output_format = "mov"
         if self.render_device[current_device] == "cpu":
             if str(self.CB_FFmpegPresent.text()) == "PLACEBO":
                 FFmpegPresent = const.FFmpegPreset.X264_PLACEBO
@@ -1587,7 +1617,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             "FFmpegPresent": FFmpegPresent,
             "FFmpegForeward": FFmpegForeward,
             "FFmpegSelfAdaptive": FFmpegSelfAdaptive,
-            "output_format": "mov",
+            "output_format": output_format,
             "two_pass": two_pass,
         }
         if not previews:
@@ -1628,7 +1658,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.SB_FrameExtend.valueChanged.connect(self.sync_frame_set_SB)
         self.CB_Sampler.currentIndexChanged.connect(self.sample_set)
         self.CB_WatermarkAgori.currentIndexChanged.connect(self.set_watermark_params)
-        self.PB_Confirm.clicked.connect(self.check_validity)
 
     def sync_frame_set_HS(self):
         self.SB_FrameExtend.setValue(int(self.HS_FrameExtend.value()))
@@ -1690,9 +1719,65 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         if self.CB_Sampler.currentIndex() == 2 and len(self.LE_SamplerSheet.text().replace("\n","")) == 0:
             showFlyout(self,self.CB_Sampler,InfoBarIcon.ERROR,_("请输入采样器工作表"),_("采样表不能为空！"))
             return False
-        elif not os.path.exists(self.LE_VideoExportPath.text()):
-            showFlyout(self,self.LE_VideoExportPath,InfoBarIcon.ERROR,_("导出路径不存在！请选择其他路径！"),_("导出路径不存在！"))
+        if len(self.LE_VideoExportPath.text()) == 0:
+            showFlyout(self,self.LE_VideoExportPath,InfoBarIcon.ERROR,_("请输入导出路径！"),_("导出路径不能为空！"))
             return False
+        if "AV1" in self.CB_VideoEncoder.text() and self.CB_VideoExportFormat == "MOV":
+            showFlyout(self,self.CB_VideoEncoder,InfoBarIcon.ERROR,_("AV1编码不支持MOV格式！"),_("请选择其他格式进行编码"))
+            return False
+        if self.CB_Sampler.currentIndex() in [0,1] and self.SB_SamplerTimes.value() == 0:
+            showFlyout(self,self.SB_SamplerTimes,InfoBarIcon.ERROR,_("请输入采样次数！"),_("采样次数不能为0！"))
+            return False
+        if self.SB_Slicelength.value() == 0:
+            showFlyout(self,self.SB_Slicelength,InfoBarIcon.ERROR,_("请输入切片长度！"),_("切片长度不能为0！"))
+            return False
+        if len(self.LE_WatermarkContent.text()) == 0:
+            showFlyout(self,self.LE_WatermarkContent,InfoBarIcon.ERROR,_("请输入水印内容！"),_("水印内容不能为空！"))
+            return False
+        if self.LE_wmpara1.isVisible() and len(self.LE_wmpara1.text()) == 0:
+            showFlyout(self,self.LE_wmpara1,InfoBarIcon.ERROR,_("请输入参数1！"),_("参数1不能为空！"))
+            return False
+        if self.LE_wmpara2.isVisible() and len(self.LE_wmpara2.text()) == 0:
+            showFlyout(self,self.LE_wmpara2,InfoBarIcon.ERROR,_("请输入参数2！"),_("参数2不能为空！"))
+            return False
+        if self.LE_wmpara3.isVisible() and len(self.LE_wmpara3.text()) == 0:
+            showFlyout(self,self.LE_wmpara3,InfoBarIcon.ERROR,_("请输入参数3！"),_("参数3不能为空！"))
+            return False
+        if self.LE_wmpara4.isVisible() and len(self.LE_wmpara4.text()) == 0:
+            showFlyout(self,self.LE_wmpara4,InfoBarIcon.ERROR,_("请输入参数4！"),_("参数4不能为空！"))
+            return False
+        if self.LE_wmpara1.isVisible():
+            try:
+                content = self.LE_wmpara1.text()
+                res = content.replace(",","")
+                int(res)
+            except ValueError:
+                showFlyout(self,self.LE_wmpara1,InfoBarIcon.ERROR,_("请输入参数1！"),_("参数1不合规！"))
+                return False
+        if self.LE_wmpara2.isVisible():
+            try:
+                content = self.LE_wmpara2.text()
+                res = content.replace(",","")
+                int(res)
+            except ValueError:
+                showFlyout(self,self.LE_wmpara2,InfoBarIcon.ERROR,_("请输入参数2！"),_("参数2不合规！"))
+                return False
+        if self.LE_wmpara3.isVisible():
+            try:
+                content = self.LE_wmpara3.text()
+                res = content.replace(",","")
+                int(res)
+            except ValueError:
+                showFlyout(self,self.LE_wmpara3,InfoBarIcon.ERROR,_("请输入参数3！"),_("参数3不合规！"))
+                return False
+        if self.LE_wmpara4.isVisible():
+            try:
+                content = self.LE_wmpara4.text()
+                res = content.replace(",","")
+                int(res)
+            except ValueError:
+                showFlyout(self,self.LE_wmpara4,InfoBarIcon.ERROR,_("请输入参数4！"),_("参数4不合规！"))
+                return False
         return True
 
 

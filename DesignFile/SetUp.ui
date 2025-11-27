@@ -23,9 +23,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
+        <y>-417</y>
         <width>377</width>
-        <height>1118</height>
+        <height>1066</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -571,16 +571,6 @@
              </item>
             </layout>
            </widget>
-          </item>
-          <item>
-           <widget class="SubtitleLabel" name="L_OutputFormat">
-            <property name="text">
-             <string>输出格式</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="ComboBox" name="CB_OutputFormat"/>
           </item>
          </layout>
         </widget>
