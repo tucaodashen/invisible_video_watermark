@@ -49,6 +49,7 @@ dependencies = [
     "stopit>=1.1.2",
     "ultralytics>=8.3.228",
     "viztracer>=1.0.4",
+    "zmq>=0.0.0",
 ]
 
 [[tool.uv.index]]

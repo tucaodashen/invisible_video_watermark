@@ -132,6 +132,7 @@
     <addaction name="action_5"/>
     <addaction name="action_6"/>
     <addaction name="action_7"/>
+    <addaction name="action_14"/>
    </widget>
    <widget class="QMenu" name="menu_6">
     <property name="title">
@@ -624,6 +625,11 @@
   <action name="action_13">
    <property name="text">
     <string>关于</string>
+   </property>
+  </action>
+  <action name="action_14">
+   <property name="text">
+    <string>恢复水印内容</string>
    </property>
   </action>
  </widget>

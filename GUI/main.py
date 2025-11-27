@@ -17,6 +17,7 @@ from modules.PyAv import extract_video_frames
 from modules.GenerateVideo import get_video_parameters_simple,get_audio_parameters_simple
 import cv2
 from PySide6.QtGui import QPixmap, QImage
+import multiprocessing
 
 from BasicSystem import const
 from modules import ProcessUnit, PyAv
@@ -24,13 +25,15 @@ from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxL
     QHeaderView, QTableWidget, QFileDialog, QAbstractItemView
 from PySide6.QtCore import Qt, QTimer, Signal
 from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel, RoundMenu, Action, \
-    FluentIcon
+    FluentIcon, TransparentToolButton
+from modules import networks
 
 from GUI.Splash import Ui_SplashDesu
 from GUI.MainWindows import Ui_MainWindow
 from GUI.Setting import Ui_Form as Ui_Setting
 from GUI.SetUp import Ui_SetUpNewForm
 from GUI.PresetApplyConfirm import Ui_AP_Form
+from GUI.RecoverWindow import Ui_Recover_Form
 
 import sys
 from GUI import PrepareRequirements
@@ -41,6 +44,7 @@ from modules.ThreadingScheduler import ThreadPoolManager
 import os
 
 from modules.audio import AudioPlayer
+from modules.ExtractUnit import ExtracUnit
 
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = 'TRUE'
 
@@ -223,6 +227,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     update_detail = QTimer()
     def __init__(self):
         super().__init__()
+        self.recover_window = None
         self.played = False
         self.audio_player = AudioPlayer()
         self.confirm_preset_form = None
@@ -277,6 +282,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.MFOpen.rightClicked.connect(self.apply_preset_multi)
         self.MFOpen.clicked.connect(self.create_batch_via_button)
         self.PresentList.receive_file.connect(self.receive_preset_drag)
+        self.action_14.triggered.connect(self.show_recover_window)
 
 
     def is_task_over(self):
@@ -284,6 +290,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.audio_player.load(r"assest\sound\complete.wav")
             self.audio_player.play()
             self.played = True
+            
+    def show_recover_window(self):
+        self.recover_window = RecoverWindow(self)
+        self.recover_window.show()
 
 
     def create_batch_via_button(self):
@@ -781,7 +791,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 task.OccurError.connect(self.handle_error)
                 task.resume()
         if start_list != []:
-            threading_pool = ThreadPoolManager(max_workers=2)
+            threading_pool = ThreadPoolManager(max_workers=1)
             threading_pool.submit_tasks(start_list)
             threading_pool.start()
         self.set_status()
@@ -2051,36 +2061,101 @@ def is_larger_than_1gb(file_path):
         return False, f"检测文件大小时出错: {str(e)}"
 
 
-# 更简洁的版本（只返回布尔值）
-def is_file_larger_than_1gb(file_path):
-    """
-    检测文件大小是否大于1GB（简化版）
 
-    参数:
-        file_path (str): 文件路径
+class RecoverWindow(QFrame,Ui_Recover_Form):
+    def __init__(self, parent=None):
+        super().__init__(parent,Qt.Window)
+        self.plk_data = None
+        self.watermark_file = None
+        self.video_file = None
+        self.setupUi(self)
+        self.set_up()
+        self.recover_process = None
+        self.frame.receive_file.connect(self.check_and_start)
+        self.result = None
+        self.image_index = 1
+        self.pushButton_2.clicked.connect(self.prev_image)
+        self.pushButton_3.clicked.connect(self.next_image)
 
-    返回:
-        bool: 如果文件大小大于1GB返回True，否则返回False
-    """
-    try:
-        if os.path.isfile(file_path):
-            file_size = os.path.getsize(file_path)
-            return file_size > (1024 * 1024 * 1024)
-        return False
-    except:
-        return False
+    def set_up(self):
+        self.F_TextResult.hide()
+        self.F_ImageResult.hide()
+        self.label_5.setText(_("请先启动分析"))
+
+    def check_and_start(self,files):
+        if len(files) != 2:
+            showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请选择视频文件和水印文件"),_("错误"))
+            return False
+        if len(files) == 2:
+            have_video = False
+            have_pkl = False
+            for i in files:
+                if str(i).split(".")[-1] in ["mp4","mkv","avi","mov"]:
+                    have_video = True
+                    self.video_file = str(i)
+                if str(i).split(".")[-1] == "pkl":
+                    have_pkl = True
+                    self.watermark_file = str(i)
+            if have_pkl and have_video:
+                self.plk_data = pickle.load(open(self.watermark_file, 'rb'))
+                self.run_recover(self.video_file,self.watermark_file)
+                self.label_5.setText(_("正在分析中，请稍候"))
+            else:
+                showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请确定您的输入只含有视频文件和水印文件"),_("错误"))
+                return False
+
+    def process_result(self,result):
+        self.result = result
+        if self.plk_data['watermark_method'] == const.WatermarkAlgorithm.IMAGE_GUOFEI or self.plk_data[
+            'watermark_method'] == const.WatermarkAlgorithm.IMAGE_FIREKEEPER:
+            self.F_ImageResult.show()
+            self.F_TextResult.hide()
+            self.L_CurIndex.setText(f"{self.image_index}/{len(self.result)}")
+            self.progressBar_2.setValue(0)
+            if len(self.result) > 0:
+                self.set_correct_image()
+        else:
+            self.F_TextResult.show()
+            self.F_ImageResult.hide()
 
 
-# 支持自定义大小的通用版本
-def is_file_larger_than(file_path, size_gb=1):
-    try:
-        if os.path.isfile(file_path):
-            file_size = os.path.getsize(file_path)
-            threshold = size_gb * 1024 * 1024 * 1024
-            return file_size > threshold
-        return False
-    except:
-        return False
+    def set_correct_image(self):
+        if self.image_index <= len(self.result):
+           cur_img = self.result[self.image_index-1]
+           self.label_8.setPixmap(cv2_to_qpixmap(cur_img))
+
+    def next_image(self):
+        if 0 < self.image_index < len(self.result):
+            self.image_index += 1
+            self.set_correct_image()
+            self.L_CurIndex.setText(f"{self.image_index}/{len(self.result)}")
+            self.progressBar_2.setValue(self.image_index*100//len(self.result))
+
+    def prev_image(self):
+        if 0 < self.image_index < len(self.result):
+            self.image_index -= 1
+            self.set_correct_image()
+            self.L_CurIndex.setText(f"{self.image_index}/{len(self.result)}")
+            self.progressBar_2.setValue(self.image_index * 100 // len(self.result))
+
+
+
+
+    def run_recover(self,file,recover_file):
+        # inst = ExtracUnit(file,recover_file,int(self.SB_MaxWorker.value()))
+        # self.recover_process = multiprocessing.Process(target=inst.run)
+        # self.recover_process.start()
+        self.start_receive_progress()
+
+
+    def start_receive_progress(self):
+        threading.Thread(target=networks.ipc_recv, args=("127.0.0.1", 1166, self.ccb)).start()
+
+    def ccb(self,value,hls):
+        if value == "start_rec":
+            threading.Thread(target=networks.receive_image, args=(10,self.process_result)).start()
+        self.progressBar.setValue(float(value)*100)
+
 
 
 

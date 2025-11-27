@@ -1,4 +1,11 @@
+import sys
+import threading
+import time
 import uuid
+import traceback
+import coredumpy
+from PySide6.QtCore import Signal, QObject
+
 from modules.decorator import timer_decorator
 from av.error import InvalidDataError
 
@@ -12,6 +19,7 @@ from BasicSystem.const import *
 import os
 import cv2
 import pickle
+import modules.networks as network
 from BasicSystem.VirtualFileSystem import FileSystem
 
 
@@ -29,31 +37,61 @@ def remove_duplicates(lst):
 def dummy(*args, **kwargs):
     print(*args, **kwargs)
 class ExtracUnit:
-    def __init__(self,video,pkl):
+    def __init__(self, video, pkl, max_worker=6):
         self.executor = ConcurrentExecutor()
         self.plk_data = pickle.load(open(pkl, 'rb'))
         self.frame_count = get_frame_count(video)
         self.video = video
         self._slice_list = []
         self._slice_length = 4
+        self.progress = 0
+        self.cur = 0
+        self.total = 1
+        self.max_worker = max_worker
+        self.dump_uuid = uuid.uuid4()
+
+
 
     def generate_slice(self):
-        print("0")
+        threading.Thread(target=network.ipc_recv, args=("127.0.0.1", 1165, self.calcu_progress)).start()
         a = spitter(self.frame_count,self._slice_length)
         print(a)
+        id = 0
+        self.total = len(a)
         for ranges in a:
-            self._slice_list.append(ExtractSlice(
+            id += 1
+            inst = ExtractSlice(
                 video=self.video,
                 frame_range=ranges,
                 attachment_data=self.plk_data['attachment_data'],
                 method=self.plk_data['watermark_method']
-            ))
-    @timer_decorator
+            )
+            inst.dump_uuid = self.dump_uuid
+            inst.identify = {"order":id}
+            self._slice_list.append(inst)
+
+
+
+
+    #@timer_decorator
     def run(self):
-        print("1")
         self.generate_slice()
-        result = self.executor.execute_concurrently(self._slice_list, 6,dummy)
-        return self.post_process(result)
+        result = self.executor.execute_concurrently(self._slice_list, self.max_worker,dummy)
+        network.ipc_send("exit", "127.0.0.1", 1165)
+        _result = self.post_process(result)
+
+        network.ipc_send("start_rec", "127.0.0.1", 1166)
+        network.ipc_send("exit", "127.0.0.1", 1166)
+        network.send_image(_result)
+        return _result
+
+
+    def calcu_progress(self,msg,a):
+        if msg == "Over":
+            self.cur += 1
+            self.progress = self.cur / self.total
+        network.ipc_send(str(self.progress), "127.0.0.1", 1166)
+
 
     def run_debug(self):
         result = []
@@ -99,6 +137,7 @@ class ExtracUnit:
         return None
 
 
+
 class ExtractSlice:
     def __init__(self,video,frame_range,attachment_data,method):
         self.video = video
@@ -107,8 +146,40 @@ class ExtractSlice:
         self._frame_data = None
         self._result = []
         self.method = method
+        self.identify = None
+        self.dump_uuid = None
+
 
     def start(self):
+        try:
+            result = self._start()
+            return result
+        except Exception as e:
+            path = f"./dumps/coredumpy_{os.path.basename(self.video)}_{self.identify['order']}_{self.dump_uuid}.dump"
+            # 获取异常信息
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+
+            if exc_traceback:
+                # 遍历到最深的 traceback（异常发生的位置）
+                deepest_tb = exc_traceback
+                while deepest_tb.tb_next:
+                    deepest_tb = deepest_tb.tb_next
+
+                # deepest_tb.tb_frame 就是异常发生的精确帧
+                exception_frame = deepest_tb.tb_frame
+
+                # 只转储异常发生的帧
+                coredumpy.dump(frame=exception_frame,
+                               description="Exception trigger frame only"
+                               , path=path, depth=4)
+
+                # 打印确认位置
+                print(f"异常发生在: {exception_frame.f_code.co_filename}:{exception_frame.f_lineno}")
+            else:
+                coredumpy.dump(description="No traceback available", path=path, depth=4)
+            raise
+
+    def _start(self):
         print("2")
         frame_list = []
         for i in range(self.frame_range[0],self.frame_range[1]+1):
@@ -157,7 +228,10 @@ class ExtractSlice:
                         except:
                             raise
                         self._result.append(result)
+        network.ipc_send("Over","127.0.0.1",1165)
         del self._frame_data
+
+
 
 
 
@@ -172,11 +246,15 @@ class ExtractSlice:
 #
 # print("移动的距离为",s,"秒")
 if __name__ == '__main__':
-    eu = ExtracUnit(r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\full_test\embedded.mov",
-                    r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\full_test\recover.pkl")
+    eu = ExtracUnit(
+        r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\ImageBenchmark\embedded.mp4",
+        r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\ImageBenchmark\recover.pkl")
     result = eu.run()
     for i in result:
-        print(i)
+        path = r"D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\ImageBenchmark\bench"
+        cv2.imwrite(os.path.join(path, f"{str(uuid.uuid4())}.png"), i)
+        #print(i)
+
 
 
 
