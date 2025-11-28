@@ -225,6 +225,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     QueueProgressUpdater = QTimer()
     freq_detail = QTimer()
     update_detail = QTimer()
+    thumbnail_status_signal = Signal(str)
     def __init__(self):
         super().__init__()
         self.recover_window = None
@@ -246,6 +247,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.action_9.triggered.connect(self.show_all)
         self.setButtons()
         self.temporary = None
+        self.thumbnail_status_signal.connect(self.update_status_message)
+
 
 
         self.current_selected_task = None
@@ -261,6 +264,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.thumbnail_lock = threading.Lock()  # 防止竞态条件
         self.default_detail_show = None
         self.started = False
+
+    def update_status_message(self, message):
+        self.statusbar.showMessage(message)
 
 
     def set_slot(self):
@@ -580,7 +586,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.task_queue:
             for i in self.task_queue:
                 if str(i.progress_identify) not in list(self.thumbnail_cache.keys()):
-                    self.statusbar.showMessage(_("正在生成缩略图..."))
+                    self.thumbnail_status_signal.emit(_("正在生成缩略图..."))
                     spf_list = []
                     for ind in index:
                         # 确保帧号不超过视频总帧数-1（0-based索引）
@@ -605,7 +611,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
                     if thu:
                         self.thumbnail_cache.update({str(i.progress_identify): thu})
-                        self.statusbar.showMessage(_("准备就绪"))
+                        self.thumbnail_status_signal.emit(_("准备就绪"))
                     else:
                         print(f"Error: No thumbnails generated for {i.progress_identify}")
 
@@ -2068,6 +2074,7 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         self.plk_data = None
         self.watermark_file = None
         self.video_file = None
+        self._inst = None
         self.setupUi(self)
         self.set_up()
         self.recover_process = None
@@ -2076,6 +2083,7 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         self.image_index = 1
         self.pushButton_2.clicked.connect(self.prev_image)
         self.pushButton_3.clicked.connect(self.next_image)
+        self.progressBar.setValue(0)
 
     def set_up(self):
         self.F_TextResult.hide()
@@ -2103,6 +2111,10 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
             else:
                 showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请确定您的输入只含有视频文件和水印文件"),_("错误"))
                 return False
+        return True
+
+    def pre_process_result(self,*args):
+        self.process_result(self._inst.result)
 
     def process_result(self,result):
         self.result = result
@@ -2142,19 +2154,17 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
 
 
     def run_recover(self,file,recover_file):
-        # inst = ExtracUnit(file,recover_file,int(self.SB_MaxWorker.value()))
-        # self.recover_process = multiprocessing.Process(target=inst.run)
-        # self.recover_process.start()
-        self.start_receive_progress()
+        self._inst = ExtracUnit(file,recover_file,int(self.SB_MaxWorker.value()))
+        self._inst.update_progress.connect(self.set_progress)
+        self._inst.receive_result.connect(self.pre_process_result)
+        self.recover_process = threading.Thread(target=self._inst.run)
+        self.recover_process.start()
+
+    def set_progress(self,progress):
+        if type(progress) == float:
+            self.progressBar.setValue(progress*100)
 
 
-    def start_receive_progress(self):
-        threading.Thread(target=networks.ipc_recv, args=("127.0.0.1", 1166, self.ccb)).start()
-
-    def ccb(self,value,hls):
-        if value == "start_rec":
-            threading.Thread(target=networks.receive_image, args=(10,self.process_result)).start()
-        self.progressBar.setValue(float(value)*100)
 
 
 

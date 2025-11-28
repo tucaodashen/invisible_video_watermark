@@ -36,8 +36,11 @@ def remove_duplicates(lst):
 
 def dummy(*args, **kwargs):
     print(*args, **kwargs)
-class ExtracUnit:
+class ExtracUnit(QObject):
+    update_progress = Signal(float)
+    receive_result = Signal()
     def __init__(self, video, pkl, max_worker=6):
+        super().__init__()
         self.executor = ConcurrentExecutor()
         self.plk_data = pickle.load(open(pkl, 'rb'))
         self.frame_count = get_frame_count(video)
@@ -49,6 +52,7 @@ class ExtracUnit:
         self.total = 1
         self.max_worker = max_worker
         self.dump_uuid = uuid.uuid4()
+        self.result = None
 
 
 
@@ -73,16 +77,14 @@ class ExtracUnit:
 
 
 
-    #@timer_decorator
+    @timer_decorator
     def run(self):
         self.generate_slice()
         result = self.executor.execute_concurrently(self._slice_list, self.max_worker,dummy)
         network.ipc_send("exit", "127.0.0.1", 1165)
         _result = self.post_process(result)
-
-        network.ipc_send("start_rec", "127.0.0.1", 1166)
-        network.ipc_send("exit", "127.0.0.1", 1166)
-        network.send_image(_result)
+        self.result = _result
+        self.receive_result.emit()
         return _result
 
 
@@ -90,7 +92,7 @@ class ExtracUnit:
         if msg == "Over":
             self.cur += 1
             self.progress = self.cur / self.total
-        network.ipc_send(str(self.progress), "127.0.0.1", 1166)
+        self.update_progress.emit(self.progress)
 
 
     def run_debug(self):
