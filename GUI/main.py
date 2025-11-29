@@ -5,6 +5,8 @@ import copy
 import os.path
 import pickle
 import random
+import shutil
+import subprocess
 import threading
 import time
 import uuid
@@ -17,7 +19,6 @@ from modules.PyAv import extract_video_frames
 from modules.GenerateVideo import get_video_parameters_simple,get_audio_parameters_simple
 import cv2
 from PySide6.QtGui import QPixmap, QImage
-import multiprocessing
 
 from BasicSystem import const
 from modules import ProcessUnit, PyAv
@@ -25,8 +26,7 @@ from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxL
     QHeaderView, QTableWidget, QFileDialog, QAbstractItemView
 from PySide6.QtCore import Qt, QTimer, Signal
 from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel, RoundMenu, Action, \
-    FluentIcon, TransparentToolButton
-from modules import networks
+    FluentIcon, TransparentToolButton, InfoBar, InfoBarPosition
 
 from GUI.Splash import Ui_SplashDesu
 from GUI.MainWindows import Ui_MainWindow
@@ -45,11 +45,12 @@ import os
 
 from modules.audio import AudioPlayer
 from modules.ExtractUnit import ExtracUnit
+from modules.pltform import get_render_devices
 
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = 'TRUE'
 
 _ = gettext.gettext
-_devices = {'AMD Ryzen 9 9955HX 16-Core Processor': 'cpu', 'AMD Radeon(TM) 610M': 'amd', 'NVIDIA GeForce RTX 5070 Laptop GPU': 'nvidia'}
+_devices = get_render_devices()
 print(_devices)
 preset_path = "./preset"
 
@@ -108,17 +109,31 @@ def resize_image_to_fixed_height_simple(image, target_height=216):
 
 def cv2_to_qpixmap(cv_img):
     """将 OpenCV 图像转换为 QPixmap"""
+    # 确保图像是连续的内存块
+    cv_img = np.ascontiguousarray(cv_img)
+
     # OpenCV 使用 BGR 格式，Qt 使用 RGB，需要转换
     if len(cv_img.shape) == 3:  # 彩色图像
-        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
-        h, w, ch = rgb_image.shape
-        bytes_per_line = ch * w
-        q_img = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        # 检查是否是3通道的BGR图像
+        if cv_img.shape[2] == 3:
+            rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+            h, w, ch = rgb_image.shape
+            bytes_per_line = ch * w
+            q_img = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        else:
+            # 处理4通道图像（如RGBA）
+            rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGRA2RGBA)
+            h, w, ch = rgb_image.shape
+            bytes_per_line = ch * w
+            q_img = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGBA8888)
     else:  # 灰度图像
         h, w = cv_img.shape
-        q_img = QImage(cv_img.data, w, h, w, QImage.Format_Grayscale8)
+        # 使用正确的格式和字节对齐
+        bytes_per_line = w
+        q_img = QImage(cv_img.data, w, h, bytes_per_line, QImage.Format_Grayscale8)
 
-    return QPixmap.fromImage(q_img)
+    # 复制数据以避免内存问题
+    return QPixmap.fromImage(q_img.copy())
 
 
 class SettingUi_L(QFrame,Ui_Setting):
@@ -293,7 +308,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def is_task_over(self):
         if int(self.QueueProgressBar.value()) == 100 and self.started and not self.played:
-            self.audio_player.load(r"assest\sound\complete.wav")
+            self.audio_player.load(r"assets\sound\complete.wav")
             self.audio_player.play()
             self.played = True
             
@@ -633,9 +648,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     return self.thumbnail_cache[str(task.progress_identify)][0]
                 return (self.thumbnail_cache[str(task.progress_identify)])[int(task.progress*100)]
             else:
-                return resize_image_to_fixed_height_simple(cv2.imread(r"assest\image\reisa.jpg"))
+                return resize_image_to_fixed_height_simple(cv2.imread(r"assets\image\reisa.jpg"))
         if task is None:
-            return resize_image_to_fixed_height_simple(cv2.imread(r"assest\image\reisa.jpg"))
+            return resize_image_to_fixed_height_simple(cv2.imread(r"assets\image\reisa.jpg"))
 
 
 
@@ -1081,13 +1096,18 @@ class SplashScreen(QWidget,Ui_SplashDesu):
     timers = QTimer()
     def __init__(self):
         super().__init__()
+        self.timer_st_oneshot = QTimer()
+        self.timer_st_oneshot.timeout.connect(self.start_now)
+        self.timer_st_oneshot.setSingleShot(True)
         self.setupUi(self)
         self.setInvisible()
         self.Tips.setText("Loading...")
         self.progressBar.setValue(0)
         self.MainWindow = MainWindow()
-        self.timers.timeout.connect(self.prepare)
-        self.timers.start(3000)
+        self.prepare()
+
+
+
 
 
     def setInvisible(self): 
@@ -1104,8 +1124,19 @@ class SplashScreen(QWidget,Ui_SplashDesu):
             self.Tips.setText(_("安装FFMpeg"))
             self.display_dialog()
         self.Tips.setText(_("清理松散文件中..."))
-
+        if os.path.exists("WorkPath"):
+            shutil.rmtree("WorkPath")
+        os.mkdir("WorkPath")
+        self.Tips.setText(_("启动日志服务器..."))
+        threading.Thread(target=self.run_log).start()
         self.Tips.setText(_("加载主页面..."))
+        self.timer_st_oneshot.start(3000)
+
+    def run_log(self):
+        print("当前工作目录:", os.getcwd())
+        subprocess.run(["LogServer.exe"])
+
+    def start_now(self):
         self.MainWindow.showMaximized()
         self.close()
 
@@ -2066,6 +2097,18 @@ def is_larger_than_1gb(file_path):
     except Exception as e:
         return False, f"检测文件大小时出错: {str(e)}"
 
+def createSuccessInfoBar(self,title,content):
+    InfoBar.success(
+        title=title,
+        content=content,
+        orient=Qt.Horizontal,
+        isClosable=True,
+        position=InfoBarPosition.TOP,
+        # position='Custom',   # NOTE: use custom info bar manager
+        duration=2000,
+        parent=self
+    )
+
 
 
 class RecoverWindow(QFrame,Ui_Recover_Form):
@@ -2084,6 +2127,20 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         self.pushButton_2.clicked.connect(self.prev_image)
         self.pushButton_3.clicked.connect(self.next_image)
         self.progressBar.setValue(0)
+        self.label_8.setScaledContents(True)
+        self.label_8.setFixedSize(256,256)
+        self.pushButton_4.clicked.connect(self.save_selected_image)
+        self.pushButton_5.clicked.connect(self.save_all_image)
+        self.pushButton.clicked.connect(self.save_text_to_file)
+        self.tabWidget.setTabText(0,_("恢复设置"))
+        self.tabWidget.setTabText(1,_("恢复结果"))
+        self.soundplayer = AudioPlayer()
+        self.soundplayer.load("assets/sound/complete.wav")
+        self.pushButton_4.setText(_("保存当前图片"))
+        self.pushButton_5.setText(_("保存所有图片"))
+        self.setWindowTitle(_("恢复水印"))
+
+
 
     def set_up(self):
         self.F_TextResult.hide()
@@ -2108,6 +2165,8 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
                 self.plk_data = pickle.load(open(self.watermark_file, 'rb'))
                 self.run_recover(self.video_file,self.watermark_file)
                 self.label_5.setText(_("正在分析中，请稍候"))
+                self.frame.hide()
+                self.label_2.setText(_("分析中，请稍等"))
             else:
                 showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请确定您的输入只含有视频文件和水印文件"),_("错误"))
                 return False
@@ -2117,9 +2176,12 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         self.process_result(self._inst.result)
 
     def process_result(self,result):
+
+        self.label_5.hide()
         self.result = result
         if self.plk_data['watermark_method'] == const.WatermarkAlgorithm.IMAGE_GUOFEI or self.plk_data[
             'watermark_method'] == const.WatermarkAlgorithm.IMAGE_FIREKEEPER:
+            self.label_7.setText(_(f"分析完成，超过可识别阈值的图片有{len(result)}张"))
             self.F_ImageResult.show()
             self.F_TextResult.hide()
             self.L_CurIndex.setText(f"{self.image_index}/{len(self.result)}")
@@ -2127,14 +2189,54 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
             if len(self.result) > 0:
                 self.set_correct_image()
         else:
+            self.label_6.setText(_(f"分析完成，超过可识别阈值的文字{len(result)}组"))
             self.F_TextResult.show()
             self.F_ImageResult.hide()
+            st = ""
+            ind = 1
+            for i in result:
+                st += _(f"组{ind}\n")
+                for ite in i:
+                    st += f"{ite}\n"
+            self.textBrowser.setText(st)
+        createSuccessInfoBar(self,_("分析完成"),_(f"请查看分析结果"))
+
+        self.soundplayer.play()
+    def save_text_to_file(self):
+        if self.result:
+            self._save_text_to_file(str(self.result))
+
+    def _save_text_to_file(self,context):
+        path = QFileDialog.getSaveFileName(self,_("保存文件"),f"recover_{self.image_index}.txt",_("文本文件 (*.txt)"))[0]
+        if path:
+            with open(path,"w",encoding="utf-8") as f:
+                f.write(context)
+
+    def save_selected_image(self):
+        if self.result:
+            path = QFileDialog.getSaveFileName(self,_("保存文件"),f"recover_{self.image_index}.png",_("图像文件 (*.png)"))[0]
+            if path:
+                cv2.imwrite(path, self.result[self.image_index-1])
+
+    def save_all_image(self):
+        if self.result:
+            path = QFileDialog.getSaveFileName(self,_("保存文件"),f"recover_{self.image_index}.png",_("图像文件 (*.png)"))[0]
+            if path:
+                for i in range(len(self.result)):
+                    cv2.imwrite(f"{path.split('.')[0]}_{i}.png", self.result[i])
 
 
     def set_correct_image(self):
         if self.image_index <= len(self.result):
-           cur_img = self.result[self.image_index-1]
-           self.label_8.setPixmap(cv2_to_qpixmap(cur_img))
+            cur_img = self.result[self.image_index-1]
+            img_path = f"recover_{self.image_index}_{uuid.uuid4()}.png"
+            cv2.imwrite(img_path, cur_img)
+            self.label_8.setImage(img_path)
+            os.remove(img_path)
+
+
+
+
 
     def next_image(self):
         if 0 < self.image_index < len(self.result):

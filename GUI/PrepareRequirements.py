@@ -41,6 +41,8 @@ def is_ffmpeg_exist():
             return True
         else:
             return False
+    raise RuntimeError("Unsupported platform")
+
 
 
 

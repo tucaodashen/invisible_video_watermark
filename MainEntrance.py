@@ -1,4 +1,5 @@
 import os
+import shutil
 import socket
 from datetime import datetime
 
@@ -26,5 +27,11 @@ def is_port_in_use(port: int, host: str = 'localhost') -> bool:
             return False
 
 if __name__ == "__main__":
+    if not os.path.exists("assets"):
+        raise RuntimeError("文件不完整，无法运行")
+    if is_port_in_use(1165):
+        raise RuntimeError("端口1165已被占用，无法运行")
+    if is_port_in_use(9999):
+        raise RuntimeError("端口9999已被占用，无法运行")
     from GUI import main
     main.start()

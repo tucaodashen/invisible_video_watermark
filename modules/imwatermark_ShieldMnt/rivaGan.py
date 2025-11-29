@@ -22,12 +22,8 @@ def create_onnx_session(model_path, device_id=0):
 
 
 
-
-modelDir = os.path.dirname(os.path.abspath(__file__))
-enc_mod = create_onnx_session(
-            os.path.join(modelDir, 'rivagan_encoder.onnx'))
-dec_mod = create_onnx_session(
-            os.path.join(modelDir, 'rivagan_decoder.onnx'))
+enc_mod = create_onnx_session('assets/checkpoints/rivagan/rivagan_encoder.onnx')
+dec_mod = create_onnx_session('assets/checkpoints/rivagan/rivagan_decoder.onnx')
 
 
 
