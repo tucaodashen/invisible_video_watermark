@@ -1,8 +1,11 @@
 <RCC>
   <qresource prefix="splash">
+    <file>PraySoftware.png</file>
+    <file>Pri.png</file>
     <file>BandiView_Splash.png</file>
   </qresource>
   <qresource prefix="MainWindow">
+    <file>slogan.png</file>
     <file>呜哇.png</file>
     <file>C:/Users/ASUS/Desktop/G0DtOFdaQAEjRZC.jpg</file>
   </qresource>

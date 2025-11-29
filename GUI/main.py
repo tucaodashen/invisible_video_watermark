@@ -2,6 +2,7 @@
 请伟大的早濑优香大人保佑这段代码吧！
 """
 import copy
+import multiprocessing
 import os.path
 import pickle
 import random
@@ -14,17 +15,18 @@ from functools import partial
 from typing import Optional
 
 import numpy as np
+import psutil
 
 from modules.PyAv import extract_video_frames
 from modules.GenerateVideo import get_video_parameters_simple,get_audio_parameters_simple
 import cv2
-from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtGui import QPixmap, QImage, QDesktopServices
 
 from BasicSystem import const
 from modules import ProcessUnit, PyAv
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout, QTableWidgetItem, QProgressBar, \
     QHeaderView, QTableWidget, QFileDialog, QAbstractItemView
-from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtCore import Qt, QTimer, Signal, QSize, QUrl
 from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel, RoundMenu, Action, \
     FluentIcon, TransparentToolButton, InfoBar, InfoBarPosition
 
@@ -243,6 +245,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     thumbnail_status_signal = Signal(str)
     def __init__(self):
         super().__init__()
+        self.log_process = None
         self.recover_window = None
         self.played = False
         self.audio_player = AudioPlayer()
@@ -280,6 +283,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.default_detail_show = None
         self.started = False
 
+
+
+
     def update_status_message(self, message):
         self.statusbar.showMessage(message)
 
@@ -304,6 +310,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.MFOpen.clicked.connect(self.create_batch_via_button)
         self.PresentList.receive_file.connect(self.receive_preset_drag)
         self.action_14.triggered.connect(self.show_recover_window)
+        self.action_12.triggered.connect(lambda : self.jump_to_website("https://opensource.org/license/mit"))
 
 
     def is_task_over(self):
@@ -557,6 +564,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(self.default_detail_show.MaximumBitRate)+" Target Bitrate:"+str(self.default_detail_show.TargetBitRate))
                 self.AudioLabel.setText(_(f"音频:{get_audio_parameters_simple(self.default_detail_show.file)}"))
                 self.label_10.setImage(cv2_to_qpixmap(self.get_thumbnail(self.default_detail_show)))
+                self.label_10.scaledToHeight(216)
                 if self.default_detail_show.start_time is not None:
                     self.StartTimeLabel.setText(_("开始时间:") + self.default_detail_show.start_time)
                 else:
@@ -577,6 +585,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(i.MaximumBitRate)+" Target Bitrate:"+str(i.TargetBitRate))
                         self.AudioLabel.setText(_(f"音频:{get_audio_parameters_simple(i.file)}"))
                         self.label_10.setImage(cv2_to_qpixmap(self.get_thumbnail(i)))
+                        self.label_10.scaledToHeight(216)
                         if i.start_time is not None:
                             self.StartTimeLabel.setText(_("开始时间:") + i.start_time)
                         else:
@@ -585,7 +594,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                             self.ComsumedTimeLabel.setText(_("消耗时间:") + str(
                                 round(time.time() - i.consumed_timer, 2)) + "s")
         else:
-            self.label_10.setImage(cv2_to_qpixmap(self.get_thumbnail(None)))
+            self.label_10.setImage("assets/image/reisa.jpg")
+            self.label_10.scaledToHeight(216)
 
     def prepare_thumbnail(self):
         with self.thumbnail_lock:
@@ -648,9 +658,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     return self.thumbnail_cache[str(task.progress_identify)][0]
                 return (self.thumbnail_cache[str(task.progress_identify)])[int(task.progress*100)]
             else:
-                return resize_image_to_fixed_height_simple(cv2.imread(r"assets\image\reisa.jpg"))
+                return cv2.imread(r"assets\image\reisa.jpg")
         if task is None:
-            return resize_image_to_fixed_height_simple(cv2.imread(r"assets\image\reisa.jpg"))
+            return cv2.imread(r"assets\image\reisa.jpg")
+
+    def jump_to_website(self,url):
+        QDesktopServices.openUrl(QUrl(url))
+
 
 
 
@@ -1084,6 +1098,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.PresentBrowserDock.show()
         self.MediaBrowserDock.show()
 
+    def closeEvent(self, event):
+        print("TryToClose")
+        if self.log_process:
+            self.log_process.terminate()
+        if is_running_simple("ffmpeg.exe"):
+            if kill_process_by_name("ffmpeg"):
+                event.accept()
+            else:
+                event.ignore()
+        else:
+            event.accept()
+
 
 
 
@@ -1096,6 +1122,7 @@ class SplashScreen(QWidget,Ui_SplashDesu):
     timers = QTimer()
     def __init__(self):
         super().__init__()
+        self.process = None
         self.timer_st_oneshot = QTimer()
         self.timer_st_oneshot.timeout.connect(self.start_now)
         self.timer_st_oneshot.setSingleShot(True)
@@ -1128,15 +1155,16 @@ class SplashScreen(QWidget,Ui_SplashDesu):
             shutil.rmtree("WorkPath")
         os.mkdir("WorkPath")
         self.Tips.setText(_("启动日志服务器..."))
-        threading.Thread(target=self.run_log).start()
+        self.run_log()
         self.Tips.setText(_("加载主页面..."))
         self.timer_st_oneshot.start(3000)
 
     def run_log(self):
         print("当前工作目录:", os.getcwd())
-        subprocess.run(["LogServer.exe"])
+        self.process,pid = run_process_and_get_pid(["ls/LogServer.exe"])
 
     def start_now(self):
+        self.MainWindow.log_process = self.process
         self.MainWindow.showMaximized()
         self.close()
 
@@ -2267,8 +2295,60 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
             self.progressBar.setValue(progress*100)
 
 
+def run_process_and_get_pid(command):
+    """
+    运行命令并返回进程对象和PID
+
+    Args:
+        command (str/list): 要执行的命令，可以是字符串或列表
+
+    Returns:
+        tuple: (process对象, PID)
+    """
+    # 如果command是字符串，需要设置shell=True
+    if isinstance(command, str):
+        process = subprocess.Popen(command, shell=True)
+    else:
+        process = subprocess.Popen(command)
+
+    pid = process.pid
+    return process, pid
 
 
+
+def kill_process_by_name(process_name):
+    """
+    根据进程名称关闭程序
+
+    Args:
+        process_name (str): 要关闭的进程名称
+
+    Returns:
+        int: 成功关闭的进程数量
+    """
+    killed_count = 0
+
+    for proc in psutil.process_iter(['name']):
+        try:
+            # 检查进程名称是否匹配（不区分大小写）
+            if proc.info['name'] and process_name.lower() in proc.info['name'].lower():
+                proc.kill()
+                print(f"已关闭进程: {proc.info['name']} (PID: {proc.pid})")
+                killed_count += 1
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            # 处理异常情况
+            pass
+
+    if killed_count == 0:
+        return False
+    else:
+        return True
+
+def is_running_simple(process_name):
+    """简单的单行检查函数"""
+    return any(process_name.lower() in proc.info['name'].lower()
+               for proc in psutil.process_iter(['name'])
+               if proc.info['name'])
 
 
 if __name__ == "__main__":
