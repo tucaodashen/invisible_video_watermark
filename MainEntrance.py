@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import shutil
 import socket
@@ -27,6 +28,7 @@ def is_port_in_use(port: int, host: str = 'localhost') -> bool:
             return False
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     if not os.path.exists("assets"):
         raise RuntimeError("文件不完整，无法运行")
     if is_port_in_use(1165):
