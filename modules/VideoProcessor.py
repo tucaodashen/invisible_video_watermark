@@ -2,12 +2,11 @@ import cv2
 import random
 import os
 import ffmpeg
-from PySide6.QtCore import QObject,Signal
-import psutil
-
 from BasicSystem import const
 from BasicSystem.log_client import setup_logger,get_logger
-from BasicSystem.const import *
+setup_logger(default_tags="VideoProcessor", enable_udp=True, enable_console=True)
+logger = get_logger()
+
 
 
 
@@ -44,12 +43,12 @@ def add_audio_to_video(video_path, audio_path, output_path):
 
         # 执行转换
         ffmpeg.run(output, overwrite_output=True)
-        print(f"成功生成输出文件: {output_path}")
+        logger.success(f"Add audio to video success: {output_path}",tags="VideoProcessor:add_audio_to_video")
 
     except ffmpeg.Error as e:
-        print(f"FFmpeg错误: {e.stderr.decode()}")
+        logger.error(f"Add audio to video error: {e.stderr.decode()}",tags="VideoProcessor:add_audio_to_video")
     except Exception as e:
-        print(f"发生错误: {str(e)}")
+        logger.error(f"Add audio to video error: {str(e)}",tags="VideoProcessor:add_audio_to_video")
 
 def slice_list(target_list, per_len):
     """
@@ -87,47 +86,46 @@ def get_count(path):
 
 
 def video_sampler(source_path,sampler_times,sampler_extension,sampler_type,manual=None):
-    setup_logger(default_tags="VideoSampler", enable_udp=True, enable_console=True)
-    logger = get_logger()
-    logger.info(f"Start sampling video: {source_path}")
+
+    logger.info(f"Start sampling video: {source_path}",tags="VideoProcessor:video_sampler")
     cap = cv2.VideoCapture(source_path)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     cap.release()
-    logger.info(f"Total frames: {total_frames}")
+    logger.info(f"Total frames: {total_frames}",tags="VideoProcessor:video_sampler")
     if sampler_type == const.SamplerType.RANDOM:
         primary_sampler_point = []
         for i in range(sampler_times):
             primary_sampler_point.append(random.randint(0,total_frames-1))
-        logger.info(f"Primary sampler point: {primary_sampler_point}")
+        logger.info(f"Primary sampler point: {primary_sampler_point}",tags="VideoProcessor:video_sampler")
         secondary_sampler_point = []
         for i in primary_sampler_point:
             for ti in range(sampler_extension):
                 secondary_sampler_point.append(i+ti)
-        logger.info(f"Secondary sampler point: {secondary_sampler_point}")
+        logger.info(f"Secondary sampler point: {secondary_sampler_point}",tags="VideoProcessor:video_sampler")
         final_sampler_point = primary_sampler_point + secondary_sampler_point
         final_sampler_point.sort()
         final_sampler_point = list(set(final_sampler_point))
-        logger.debug(f"Final sampler point: {final_sampler_point}")
+        logger.debug(f"Final sampler point: {final_sampler_point}",tags="VideoProcessor:video_sampler")
         return final_sampler_point
     elif sampler_type == const.SamplerType.FULL:
         final_sampler_point = list(range(total_frames))
-        logger.debug(f"Final sampler point: {final_sampler_point}")
+        logger.debug(f"Final sampler point: {final_sampler_point}",tags="VideoProcessor:video_sampler")
         return final_sampler_point
     elif sampler_type == const.SamplerType.AVERAGE:
         primary_sampler_point = []
         period = total_frames // sampler_times
         for i in range(sampler_times):
             primary_sampler_point.append(i*period)
-        logger.info(f"Primary sampler point: {primary_sampler_point}")
+        logger.debug(f"Primary sampler point: {primary_sampler_point}",tags="VideoProcessor:video_sampler")
         secondary_sampler_point = []
         for i in primary_sampler_point:
             for ti in range(sampler_extension):
                 secondary_sampler_point.append(i+ti)
-        logger.info(f"Secondary sampler point: {secondary_sampler_point}")
+        logger.debug(f"Secondary sampler point: {secondary_sampler_point}",tags="VideoProcessor:video_sampler")
         final_sampler_point = primary_sampler_point + secondary_sampler_point
         final_sampler_point.sort()
         final_sampler_point = list(set(final_sampler_point))
-        logger.debug(f"Final sampler point: {final_sampler_point}")
+        logger.info(f"Final sampler point: {final_sampler_point}",tags="VideoProcessor:video_sampler")
         return final_sampler_point
     elif sampler_type == const.SamplerType.PSY:
         pass
@@ -136,7 +134,7 @@ def video_sampler(source_path,sampler_times,sampler_extension,sampler_type,manua
         final_sampler_point = []
         for i in sampler_list:
             final_sampler_point.append(int(i))
-        logger.debug(f"Final sampler point: {final_sampler_point}")
+        logger.debug(f"Final sampler point: {final_sampler_point}",tags="VideoProcessor:video_sampler")
         return final_sampler_point
 
 
@@ -151,7 +149,8 @@ def extract_frame_by_index(video_path, frame_index, output_path):
 
     # 检查视频是否成功打开
     if not cap.isOpened():
-        print("无法打开视频文件")
+        logger.critical(f"Failed to open video file: {video_path}",tags="VideoProcessor:extract_frame_by_index")
+        raise FileNotFoundError(f"Failed to open video file: {video_path}")
         return
 
     # 设置目标帧位置
@@ -162,9 +161,9 @@ def extract_frame_by_index(video_path, frame_index, output_path):
 
     if ret:
         cv2.imwrite(output_path, frame)
-        print(f"已保存第 {frame_index} 帧到 {output_path}")
+        logger.debug(f"Extracted frame {frame_index} to {output_path}",tags="VideoProcessor:extract_frame_by_index")
     else:
-        print("读取帧失败")
+        logger.error(f"Failed to extract frame {frame_index} from {video_path}",tags="VideoProcessor:extract_frame_by_index")
 
     cap.release()
 
@@ -179,26 +178,25 @@ def extract_frames(video_path, start_frame, end_frame, output_dir,formate="png",
     output_dir: 输出目录路径
     """
     # 确保输出目录存在
-    setup_logger(default_tags="ExtractFrames", enable_udp=True, enable_console=True)
-    logger = get_logger()
     os.makedirs(output_dir, exist_ok=True)
 
     # 打开视频文件
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        logger.error(f"Failed to open video file: {video_path}")
+        logger.error(f"Failed to open video file: {video_path}",tags="VideoProcessor:extract_frames")
+        raise FileNotFoundError(f"Failed to open video file: {video_path}")
         return
 
     # 获取视频总帧数和帧率
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = cap.get(cv2.CAP_PROP_FPS)
 
-    logger.info(f"total_frames: {total_frames}")
-    print(f"FPS:{fps:.2f}")
+    logger.info(f"total_frames: {total_frames}",tags="VideoProcessor:extract_frames")
+    logger.info(f"fps: {fps:.2f}",tags="VideoProcessor:extract_frames")
 
     # 验证帧范围有效性
     if start_frame < 0 or end_frame >= total_frames or start_frame > end_frame:
-        logger.error(f"Invalid frame range: {start_frame} to {end_frame}")
+        logger.warning(f"Invalid frame range: {start_frame} to {end_frame}",tags="VideoProcessor:extract_frames")
         cap.release()
         return
 
@@ -210,7 +208,8 @@ def extract_frames(video_path, start_frame, end_frame, output_dir,formate="png",
         ret, frame = cap.read()
 
         if not ret:
-            logger.error(f"Failed to read {frame_num}")
+            logger.critical(f"Failed to read {frame_num}",tags="VideoProcessor:extract_frames")
+            raise RuntimeError(f"Failed to read frame {frame_num} from {video_path}")
             break
 
         # 保存帧为图像文件
@@ -219,7 +218,7 @@ def extract_frames(video_path, start_frame, end_frame, output_dir,formate="png",
 
         # 显示进度
         if frame_num % 1 == 0:
-            logger.debug(f"Extracted frame {frame_num}/{end_frame}")
+            logger.debug(f"Extracted frame {frame_num}/{end_frame}",tags=f"VideoProcessor:extract_frames:{os.path.basename(video_path)}")
             total = ((end_frame-start_frame+1)*1.0)
             cur = ((frame_num-start_frame)*1.0)
             if callback is not None and type(callback) is not float:
@@ -234,12 +233,10 @@ def extract_frames(video_path, start_frame, end_frame, output_dir,formate="png",
 
     # 释放资源
     cap.release()
-    logger.info(f"\nOver! Extracted {end_frame - start_frame + 1} to {output_dir}")
+    logger.info(f"\nOver! Extracted {end_frame - start_frame + 1} to {output_dir}",tags=f"VideoProcessor:extract_frames:{os.path.basename(video_path)}")
 
 def spitter(total_frame_count,split_size):
-    setup_logger(default_tags="Spitter", enable_udp=True, enable_console=True)
-    logger = get_logger()
-    logger.info(f"Executing spitter with total_frame_count: {total_frame_count} and split_size: {split_size}")
+    logger.info(f"Executing spitter with total_frame_count: {total_frame_count} and split_size: {split_size}",tags="VideoProcessor:spitter")
     result = []
     start_index = 0
     while start_index < total_frame_count-1:
@@ -247,57 +244,8 @@ def spitter(total_frame_count,split_size):
         start_index = start_index + split_size
         end_index = min(start_index, total_frame_count)
         result.append((s_start_index, end_index-1))
-    logger.debug(f"Spitter result: {result}")
+    logger.debug(f"Spitter result: {result}",tags="VideoProcessor:spitter")
     return result
-
-def multiprocess_video_extractor(source_path,spitter_result,process=0):
-    if process == 0:
-        process = psutil.cpu_count(logical=True)
-    args_list = []
-    index = 0
-    for i in spitter_result:
-        index += 1
-        args_list.append([source_path,i[0],i[1],"./output"])
-    if len(args_list) <= process:
-        process = len(args_list)
-    else:
-        process = process
-
-def video_fusion():
-    pass
-def video_output():
-    pass
-
-def concatenate_with_ffmpeg_python(video_paths, output_path):
-    """
-    使用ffmpeg-python库拼接视频
-
-    参数:
-    video_paths: 视频文件路径列表
-    output_path: 输出文件路径
-    """
-    # 创建临时文件列表
-    list_file = "video_list.txt"
-    with open(list_file, "w") as f:
-        for path in video_paths:
-            f.write(f"file '{os.path.abspath(path)}'\n")
-
-    try:
-        # 使用ffmpeg-python构建命令
-        (
-            ffmpeg
-            .input(list_file,format='concat', safe=0)
-            .output(output_path, c='copy')
-            .overwrite_output()
-            .run()
-        )
-        print(f"视频拼接完成: {output_path}")
-    except ffmpeg.Error as e:
-        print(f"拼接过程中出错: {e}")
-    finally:
-        # 清理临时文件
-        if os.path.exists(list_file):
-            os.remove(list_file)
 
 
 if __name__ == '__main__':

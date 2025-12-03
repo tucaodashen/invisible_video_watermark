@@ -1,16 +1,6 @@
 import multiprocessing
 import os
-import shutil
 import socket
-from datetime import datetime
-
-
-
-def get_unused_port() -> int:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('127.0.0.1', 0))  # 绑定到本地回环地址和随机端口
-        return s.getsockname()[1]  # 返回系统分配的端口号
-
 
 def is_port_in_use(port: int, host: str = 'localhost') -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

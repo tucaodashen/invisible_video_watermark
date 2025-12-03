@@ -4,14 +4,12 @@ import traceback
 
 import ffmpeg
 
-from BasicSystem.log_client import setup_logger, get_logger
 from modules import VideoProcessor
 from pathlib import Path
 from BasicSystem import const
 from modules.Slice import Slice
 from modules import networks
 import uuid
-import cv2
 import os
 from BasicSystem.VirtualFileSystem import FileSystem
 from modules.GenerateVideo import merge_video_sequnece
@@ -23,6 +21,9 @@ import socket
 import threading
 import gettext
 from PySide6.QtCore import Signal,QObject
+from BasicSystem.log_client import setup_logger,get_logger
+setup_logger(default_tags="ProcessUnit", enable_udp=True, enable_console=True)
+logger = get_logger()
 
 _ = gettext.gettext
 
@@ -59,13 +60,14 @@ def extract_audio_to_flac(video_path,output_audio_path,
                     fps = num / den
                 else:
                     fps = float(frame_rate)
+                    logger.debug(f"Identify video fps {fps}",tags=f"ProcessUnit:extract_audio_to_flac:{os.path.basename(video_path)}")
             else:
                 # 如果无法获取视频流信息，使用默认值
                 fps = 30.0
-                print(f"警告: 无法检测视频帧率，使用默认值 {fps}")
+                logger.warning(f"Can not identify video fps,use default fps {fps}",tags=f"ProcessUnit:extract_audio_to_flac:{os.path.basename(video_path)}")
         except Exception as e:
             fps = 30.0
-            print(f"获取视频信息时出错: {e}，使用默认帧率 {fps}")
+            logger.warning(f"Occur error when extract audio to flac: {e}，use default fps {fps}",tags=f"ProcessUnit:extract_audio_to_flac:{os.path.basename(video_path)}")
 
 
     # 构建ffmpeg命令
@@ -83,37 +85,42 @@ def extract_audio_to_flac(video_path,output_audio_path,
         cmd.extend(['-b:a', bitrate])
 
     cmd.append(output_audio_path)
+    logger.debug(f"Extract audio to flac command: {' '.join(cmd)}",tags=f"ProcessUnit:extract_audio_to_flac:{os.path.basename(video_path)}")
+
+
 
     # 执行转换
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        print(f"成功提取音频到: {output_audio_path}")
+        logger.success(f"Success extract audio to flac: {output_audio_path}",tags=f"ProcessUnit:extract_audio_to_flac:{os.path.basename(video_path)}")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"提取音频时出错: {e.stderr}")
+        logger.error(f"Extract audio to flac error: {e.stderr}",tags=f"ProcessUnit:extract_audio_to_flac:{os.path.basename(video_path)}")
         return False
 
 
-def get_audio_tracks_info(video_path,logger):
+def get_audio_tracks_info(video_path):
     """
     获取视频中所有音频轨道的详细信息
     """
+    text = []
     try:
         probe = ffmpeg.probe(video_path)
         audio_streams = [stream for stream in probe['streams'] if stream['codec_type'] == 'audio']
 
-        logger.info("找到的音频轨道:")
+        text.append("Found audio tracks:")
         for i, stream in enumerate(audio_streams):
-            logger.info(f"轨道 {i}:")
-            logger.info(f"  编码器: {stream.get('codec_name', '未知')}")
-            logger.info(f"  采样率: {stream.get('sample_rate', '未知')} Hz")
-            logger.info(f"  声道数: {stream.get('channels', '未知')}")
-            logger.info(f"  语言: {stream.get('tags', {}).get('language', '未知')}")
-            logger.info(f"  标题: {stream.get('tags', {}).get('title', '无标题')}")
+            text.append(f"Track {i}:")
+            text.append(f"  Decoder: {stream.get('codec_name', '未知')}")
+            text.append(f"  Sample Rate: {stream.get('sample_rate', '未知')} Hz")
+            text.append(f"  Channels: {stream.get('channels', '未知')}")
+            text.append(f"  Language: {stream.get('tags', {}).get('language', '未知')}")
+            text.append(f"  Title: {stream.get('tags', {}).get('title', '无标题')}")
+            logger.debug(f"Audio track {i} details: {stream}",tags=f"ProcessUnit:get_audio_tracks_info:{os.path.basename(video_path)}")
 
         return len(audio_streams)
     except Exception as e:
-        logger.error(f"获取音频轨道信息时出错: {e}")
+        logger.error(f"Error when get audio tracks info: {e}",tags=f"ProcessUnit:get_audio_tracks_info:{os.path.basename(video_path)}")
         return 0
 
 
@@ -155,7 +162,7 @@ class ProcessUnit(QObject):
 
         #FFMPEG
         self.BitRateControl = None
-        self.MaximumBitRate = None
+        self.TargetBitRate = None
         self.MaximumBitRate = None
         self.FFmpegEncoder = None
         self.FFmpegTune = None
@@ -184,9 +191,7 @@ class ProcessUnit(QObject):
         self.progress_dict = {}
 
         #sort_log
-        default_tags={"module":"ProcessUnit","task":f"{self.base_file_name}_Process{self.identify['name']}"}
-        setup_logger(default_tags=default_tags, enable_udp=True, enable_console=True)
-        self.logger = get_logger()
+        self.logger = logger
 
         #GUI
 
@@ -210,9 +215,9 @@ class ProcessUnit(QObject):
         self.statue = None
 
 
-    def audio_process(self,input_video, path,tags=None):
-        track_count = get_audio_tracks_info(input_video,self.logger)
-        self.logger.info(f"视频{input_video}有{track_count}个音轨",tags=tags)
+    def audio_process(self,input_video, path):
+        track_count = get_audio_tracks_info(input_video)
+        self.logger.info(f"Video {input_video} has {track_count} audio tracks",tags=f"ProcessUnit:ProcessUnit:extract_audio_to_flac:{os.path.basename(input_video)}")
         FileSystem.create_directory(self.identify['name'], "audio_track")
         for i in range(track_count):
             output_path = os.path.join(path, f"{int(i)}.flac")
@@ -221,6 +226,7 @@ class ProcessUnit(QObject):
     def set_args(self,**kwargs):
         for key, value in kwargs.items():
             if key == "version" and value != const.__version__:
+                logger.error(f"Version {value} not match {const.__version__}",tags=f"ProcessUnit:ProcessUnit:set_args")
                 raise ValueError(_("版本号不匹配"))
             setattr(self, key, value)
 
@@ -230,7 +236,7 @@ class ProcessUnit(QObject):
         for i in file:
             if self.dump_uuid in str(i):
                 self.dump_file.append(i)
-        print(self.dump_file)
+        logger.debug(f"Found dump file: {self.dump_file}",tags=f"ProcessUnit:ProcessUnit:search_dump_file")
         self.dump_file = list(set(self.dump_file))
 
 
@@ -241,6 +247,7 @@ class ProcessUnit(QObject):
             port = s.getsockname()[1]
         self.ipc_listener = threading.Thread(target=networks.ipc_recv,args=('127.0.0.1',int(port),self.ipc_callback),daemon=True)
         self.ipc_port = port
+        self.logger.info(f"Set up IPC on port: {self.ipc_port}",tags=f"ProcessUnit:ProcessUnit:setup_ipc")
 
     def start_ipc(self):
         self.ipc_listener.start()
@@ -249,18 +256,19 @@ class ProcessUnit(QObject):
             "process_progress":None,
             "process_message":None,
         }
+        self.logger.debug("Start IPC listener",tags=f"ProcessUnit:ProcessUnit:start_ipc")
 
     def ipc_callback(self,data,addr):
-        self.logger.debug(f"Received data from {addr}: {data}")
+        # self.logger.debug(f"Received data from {addr}: {data}",tags=f"ProcessUnit:ProcessUnit:ipc_callback")
         try:
             data = json.loads(data)
             if data["process_order"] is None and data['process_message'] is not None:
-                self.logger.debug(f"Received message: {data['process_message']}")
+                self.logger.debug(f"Received message: {data['process_message']}",tags=f"ProcessUnit:ProcessUnit:ipc_callback")
             elif data['process_order'] is not None:
                 self.progress_dict.update({int(data['process_order']): float(data['process_progress'])})
                 # print(self.FFmpegTune, self.FFmpegEncoder, self.FFmpegPresent, "IDENTIFY")
         except json.JSONDecodeError:
-            self.logger.warning(f"Invalid JSON data: {data}")
+            self.logger.warning(f"Invalid JSON data: {data}",tags=f"ProcessUnit:ProcessUnit:ipc_callback")
         if self.progress_dict != {}:
             cur_sum = 0
             for i in list(self.progress_dict.values()):
@@ -276,19 +284,19 @@ class ProcessUnit(QObject):
             self.progress_dict.update(
                 {i:0}
             )
-        self.logger.debug(f"Progress dict: {self.progress_dict}")
+        # self.logger.debug(f"Progress dict: {self.progress_dict}",tags=f"ProcessUnit:ProcessUnit:set_up_progress_dict")
 
 
 
 
     def sample(self):
         self._sample_list = VideoProcessor.video_sampler(self.file,self.sample_times,self.sample_extend,self.sample_type,self.manual_sample_sheet)
+        # self.logger.debug(f"Sample list: {self._sample_list}",tags=f"ProcessUnit:ProcessUnit:sample")
 
     def generate_queue(self):
         count = self.frame_count
-        print(count,self.file)
         self._sliced_list = VideoProcessor.spitter(count,self.slice_length)
-        print(len(self._sliced_list))
+        self.logger.debug(f"Slice list length: {len(self._sliced_list)}",tags=f"ProcessUnit:ProcessUnit:generate_queue")
         for r in self._sliced_list:
             print(r)
         index = 0
@@ -320,14 +328,18 @@ class ProcessUnit(QObject):
                                          ipc_port=self.ipc_port,
                                          dump_uuid = self.dump_uuid
                                          ))
-        print(len(self.slice_list),"Length of slice list")
+        self.logger.debug(f"Length of slice list: {len(self.slice_list)}",tags=f"ProcessUnit:ProcessUnit:generate_queue")
+
+
 
     def prepare_for_merge(self):
+        self.logger.debug(f"Output path: {self.output_path}",tags=f"ProcessUnit:ProcessUnit:prepare_for_merge")
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
         FileSystem.create_workspace(f"{self.base_file_name}-merge")
         FileSystem.create_directory(f"{self.base_file_name}-merge","./merge")
         FileSystem.create_directory(f"{self.base_file_name}-merge", "./audio_track")
+        self.logger.debug("Create directory for audio track",tags=f"ProcessUnit:ProcessUnit:prepare_for_merge")
         output_path = FileSystem.open_file(f"{self.base_file_name}-merge",f"./audio_track",const.File_Return_Type.PATH)
         self.audio_process(self.file,output_path)
         perfix = FileSystem.open_file(f"{self.base_file_name}-merge",f"./audio_track",const.File_Return_Type.PATH)
@@ -337,6 +349,7 @@ class ProcessUnit(QObject):
             FileSystem.import_file(f"{self.base_file_name}-merge",obj[1],"./merge")
             os.remove(obj[1])
         self._temporary_path = self.output_path
+        self.logger.success(f"Prepare for merge success, output path: {self.output_path}",tags=f"ProcessUnit:ProcessUnit:prepare_for_merge")
 
 
     def merge(self):
@@ -345,14 +358,14 @@ class ProcessUnit(QObject):
         for i in range(1,ti+1):
             self.saved_file_path = FileSystem.open_file(f"{self.base_file_name}-merge",f"./merge/{i}.{self.output_format}",const.File_Return_Type.PATH)
             lists.append(FileSystem.open_file(f"{self.base_file_name}-merge",f"./merge/{i}.{self.output_format}",const.File_Return_Type.PATH))
-        print(lists)
+        self.logger.debug(f"Merge list: {lists}",tags=f"ProcessUnit:ProcessUnit:merge")
         merge_video_sequnece(lists,os.path.join(self._temporary_path,f"{self.output_name}.{self.output_format}"),logger=self.logger,audio_file=self.audio_file_list,output_format=self.output_format)
 
     def report_error(self,error_list):
         self.search_dump_file()
         self.OccurError.emit(error_list,self.progress_identify,self.dump_file)
         self.error_occured = True
-        print("?????????????????????????????????????????????????????????????????")
+        self.logger.critical(f"Report error: {error_list}",tags=f"ProcessUnit:ProcessUnit:report_error")
 
 
 
@@ -365,6 +378,7 @@ class ProcessUnit(QObject):
 
     @timer_decorator
     def run(self):
+        self.logger.info(f"Start process unit: {self.identify}",tags=f"ProcessUnit:ProcessUnit:run")
         self.setup_ipc()
         self.set_stage(0)
         self.sample()
@@ -394,20 +408,22 @@ class ProcessUnit(QObject):
             self.merge()
             self.set_stage(6)
             self.after_processing()
-            self.sort_log()
             self.remove_workspace()
             self.completed = True
             self.running = False
             self.status = 1
+            self.logger.success(f"Process unit: {self.identify} completed",tags=f"ProcessUnit:ProcessUnit:run")
 
             return True
         else:
             self.completed = _("发生错误")
             self.running = False
             self.status = 0
+            self.logger.critical(f"Process unit: {self.identify} error: {self.completed}",tags=f"ProcessUnit:ProcessUnit:run")
             try:
                 self.remove_workspace()
-            except:
+            except Exception as e:
+                self.logger.critical(f"Remove workspace error: {e}",tags=f"ProcessUnit:ProcessUnit:run")
                 pass
             return False
 
@@ -416,19 +432,24 @@ class ProcessUnit(QObject):
     def suspend(self):
         for i in self.scheduler.get_running_pids():
             manage_process_by_pid(i, "suspend")
+            self.logger.info(f"Suspend process: {i}",tags=f"ProcessUnit:ProcessUnit:suspend")
 
     def resume(self):
         for i in self.scheduler.get_running_pids():
             manage_process_by_pid(i, "resume")
+            self.logger.info(f"Resume process: {i}",tags=f"ProcessUnit:ProcessUnit:resume")
 
     def stop(self):
         for i in self.scheduler.get_running_pids():
             manage_process_by_pid(i, "terminate")
+            self.logger.info(f"Stop process: {i}",tags=f"ProcessUnit:ProcessUnit:stop")
         manage_process_by_pid(self.scheduler.manager_pid, "terminate")
+        self.logger.info(f"Stop process: {self.scheduler.manager_pid}",tags=f"ProcessUnit:ProcessUnit:stop")
         self.stopped = True
 
     def after_processing(self):
-        print(self.result_list)
+        for i in self.result_list:
+            print(i)
         recover_data = {
             "version":const.__version__,
             "sample_list":list(self._sample_list),
@@ -437,73 +458,39 @@ class ProcessUnit(QObject):
         }
         json_path = os.path.join(self._temporary_path,f"recover.pkl")
         data = pickle.dumps(recover_data)
-        print(data)
+        self.logger.debug(f"Recover data: {recover_data}",tags=f"ProcessUnit:ProcessUnit:after_processing")
 
         if os.path.exists(json_path):
             os.remove(json_path)
         with open(json_path,"wb") as f:
             f.write(data)
-        print(recover_data)
+        self.logger.debug(f"Recover data saved to: {json_path}",tags=f"ProcessUnit:ProcessUnit:after_processing")
         FileSystem.mapping_list = {}
         self.stop()
 
 
     def set_stage(self,stage):
         self.process_unit_stage = int(stage)
+        self.logger.info(f"Set process unit stage: {self.process_unit_stage}",tags=f"ProcessUnit:ProcessUnit:set_stage")
 
-    def calculate_total_progress_stage(self):
-        if not self._slice_list:
-            slice_length = len(self._sliced_list)
-        slice_length = self.process_limit
-        slice_stage = slice_length*19
-        process_unit_stage = 6
-        self.total_progress_stage = slice_stage + process_unit_stage
 
-    def calculate_current_progress_stage(self):
-        file_dir = "./progressCalc"
-        pgdf_list = os.listdir(file_dir)
-        self.slice_stage = 0
-        for i in pgdf_list:
-            if os.path.basename(i).split(".")[0] == self.identify["UUID"]:
-                with open(os.path.join(file_dir,i),"r") as f:
-                    json_data = json.load(f)
-                    self.slice_stage += json_data["stage"]
-        self.current_progress_stage = self.slice_stage + self.process_unit_stage
-
-    def calculate_percent(self):
-        self.calculate_total_progress_stage()
-        self.calculate_current_progress_stage()
-        self.progress_percent = (self.current_progress_stage/self.total_progress_stage)*100
-        # print(f"Progress: {self.progress_percent}%")
 
     def process_attachment(self):
         list_data = []
         for i in self.result_list:
             if str(i[0]) != "114514":
                 list_data.append(i[0])
-        self.logger.debug(f"Attachment data: {list_data}")
+        self.logger.debug(f"Attachment data: {list_data}",tags=f"ProcessUnit:ProcessUnit:process_attachment")
         return list_data
 
     def remove_workspace(self):
         vi = os.path.dirname(os.path.normpath(str(self.saved_file_path)))
         root = os.path.dirname(os.path.normpath(vi))
         shutil.rmtree(root)
+        self.logger.debug(f"Remove workspace: {root}",tags=f"ProcessUnit:ProcessUnit:remove_workspace")
 
-    def sort_log(self):
-        pass
-        # for i in os.listdir("./logs"):
-        #     with open(os.path.join("./logs",i), 'r') as file:
-        #         lines = []
-        #         for ina in range(100):
-        #             line = file.readline()
-        #             if not line:  # 文件行数不足100时提前终止
-        #                 break
-        #             for identify in self.slice_list:
-        #                 if str(identify.log_sort_uuid) in str(line):
-        #                     shutil.move(os.path.join("./logs",i),os.path.join("./logs",str(self.base_file_name+str(self.identify["UUID"])),i))
-            # for identify in self.slice_list:
-            #     if i.split(".")[0].split("_")[-1] == identify.log_sort_uuid:
-            #         shutil.move(os.path.join("./logs",i),os.path.join("./logs",str(self.base_file_name+str(self.identify["UUID"])),i))
+
+
 
 
 

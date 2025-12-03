@@ -1,5 +1,8 @@
 import time
 from functools import wraps
+from BasicSystem.log_client import setup_logger,get_logger
+setup_logger(default_tags="decorator", enable_udp=True, enable_console=True)
+logger = get_logger()
 
 
 def timer_decorator(func):
@@ -9,6 +12,6 @@ def timer_decorator(func):
         result = func(*args, **kwargs)    # 执行被装饰的函数
         end_time = time.perf_counter()    # 获取结束时间
         elapsed_time = end_time - start_time  # 计算耗时
-        print(f"Function {func.__name__} executed in {elapsed_time:.4f} seconds.")
+        logger.debug(f"Function {func.__name__} executed in {elapsed_time:.4f} seconds.",tags="decorator:timer_decorator")
         return result  # 返回原函数的执行结果
     return wrapper

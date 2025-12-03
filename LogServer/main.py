@@ -1,7 +1,6 @@
-# log_server.py (修复版本)
+import os.path
 import socket
 import json
-import time
 import sys
 from datetime import datetime
 from threading import Thread
@@ -102,4 +101,11 @@ class LogServer:
 
 if __name__ == "__main__":
     server = LogServer()
+    if not os.path.exists("identify_session.txt"):
+        with open("identify_session.txt", "w") as f:
+            f.write(server.session_id)
+    else:
+        os.remove("identify_session.txt")
+        with open("identify_session.txt", "w") as f:
+            f.write(server.session_id)
     server.start_server()

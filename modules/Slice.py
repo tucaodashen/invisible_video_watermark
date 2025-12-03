@@ -1,8 +1,6 @@
 import shutil
 import sys
 import uuid
-
-from BasicSystem.log_client import setup_logger, get_logger
 from modules import networks
 from BasicSystem import const
 from BasicSystem.VirtualFileSystem import FileSystem
@@ -17,11 +15,12 @@ import subprocess
 import json
 import coredumpy
 import gettext
+from BasicSystem.log_client import setup_logger,get_logger
+setup_logger(default_tags="Slice", enable_udp=True, enable_console=True)
+logger = get_logger()
+
 
 _ = gettext.gettext
-
-progress_path = "./progressCalc"
-
 
 frame_format = {
             "process_order":None,
@@ -39,8 +38,6 @@ frame_format = {
 
 
 def execute_command(args):
-    setup_logger(default_tags="Slice", enable_udp=True, enable_console=True)
-    logger = get_logger()
 
     process = subprocess.Popen(
         args,
@@ -50,17 +47,17 @@ def execute_command(args):
 
     # 实时处理 stderr 输出
     for line in process.stderr:
-        logger.debug(str(line).replace('\n', ''))
+        logger.debug(str(line).replace('\n', ''),tags="Slice:execute_command")
 
     # 等待命令完成
     return_code = process.wait()
-    print(f"Return code: {return_code}")
+    logger.debug(f"Completed with return code: {return_code},file{args}",tags="Slice:execute_command")
     if return_code!= 0:
-        logger.error(f"Completed with return code: {return_code},file{args[1]} FUCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
+        logger.error(f"Completed with return code: {return_code},file{args}",tags="Slice:execute_command")
     return return_code
 
 
-class Slice():
+class Slice:
     def __init__(self,
                  range,
                  encoder,
@@ -81,8 +78,7 @@ class Slice():
                  progress_id=None,
                  ipc_port=None,
                  dump_uuid=None):
-        setup_logger(default_tags={"module":"VideoSlice","task":f"_Slice{identify['order']}"}, enable_udp=True, enable_console=True)
-        self.logger = get_logger()
+        self.logger = logger
 
         self.video_range = range
 
@@ -146,6 +142,7 @@ class Slice():
 
 
     def extract(self):
+        self.logger.debug(f"Extract {self.file} {self.video_range[0]} {self.video_range[1]} to {self._extract_path}",tags=f"Slice:Slice:extract:{os.path.basename(self.file)}:{self.identify['order']}")
         VideoProcessor.extract_frames(self.file,self.video_range[0],self.video_range[1],self._extract_path,formate="png",callback=self.extract_callback)
 
     def process(self):
@@ -154,6 +151,7 @@ class Slice():
             result = self._process()
             return result
         except Exception as e:
+            self.logger.debug(f"Exception {e}",tags=f"Slice:Slice:process:{os.path.basename(self.file)}:{self.identify['order']}")
             path = f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}_{self.dump_uuid}.dump"
             # 获取异常信息
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -197,7 +195,7 @@ class Slice():
 
     def _process(self):
         # raise RuntimeError("TEST")
-        self.logger.debug(f"Start processing {self.identify['order']},sort UUID {str(self.log_sort_uuid)}",tags=self.additional_tags)
+        self.logger.debug(f"Start processing {self.identify['order']},sort UUID {str(self.log_sort_uuid)}",tags=f"Slice:Slice:process:{os.path.basename(self.file)}:{self.identify['order']}")
         self.output_progress_description(0,_("Start processing"))
         FileSystem.create_workspace(self.identify['name'])
         self.output_progress_description(1,_("Create workspace"))
@@ -205,13 +203,12 @@ class Slice():
         self.output_progress_description(2,_("Create extracted directory"))
         self._extract_path = FileSystem.open_file(self.identify['name'],"extracted",const.File_Return_Type.PATH)
         self.output_progress_description(3,_("Open extracted directory"))
-        self.logger.info(f"Extracted frames saved to {self._extract_path}",tags=self.additional_tags)
+        self.logger.info(f"Extracted frames saved to {self._extract_path}",tags=f"Slice:Slice:process:{os.path.basename(self.file)}:{self.identify['order']}")
         self.extract()
         self.output_progress_description(4,_("Extract frames"))
         for sing in FileSystem.ls_directory(self.identify['name'],"extracted"):
             self.file_list.append(FileSystem.open_file(self.identify['name'],sing,const.File_Return_Type.PATH))
         self.output_progress_description(5,_("Get extracted frames"))
-        print(self.file_list)
         self.output_progress_description(6,_("Start stamping"))
         self.stamp()
         self.output_progress_description(7,_("Stamp frames"))
@@ -243,7 +240,6 @@ class Slice():
                 elif self.stamp_method == const.WatermarkAlgorithm.IMAGE_GUOFEI:
                     self._result, self.attachment_data_result = watermarkstamper.guofei_image(image, self.watermark,
                                                                                        self.attachment_data)
-                    print(str(self.attachment_data_result)+"FUCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
                 elif self.stamp_method == const.WatermarkAlgorithm.TEXT_GOUFEI:
                     self._result, self.attachment_data_result = watermarkstamper.guofei_text(image, self.watermark,
                                                                                     self.attachment_data)
@@ -257,12 +253,14 @@ class Slice():
                     self._result = image
                 os.remove(file)
                 cv2.imwrite(file,self._result)
-                self.logger.info(f"Stamped frame {number} saved to {file}",tags=self.additional_tags)
+                self.logger.info(f"Stamped frame {number} saved to {file}",tags=f"Slice:Slice:stamp:{os.path.basename(self.file)}:{self.identify['order']}")
             else:
                 pass
             index += 1
             self.stamp_callback(index / len(self.file_list))
-        print("Stamping Complete")
+        logger.success(f"Stamping Complete",tags=f"Slice:Slice:stamp:{os.path.basename(self.file)}:{self.identify['order']}")
+
+
 
     def output(self):
         image_folder = FileSystem.open_file(self.identify['name'],"extracted",const.File_Return_Type.PATH)
@@ -301,16 +299,19 @@ class Slice():
                 self.ffmpeg_retry_count += 1
                 if self.ffmpeg_retry_count >= 50:
                     self.output_progress_description(16, _("FFmpeg retry count exceeded"))
+                    self.logger.error(f"FFmpeg retry count exceeded",tags=f"Slice:Slice:run:{os.path.basename(self.file)}:{self.identify['order']}")
                     raise SystemError(_("FFmpeg retry count exceeded"))
                 self.output_progress_description(16, _("FFmpeg error, retry"))
 
 
 
     def run(self):
+        self.logger.info(f"Start process {self.identify['order']}",tags=f"Slice:Slice:run:{os.path.basename(self.file)}:{self.identify['order']}")
         self.object = multiprocessing.Process(target=self.process)
         return self.object
 
     def start(self):
+        self.logger.info(f"Start process {self.identify['order']}",tags=f"Slice:Slice:start:{os.path.basename(self.file)}:{self.identify['order']}")
         results = self.process()
         return results
 
@@ -326,12 +327,13 @@ class Slice():
             "process_progress": aa,
             "process_message": f"{msg}|{self.extract_progress}|{self.stamp_progress}",
         }
+        self.logger.debug(f"Output progress {st_N} {msg}",tags=f"Slice:Slice:output_progress_description:{os.path.basename(self.file)}:{self.identify['order']}")
         data = json.dumps(frame_format)
         networks.ipc_send(data,"127.0.0.1",self.ipc_port)
 
     def after_process(self):
         root_dir = FileSystem.open_file(self.identify['name'],"./",const.File_Return_Type.PATH)
-        print(root_dir,"delete")
+        self.logger.info(f"Delete extracted directory {root_dir}",tags=f"Slice:Slice:after_process:{os.path.basename(self.file)}:{self.identify['order']}")
         shutil.rmtree(root_dir)
 
 

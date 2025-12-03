@@ -6,20 +6,26 @@ import traceback
 from concurrent.futures.process import BrokenProcessPool
 from typing import List, Any, Set
 from multiprocessing import Manager
-import threading
 import psutil
 import ctypes
+from BasicSystem.log_client import setup_logger,get_logger
+setup_logger(default_tags="ProcessSchedulerSusFec", enable_udp=True, enable_console=True)
+logger = get_logger()
 
 
 def _task_wrapper(obj, shared_pids):
     pid = os.getpid()
     shared_pids.append(pid)  # 将PID添加到共享列表
+    logger.debug(f"PID {pid} added to shared_pids before task execution",tags="ProcessSchedulerSusFec:_task_wrapper")
     try:
         return obj.start()
     finally:
         # 任务完成后从共享列表中移除PID
         if pid in shared_pids:
             shared_pids.remove(pid)
+            logger.debug(f"PID {pid} removed from shared_pids after task completion",tags="ProcessSchedulerSusFec:_task_wrapper")
+
+
 
 
 class ConcurrentExecutor:
@@ -107,6 +113,7 @@ class ConcurrentExecutor:
 
         # 如果被终止，返回特殊值
         if self.terminated:
+            logger.debug("All tasks terminated",tags="ProcessSchedulerSusFec:execute_concurrently")
             return ["Terminated"]
 
         return results
@@ -175,30 +182,30 @@ def manage_process_by_pid(pid, action):
         if action == 'suspend':
             # 挂起进程
             process.suspend()
-            print(f"进程 {pid} 已挂起")
+            logger.debug(f"Process {pid} suspended",tags="ProcessSchedulerSusFec:manage_process_by_pid")
 
         elif action == 'resume':
             # 恢复进程
             process.resume()
-            print(f"进程 {pid} 已恢复")
+            logger.debug(f"Process {pid} resumed",tags="ProcessSchedulerSusFec:manage_process_by_pid")
 
         elif action == 'terminate':
             # 终止进程
             process.terminate()
-            print(f"进程 {pid} 正在终止...")
+            logger.debug(f"Process {pid} is terminating",tags="ProcessSchedulerSusFec:manage_process_by_pid")
             # 等待进程结束
             process.wait(timeout=3)
-            print(f"进程 {pid} 已终止")
+            logger.debug(f"Process {pid} terminated",tags="ProcessSchedulerSusFec:manage_process_by_pid")
 
         else:
-            print("无效的操作类型。请使用 'suspend', 'resume' 或 'terminate'")
+            logger.warning(f"Invalid action '{action}'. Please use 'suspend', 'resume', or 'terminate'.",tags="ProcessSchedulerSusFec:manage_process_by_pid")
 
     except psutil.NoSuchProcess:
-        print(f"错误：找不到 PID 为 {pid} 的进程")
+        logger.error(f"Error: Process with PID {pid} not found",tags="ProcessSchedulerSusFec:manage_process_by_pid")
     except psutil.AccessDenied:
-        print(f"错误：没有足够的权限操作进程 {pid}")
+        logger.error(f"Error: Insufficient permissions to manage process {pid}",tags="ProcessSchedulerSusFec:manage_process_by_pid")
     except Exception as e:
-        print(f"发生错误：{e}")
+        logger.error(f"Error: {e}",tags="ProcessSchedulerSusFec:manage_process_by_pid")
 
 
 
@@ -215,10 +222,12 @@ def terminate_thread(thread):
     )
 
     if res == 0:
-        raise ValueError("无效的线程ID")
+        logger.error("Error: Invalid thread ID",tags="ProcessSchedulerSusFec:terminate_thread")
+        raise ValueError("Invalid thread ID")
     elif res != 1:
         ctypes.pythonapi.PyThreadState_SetAsyncExc(thread.ident, None)
-        raise SystemError("终止线程失败")
+        logger.error("Error: Failed to terminate thread",tags="ProcessSchedulerSusFec:terminate_thread")
+        raise SystemError("Failed to terminate thread")
 
 
 # 使用示例

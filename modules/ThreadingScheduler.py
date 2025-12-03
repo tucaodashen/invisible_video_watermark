@@ -2,7 +2,9 @@ import threading
 import queue
 import time
 from typing import List, Callable, Any, Optional
-
+from BasicSystem.log_client import setup_logger,get_logger
+setup_logger(default_tags="ThreadingScheduler", enable_udp=True, enable_console=True)
+logger = get_logger()
 
 class ThreadPoolManager:
     def __init__(self, max_workers: int = 5):
@@ -31,6 +33,7 @@ class ThreadPoolManager:
             **kwargs: 传递给函数的关键字参数
         """
         if self.is_running:
+            logger.critical("Thread pool is running, cannot submit new tasks",tags="ThreadingScheduler:ThreadPoolManager:submit_tasks")
             raise RuntimeError("线程池正在运行中，请等待当前任务完成后再提交新任务")
 
         self.total_tasks = len(func_list)
@@ -58,6 +61,7 @@ class ThreadPoolManager:
                         self.completed_count += 1
 
                 except Exception as e:
+                    logger.error(f"{e} occur when task {task_index} execute: ",tags="ThreadingScheduler:ThreadPoolManager:_worker")
                     # 记录异常
                     with self.lock:
                         self.results[task_index] = e
@@ -74,6 +78,7 @@ class ThreadPoolManager:
     def start(self) -> None:
         """启动线程池执行任务"""
         if self.task_queue.empty():
+            logger.warning("No tasks to execute, please submit tasks first",tags="ThreadingScheduler:ThreadPoolManager:start")
             raise RuntimeError("没有任务可执行，请先提交任务")
 
         self.is_running = True
@@ -96,6 +101,7 @@ class ThreadPoolManager:
             bool: 是否所有任务都已完成
         """
         if not self.is_running:
+            logger.warning("Thread pool is not running, please start it first",tags="ThreadingScheduler:ThreadPoolManager:wait_completion")
             raise RuntimeError("线程池未启动")
 
         start_time = time.time()
@@ -110,6 +116,7 @@ class ThreadPoolManager:
     def get_results(self) -> List[Any]:
         """获取所有任务的结果"""
         if self.completed_count < self.total_tasks:
+            logger.warning("Not all tasks have completed, cannot get results",tags="ThreadingScheduler:ThreadPoolManager:get_results")
             raise RuntimeError("任务尚未全部完成")
 
         return self.results
@@ -129,6 +136,7 @@ class ThreadPoolManager:
             thread.join(timeout=5)
 
         self.threads.clear()
+        logger.info("Thread pool shutdown completed",tags="ThreadingScheduler:ThreadPoolManager:shutdown")
 
     def execute(self, func_list: List[Callable], *args, **kwargs) -> List[Any]:
         """
@@ -147,6 +155,7 @@ class ThreadPoolManager:
         self.wait_completion()
         results = self.get_results()
         self.shutdown()
+        logger.success("All tasks have completed",tags="ThreadingScheduler:ThreadPoolManager:execute")
         return results
 
 

@@ -3,6 +3,9 @@ import numpy as np
 from typing import List
 import cv2
 from collections import defaultdict
+from BasicSystem.log_client import setup_logger,get_logger
+setup_logger(default_tags="PyAv", enable_udp=True, enable_console=True)
+logger = get_logger()
 
 
 def extract_video_frames(video_path: str, frame_indices: List[int]) -> List[np.ndarray]:
@@ -17,6 +20,7 @@ def extract_video_frames(video_path: str, frame_indices: List[int]) -> List[np.n
         包含指定帧的列表 (OpenCV BGR格式的numpy数组)
     """
     # 确保帧号列表是升序排列且去重
+    logger.info(f"Extract video frames {video_path}",tags="PyAv:extract_video_frames")
     sorted_indices = sorted(set(frame_indices))
     frame_dict = {idx: None for idx in sorted_indices}
 
@@ -51,6 +55,7 @@ def extract_video_frames(video_path: str, frame_indices: List[int]) -> List[np.n
         container.close()
 
     # 按原始请求顺序返回结果
+    logger.success(f"Extract video frames {video_path}",tags="PyAv:extract_video_frames")
     return [frame_dict[idx] for idx in frame_indices]
 
 
@@ -68,6 +73,7 @@ def group_similar_images(images, hash_threshold=5, size=(8, 8)):
     """
 
     # 计算图像的感知哈希值
+    logger.info(f"Group similar images",tags="PyAv:group_similar_images")
     def calc_phash(img):
         # 处理不同通道数的图像
         if img.ndim == 3 and img.shape[2] == 3:  # BGR彩色图像
@@ -96,6 +102,7 @@ def group_similar_images(images, hash_threshold=5, size=(8, 8)):
         for i in range(8):
             for j in range(8):
                 hash_val = (hash_val << 1) | (1 if roi[i, j] > median else 0)
+        logger.success(f"Calculate phash {hash_val}",tags="PyAv:group_similar_images")
         return hash_val
 
     # 计算汉明距离
@@ -105,6 +112,7 @@ def group_similar_images(images, hash_threshold=5, size=(8, 8)):
         while xor_val:
             distance += 1
             xor_val &= xor_val - 1
+        logger.success(f"Calculate hamming distance {distance}",tags="PyAv:group_similar_images")
         return distance
 
     # 计算所有图片的哈希值
@@ -131,6 +139,8 @@ def group_similar_images(images, hash_threshold=5, size=(8, 8)):
     groups = defaultdict(list)
     for i in range(len(images)):
         groups[find(i)].append(images[i])
+
+    logger.success(f"Group similar images {len(groups)} groups",tags="PyAv:group_similar_images")
 
     return list(groups.values())
 

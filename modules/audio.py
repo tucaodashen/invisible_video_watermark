@@ -3,6 +3,9 @@ import wave
 import threading
 import time
 import os
+from BasicSystem.log_client import setup_logger,get_logger
+setup_logger(default_tags="audio", enable_udp=True, enable_console=True)
+logger = get_logger()
 
 
 class AudioPlayer:
@@ -31,7 +34,8 @@ class AudioPlayer:
         如果当前正在播放，会自动停止并加载新文件。
         """
         if not os.path.exists(filepath):
-            raise FileNotFoundError(f"文件未找到: {filepath}")
+            logger.error(f"File not found: {filepath}",tags="audio:load")
+            raise FileNotFoundError(f"File not found: {filepath}")
 
         # 加载新文件前，先获取锁并清理旧资源
         with self.lock:
@@ -58,13 +62,13 @@ class AudioPlayer:
                 rate=self.wf.getframerate(),
                 output=True
             )
-            print(f"[AudioPlayer] 已加载音频: {filepath}")
+            logger.debug(f"Loaded audio file: {filepath}",tags="audio:load")
 
     def play(self):
         """开始或继续播放"""
         with self.lock:
             if self.wf is None:
-                print("[AudioPlayer] 错误: 未加载音频文件")
+                logger.error("No audio file loaded to play.",tags="audio:play")
                 return
             self._playing = True
             self._paused = False
@@ -75,7 +79,7 @@ class AudioPlayer:
             if self._playing:
                 self._playing = False
                 self._paused = True
-                print("[AudioPlayer] 已暂停")
+                logger.debug("Audio playback paused.",tags="audio:play")
 
     def stop(self):
         """停止播放并重置进度"""
@@ -84,7 +88,7 @@ class AudioPlayer:
             self._paused = False
             if self.wf:
                 self.wf.rewind()  # 文件指针回到开头
-            print("[AudioPlayer] 已停止")
+            logger.debug("Audio playback stopped and reset.",tags="audio:play")
 
     def close(self):
         """释放所有资源，终止线程（通常在程序退出时调用）"""
@@ -99,7 +103,7 @@ class AudioPlayer:
             if self.wf:
                 self.wf.close()
             self.pa.terminate()
-        print("[AudioPlayer] 资源已释放")
+        logger.debug("Audio resources released.",tags="audio:close")
 
     def _playback_loop(self):
         """后台播放线程的主循环"""
@@ -120,7 +124,7 @@ class AudioPlayer:
                         # 数据读完，说明播放结束
                         self._playing = False
                         self.wf.rewind()
-                        print("[AudioPlayer] 播放结束")
+                        logger.debug("Audio playback finished.",tags="audio:play")
 
             # 2. 写入音频流 (耗时操作，放在锁外面)
             if should_write and self.stream:
@@ -128,7 +132,7 @@ class AudioPlayer:
                     self.stream.write(data)
                 except OSError as e:
                     # 处理可能的音频设备错误
-                    print(f"[AudioPlayer] Stream error: {e}")
+                    logger.error(f"Audio stream error: {e}",tags="audio:play")
                     self._playing = False
 
             # 3. 如果没有播放，稍微休眠以节省CPU

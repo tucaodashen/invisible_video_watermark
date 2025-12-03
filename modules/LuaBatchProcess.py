@@ -1,4 +1,3 @@
-import lupa
 from lupa import LuaRuntime
 
 # 定义一些你想要暴露的 Python 函数

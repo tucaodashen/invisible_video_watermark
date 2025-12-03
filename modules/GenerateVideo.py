@@ -2,17 +2,17 @@ import json
 import os
 import subprocess
 import uuid
-
-from BasicSystem.log_client import setup_logger, get_logger
 from BasicSystem.const import Encoder, BitRateControl, FFmpegTune, FFmpegPreset
 import sys
+from BasicSystem.log_client import setup_logger,get_logger
+setup_logger(default_tags="GenerateVideo", enable_udp=True, enable_console=True)
+logger = get_logger()
 
 
-ffmpeg_path = r'D:\Project\Python\InvisibleVideoWatermarkNEXT\InvisibleVideoWatermarkNEXT\ffmpeg\ffmpeg-8.0-essentials_build\bin\ffmpeg.exe'
+ffmpeg_path = "ffmpeg.exe"
 
 
-def execute_command(args,port=25565):
-    setup_logger(default_tags="execute_command", enable_udp=True, enable_console=True)
+def execute_command(args):
     logger = get_logger()
     args.append("-y")
     process = subprocess.Popen(
@@ -33,14 +33,13 @@ def execute_command(args,port=25565):
         # 打印到控制台
         #sys.stderr.write(line)
         sys.stderr.flush()
-        logger.debug(str(line).replace('\n', ''))
+        logger.debug(str(line).replace('\n', ''),tags="GenerateVideo:execute_command")
         print(str(line).replace('\n', ''))
 
     # 等待命令完成
     return_code = process.wait()
-    print(f"FFmpeg completed with return code: {return_code},file{args[1]}")
     if return_code!= 0:
-        logger.error(f"FFmpeg completed with return code: {return_code},file{args[1]} FUCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
+        logger.error(f"FFmpeg completed with return code: {return_code},file{args}")
     return return_code
 
 
@@ -65,8 +64,6 @@ def merge_sequences(input_files,
     """
     # 执行 FFmpeg 命令
     args = []
-    setup_logger(default_tags="GenerateVideo", enable_udp=True, enable_console=True)
-    logger = get_logger()
 
     args.append(ffmpeg_path)
     # fps
@@ -100,6 +97,7 @@ def merge_sequences(input_files,
     elif video_encoder == Encoder.Resolume_DXV:
         args.append('dxv')
     else:
+        logger.critical(f"Unsupported video encoder: {video_encoder}",tags="GenerateVideo:merge_sequences")
         raise ValueError(f"Unsupported video encoder: {video_encoder}")
 
     if video_encoder != Encoder.Resolume_DXV:
@@ -117,6 +115,7 @@ def merge_sequences(input_files,
             args.append(str(float(maximum_bitrate[:-1]) * 2) + "M")
         elif bitrate_control == BitRateControl.CQP:
             if video_encoder == Encoder.AMD_H264 or video_encoder == Encoder.AMD_HEVC:
+                logger.critical("CQP is not supported for AMD encoders",tags="GenerateVideo:merge_sequences")
                 raise ValueError("CQP is not supported for AMD encoders")
             elif video_encoder == Encoder.X264:
                 args.append("-crf")
@@ -182,6 +181,7 @@ def merge_sequences(input_files,
                 args.append("-aq-strength")
                 args.append(str(psy))
             else:
+                logger.critical("Psycho-visual is not supported for this encoder",tags="GenerateVideo:merge_sequences")
                 raise ValueError("Psycho-visual is not supported for this encoder")
         if fc is not None:
             if video_encoder == Encoder.NVIDIA_H264 or video_encoder == Encoder.NVIDIA_HEVC or video_encoder == Encoder.NVIDIA_AV1:
@@ -191,6 +191,7 @@ def merge_sequences(input_files,
                 args.append("-lookahead")
                 args.append(str(fc))
             else:
+                logger.critical("Forward-compatibility is not supported for this encoder",tags="GenerateVideo:merge_sequences")
                 raise ValueError("Forward-compatibility is not supported for this encoder")
         #tune
         if video_encoder != Encoder.AMD_H264 or Encoder.AMD_HEVC:
@@ -222,8 +223,8 @@ def merge_sequences(input_files,
     #output
     args.append(output_file)
 
-    logger.debug(f"FFmpeg command: {' '.join(args)}")
-    print(' '.join(args))
+    logger.debug(f"FFmpeg command: {' '.join(args)}",tags="GenerateVideo:merge_sequences")
+    # print(' '.join(args))
     if not debug:
         code = execute_command(args)
     else:
@@ -241,6 +242,7 @@ def setup_sequence(path):
                                                                                                               path)[
                                                                                                               0]).split(
                                                                                                           '.')[1]))
+    logger.debug(f"sequence name: {name}",tags="GenerateVideo:merge_sequences")
     return name
 
 
@@ -293,10 +295,11 @@ def merge_video_sequnece(input_list, output_path,logger,audio_file,output_format
                 args.append('-c:a')
                 args.append('aac')
     args.append(output_path)
-    print(f"FFmpeg command: {' '.join(args)}")
+    logger.debug(f"FFmpeg command: {' '.join(args)}",tags="GenerateVideo:merge_sequences")
     code = execute_command(args)
     if os.path.exists(f"{name}.txt"):
         os.remove(f"{name}.txt")
+    logger.debug(f"merge video sequence {name} success",tags="GenerateVideo:merge_sequences")
     return code
 
 

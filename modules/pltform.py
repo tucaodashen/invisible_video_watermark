@@ -1,8 +1,9 @@
-from linecache import cache
-
 from pyadl import ADLManager
 import cpuinfo
 from functools import cache
+from BasicSystem.log_client import setup_logger,get_logger
+setup_logger(default_tags="pltform", enable_udp=True, enable_console=True)
+logger = get_logger()
 
 
 @cache
@@ -18,7 +19,7 @@ def get_render_devices():
             device_list.update({str(device.adapterName).replace("b'", "").replace("'", ""):"nvidia"})
         else:
             pass
-
+    logger.info(f"Get render devices {device_list}",tags="pltform:get_render_devices")
     return device_list
 
 
