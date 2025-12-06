@@ -226,7 +226,7 @@ class ProcessUnit(QObject):
     def set_args(self,**kwargs):
         for key, value in kwargs.items():
             if key == "version" and value != const.__version__:
-                logger.error(f"Version {value} not match {const.__version__}",tags=f"ProcessUnit:ProcessUnit:set_args")
+                logger.error(f"Version {value} not match {const.__version__}",tags=f"ProcessUnit:ProcessUnit:set_args:{os.path.basename(self.file)}")
                 raise ValueError(_("版本号不匹配"))
             setattr(self, key, value)
 
@@ -236,7 +236,7 @@ class ProcessUnit(QObject):
         for i in file:
             if self.dump_uuid in str(i):
                 self.dump_file.append(i)
-        logger.debug(f"Found dump file: {self.dump_file}",tags=f"ProcessUnit:ProcessUnit:search_dump_file")
+        logger.debug(f"Found dump file: {self.dump_file}",tags=f"ProcessUnit:ProcessUnit:search_dump_file:{os.path.basename(self.file)}")
         self.dump_file = list(set(self.dump_file))
 
 
@@ -247,7 +247,7 @@ class ProcessUnit(QObject):
             port = s.getsockname()[1]
         self.ipc_listener = threading.Thread(target=networks.ipc_recv,args=('127.0.0.1',int(port),self.ipc_callback),daemon=True)
         self.ipc_port = port
-        self.logger.info(f"Set up IPC on port: {self.ipc_port}",tags=f"ProcessUnit:ProcessUnit:setup_ipc")
+        self.logger.info(f"Set up IPC on port: {self.ipc_port}",tags=f"ProcessUnit:ProcessUnit:setup_ipc:{os.path.basename(self.file)}")
 
     def start_ipc(self):
         self.ipc_listener.start()
@@ -256,19 +256,19 @@ class ProcessUnit(QObject):
             "process_progress":None,
             "process_message":None,
         }
-        self.logger.debug("Start IPC listener",tags=f"ProcessUnit:ProcessUnit:start_ipc")
+        self.logger.debug("Start IPC listener",tags=f"ProcessUnit:ProcessUnit:start_ipc:{os.path.basename(self.file)}")
 
     def ipc_callback(self,data,addr):
         # self.logger.debug(f"Received data from {addr}: {data}",tags=f"ProcessUnit:ProcessUnit:ipc_callback")
         try:
             data = json.loads(data)
             if data["process_order"] is None and data['process_message'] is not None:
-                self.logger.debug(f"Received message: {data['process_message']}",tags=f"ProcessUnit:ProcessUnit:ipc_callback")
+                self.logger.debug(f"Received message: {data['process_message']}",tags=f"ProcessUnit:ProcessUnit:ipc_callback:{os.path.basename(self.file)}")
             elif data['process_order'] is not None:
                 self.progress_dict.update({int(data['process_order']): float(data['process_progress'])})
                 # print(self.FFmpegTune, self.FFmpegEncoder, self.FFmpegPresent, "IDENTIFY")
         except json.JSONDecodeError:
-            self.logger.warning(f"Invalid JSON data: {data}",tags=f"ProcessUnit:ProcessUnit:ipc_callback")
+            self.logger.warning(f"Invalid JSON data: {data}",tags=f"ProcessUnit:ProcessUnit:ipc_callback:{os.path.basename(self.file)}")
         if self.progress_dict != {}:
             cur_sum = 0
             for i in list(self.progress_dict.values()):
@@ -296,7 +296,7 @@ class ProcessUnit(QObject):
     def generate_queue(self):
         count = self.frame_count
         self._sliced_list = VideoProcessor.spitter(count,self.slice_length)
-        self.logger.debug(f"Slice list length: {len(self._sliced_list)}",tags=f"ProcessUnit:ProcessUnit:generate_queue")
+        self.logger.debug(f"Slice list length: {len(self._sliced_list)}",tags=f"ProcessUnit:ProcessUnit:generate_queue:{os.path.basename(self.file)}")
         for r in self._sliced_list:
             print(r)
         index = 0
@@ -328,18 +328,18 @@ class ProcessUnit(QObject):
                                          ipc_port=self.ipc_port,
                                          dump_uuid = self.dump_uuid
                                          ))
-        self.logger.debug(f"Length of slice list: {len(self.slice_list)}",tags=f"ProcessUnit:ProcessUnit:generate_queue")
+        self.logger.debug(f"Length of slice list: {len(self.slice_list)}",tags=f"ProcessUnit:ProcessUnit:generate_queue:{os.path.basename(self.file)}")
 
 
 
     def prepare_for_merge(self):
-        self.logger.debug(f"Output path: {self.output_path}",tags=f"ProcessUnit:ProcessUnit:prepare_for_merge")
+        self.logger.debug(f"Output path: {self.output_path}",tags=f"ProcessUnit:ProcessUnit:prepare_for_merge:{os.path.basename(self.file)}")
         if not os.path.exists(self.output_path):
             os.makedirs(self.output_path)
         FileSystem.create_workspace(f"{self.base_file_name}-merge")
         FileSystem.create_directory(f"{self.base_file_name}-merge","./merge")
         FileSystem.create_directory(f"{self.base_file_name}-merge", "./audio_track")
-        self.logger.debug("Create directory for audio track",tags=f"ProcessUnit:ProcessUnit:prepare_for_merge")
+        self.logger.debug("Create directory for audio track",tags=f"ProcessUnit:ProcessUnit:prepare_for_merge:{os.path.basename(self.file)}")
         output_path = FileSystem.open_file(f"{self.base_file_name}-merge",f"./audio_track",const.File_Return_Type.PATH)
         self.audio_process(self.file,output_path)
         perfix = FileSystem.open_file(f"{self.base_file_name}-merge",f"./audio_track",const.File_Return_Type.PATH)
@@ -349,7 +349,7 @@ class ProcessUnit(QObject):
             FileSystem.import_file(f"{self.base_file_name}-merge",obj[1],"./merge")
             os.remove(obj[1])
         self._temporary_path = self.output_path
-        self.logger.success(f"Prepare for merge success, output path: {self.output_path}",tags=f"ProcessUnit:ProcessUnit:prepare_for_merge")
+        self.logger.success(f"Prepare for merge success, output path: {self.output_path}",tags=f"ProcessUnit:ProcessUnit:prepare_for_merge:{os.path.basename(self.file)}")
 
 
     def merge(self):
@@ -358,14 +358,14 @@ class ProcessUnit(QObject):
         for i in range(1,ti+1):
             self.saved_file_path = FileSystem.open_file(f"{self.base_file_name}-merge",f"./merge/{i}.{self.output_format}",const.File_Return_Type.PATH)
             lists.append(FileSystem.open_file(f"{self.base_file_name}-merge",f"./merge/{i}.{self.output_format}",const.File_Return_Type.PATH))
-        self.logger.debug(f"Merge list: {lists}",tags=f"ProcessUnit:ProcessUnit:merge")
+        self.logger.debug(f"Merge list: {lists}",tags=f"ProcessUnit:ProcessUnit:merge:{os.path.basename(self.file)}")
         merge_video_sequnece(lists,os.path.join(self._temporary_path,f"{self.output_name}.{self.output_format}"),logger=self.logger,audio_file=self.audio_file_list,output_format=self.output_format)
 
     def report_error(self,error_list):
         self.search_dump_file()
         self.OccurError.emit(error_list,self.progress_identify,self.dump_file)
         self.error_occured = True
-        self.logger.critical(f"Report error: {error_list}",tags=f"ProcessUnit:ProcessUnit:report_error")
+        self.logger.critical(f"Report error: {error_list}",tags=f"ProcessUnit:ProcessUnit:report_error:{os.path.basename(self.file)}")
 
 
 
@@ -378,7 +378,7 @@ class ProcessUnit(QObject):
 
     @timer_decorator
     def run(self):
-        self.logger.info(f"Start process unit: {self.identify}",tags=f"ProcessUnit:ProcessUnit:run")
+        self.logger.info(f"Start process unit: {self.identify}",tags=f"ProcessUnit:ProcessUnit:run:{os.path.basename(self.file)}")
         self.setup_ipc()
         self.set_stage(0)
         self.sample()
@@ -412,18 +412,18 @@ class ProcessUnit(QObject):
             self.completed = True
             self.running = False
             self.status = 1
-            self.logger.success(f"Process unit: {self.identify} completed",tags=f"ProcessUnit:ProcessUnit:run")
+            self.logger.success(f"Process unit: {self.identify} completed",tags=f"ProcessUnit:ProcessUnit:run:{os.path.basename(self.file)}")
 
             return True
         else:
             self.completed = _("发生错误")
             self.running = False
             self.status = 0
-            self.logger.critical(f"Process unit: {self.identify} error: {self.completed}",tags=f"ProcessUnit:ProcessUnit:run")
+            self.logger.critical(f"Process unit: {self.identify} error: {self.completed}",tags=f"ProcessUnit:ProcessUnit:run:{os.path.basename(self.file)}")
             try:
                 self.remove_workspace()
             except Exception as e:
-                self.logger.critical(f"Remove workspace error: {e}",tags=f"ProcessUnit:ProcessUnit:run")
+                self.logger.critical(f"Remove workspace error: {e}",tags=f"ProcessUnit:ProcessUnit:run:{os.path.basename(self.file)}")
                 pass
             return False
 
@@ -432,19 +432,19 @@ class ProcessUnit(QObject):
     def suspend(self):
         for i in self.scheduler.get_running_pids():
             manage_process_by_pid(i, "suspend")
-            self.logger.info(f"Suspend process: {i}",tags=f"ProcessUnit:ProcessUnit:suspend")
+            self.logger.info(f"Suspend process: {i}",tags=f"ProcessUnit:ProcessUnit:suspend:{os.path.basename(self.file)}")
 
     def resume(self):
         for i in self.scheduler.get_running_pids():
             manage_process_by_pid(i, "resume")
-            self.logger.info(f"Resume process: {i}",tags=f"ProcessUnit:ProcessUnit:resume")
+            self.logger.info(f"Resume process: {i}",tags=f"ProcessUnit:ProcessUnit:resume:{os.path.basename(self.file)}")
 
     def stop(self):
         for i in self.scheduler.get_running_pids():
             manage_process_by_pid(i, "terminate")
-            self.logger.info(f"Stop process: {i}",tags=f"ProcessUnit:ProcessUnit:stop")
+            self.logger.info(f"Stop process: {i}",tags=f"ProcessUnit:ProcessUnit:stop:{os.path.basename(self.file)}")
         manage_process_by_pid(self.scheduler.manager_pid, "terminate")
-        self.logger.info(f"Stop process: {self.scheduler.manager_pid}",tags=f"ProcessUnit:ProcessUnit:stop")
+        self.logger.info(f"Stop process: {self.scheduler.manager_pid}",tags=f"ProcessUnit:ProcessUnit:stop:{os.path.basename(self.file)}")
         self.stopped = True
 
     def after_processing(self):
@@ -458,20 +458,20 @@ class ProcessUnit(QObject):
         }
         json_path = os.path.join(self._temporary_path,f"recover.pkl")
         data = pickle.dumps(recover_data)
-        self.logger.debug(f"Recover data: {recover_data}",tags=f"ProcessUnit:ProcessUnit:after_processing")
+        self.logger.debug(f"Recover data: {recover_data}",tags=f"ProcessUnit:ProcessUnit:after_processing:{os.path.basename(self.file)}")
 
         if os.path.exists(json_path):
             os.remove(json_path)
         with open(json_path,"wb") as f:
             f.write(data)
-        self.logger.debug(f"Recover data saved to: {json_path}",tags=f"ProcessUnit:ProcessUnit:after_processing")
+        self.logger.debug(f"Recover data saved to: {json_path}",tags=f"ProcessUnit:ProcessUnit:after_processing:{os.path.basename(self.file)}")
         FileSystem.mapping_list = {}
         self.stop()
 
 
     def set_stage(self,stage):
         self.process_unit_stage = int(stage)
-        self.logger.info(f"Set process unit stage: {self.process_unit_stage}",tags=f"ProcessUnit:ProcessUnit:set_stage")
+        self.logger.info(f"Set process unit stage: {self.process_unit_stage}",tags=f"ProcessUnit:ProcessUnit:set_stage:{os.path.basename(self.file)}")
 
 
 
@@ -480,14 +480,14 @@ class ProcessUnit(QObject):
         for i in self.result_list:
             if str(i[0]) != "114514":
                 list_data.append(i[0])
-        self.logger.debug(f"Attachment data: {list_data}",tags=f"ProcessUnit:ProcessUnit:process_attachment")
+        self.logger.debug(f"Attachment data: {list_data}",tags=f"ProcessUnit:ProcessUnit:process_attachment:{os.path.basename(self.file)}")
         return list_data
 
     def remove_workspace(self):
         vi = os.path.dirname(os.path.normpath(str(self.saved_file_path)))
         root = os.path.dirname(os.path.normpath(vi))
         shutil.rmtree(root)
-        self.logger.debug(f"Remove workspace: {root}",tags=f"ProcessUnit:ProcessUnit:remove_workspace")
+        self.logger.debug(f"Remove workspace: {root}",tags=f"ProcessUnit:ProcessUnit:remove_workspace:{os.path.basename(self.file)}")
 
 
 

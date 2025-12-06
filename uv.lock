@@ -779,6 +779,7 @@ dependencies = [
     { name = "psutil" },
     { name = "py-cpuinfo" },
     { name = "pyadl" },
+    { name = "pyanime4k" },
     { name = "pyaudio" },
     { name = "pyinstaller" },
     { name = "pyoxidizer" },
@@ -829,6 +830,7 @@ requires-dist = [
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "py-cpuinfo", specifier = ">=9.0.0" },
     { name = "pyadl", specifier = ">=0.1" },
+    { name = "pyanime4k", specifier = ">=3.1.0" },
     { name = "pyaudio", specifier = ">=0.2.14" },
     { name = "pyinstaller", specifier = ">=6.14.2" },
     { name = "pyoxidizer", specifier = ">=0.24.0" },
@@ -1934,6 +1936,33 @@ name = "pyadl"
 version = "0.1"
 source = { registry = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple" }
 sdist = { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/d4/6b/2f0181e334dd97949f7112467d4b16d346aa759dcf3da793c8eb58f0ce0b/pyadl-0.1.tar.gz", hash = "sha256:8c76c809cfdcb1c40eb2af1dfb3fbb5c265d0431fa3c1645cb65709e353f9d87", size = 24648, upload-time = "2017-12-29T09:16:10.851Z" }
+
+[[package]]
+name = "pyanime4k"
+version = "3.1.0"
+source = { registry = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/2c/6d/29879c33e311d46b08c602f5698c95562a3e764c6e31b25c9d448c8018df/pyanime4k-3.1.0.tar.gz", hash = "sha256:be7cec9c516249621a52c0e9d605f7c1b13cd57ec09f934f860a191eee4dd569", size = 259568, upload-time = "2025-11-10T23:17:05.396Z" }
+wheels = [
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/10/e1/8bbc63155ce0e06f664c2a4470b4460a0671b8288f284da273b1a7cd6637/pyanime4k-3.1.0-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:25919b240f54786c1f5d826cbe231de4d0deab5a13545288e54847279315962b", size = 547522, upload-time = "2025-11-10T23:16:31.481Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/f1/64/deecbf7a2ce12574c7af91d612e04c13298f26209203a059e73fd21d1ecc/pyanime4k-3.1.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:d463218f6b95eab0f09c43eb7e94b2f9f7f3b6b40cbd2b8d6f2d698c8b65ff0c", size = 420419, upload-time = "2025-11-10T23:16:33.073Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/6d/50/3700178d6863cded3773ce5b1ab23cab703f7c1154f2f010087902f36cb4/pyanime4k-3.1.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dfe3ccc9716b4e10e967928bba64042f7ef62d74166c347efdcc6c68cd54b6ac", size = 720579, upload-time = "2025-11-10T23:16:34.581Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/ee/3c/a67fd0336570dc49425fb1abd9210f164f1afdb8d31f8792612987500b9c/pyanime4k-3.1.0-cp310-cp310-win_amd64.whl", hash = "sha256:b4f1bdcf3cf925bf5cc0edf7c80048cf81c664de6b64c90be2c5c802da0ceed9", size = 886657, upload-time = "2025-11-10T23:16:35.844Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/09/c6/0d15f604217b22a6192dfb244e35c640d4cc2a5a4cbf5ebf080e91b64292/pyanime4k-3.1.0-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:afe443afebe43b9975a7c16d0fee79ea24416172971ab5fea3f1bd111f2073ba", size = 549178, upload-time = "2025-11-10T23:16:37.62Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/60/ed/33589dea711c4e70e957269e727ab06840ee38f5619b71aa7f5be4270ee0/pyanime4k-3.1.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:24b3ad8ddbb4d6f62270739fad4b3930649377f53fe3b557c784674fe8912ac8", size = 421762, upload-time = "2025-11-10T23:16:38.77Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/0a/a0/0bd78dafce7c7e2cdb10d8dbb681272258590dfef3539fd34e52add2ec4d/pyanime4k-3.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:65f0c137a8295f0c0bbf0693b19422e91dac9fe0b9b768885dc927bcce33bdb2", size = 722273, upload-time = "2025-11-10T23:16:40.317Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/48/96/789ff3477c49edae020af77b10157f4c804aa898f30799f094371fc645d7/pyanime4k-3.1.0-cp311-cp311-win_amd64.whl", hash = "sha256:0fb56766f6d99a96e9aadb0e689df82fe7d96e8179f9e2abbe4fecaee2f64571", size = 887398, upload-time = "2025-11-10T23:16:41.935Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/56/aa/a29d19e061264f077461d046cc64dc97413f0be287954650d6eed28a541e/pyanime4k-3.1.0-cp312-cp312-macosx_10_15_x86_64.whl", hash = "sha256:fb10f07805df21dee1be7b542fd27541131f74759a0ff1f930b0199712dc261e", size = 550303, upload-time = "2025-11-10T23:16:43.527Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/95/0d/08b79a5a55af86c8a8e8eefcc20ee8a8f2f48213e77b4f3384d49f795388/pyanime4k-3.1.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:663ab6b1ef332a7c8bdb39c433281710423992c3a67e9cd25158f2f6f581247e", size = 421803, upload-time = "2025-11-10T23:16:44.798Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/7b/a4/d2a17e7749bc64867b967cf474de58288466cef085e161e91e8bb1fd4425/pyanime4k-3.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:946b437f3de5c9c7fb7c8cb600653a67905b8e761df272d06d1d6b4423f54e34", size = 720822, upload-time = "2025-11-10T23:16:46.3Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/ab/9f/8b04d3b2a8b64fd44e055c41090d485dec5a43a6f69dd4d085fdf07c7475/pyanime4k-3.1.0-cp312-cp312-win_amd64.whl", hash = "sha256:bdea61f7b3454261a31ab8176c4179b5d49090aab4621c9bbce0ffc45421bc21", size = 888800, upload-time = "2025-11-10T23:16:47.419Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/f7/3b/ea621667134c4a8761aa16da5f72bcb8dabac248ac1cdd0ad1ef5f126220/pyanime4k-3.1.0-cp313-cp313-macosx_10_15_x86_64.whl", hash = "sha256:480f9766090a863fb10c5a27eccb5396fd1d1d1060a5012315b2bd0bc4c67f6c", size = 550305, upload-time = "2025-11-10T23:16:48.65Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/27/0b/1e9ce16b0063c18a973543d8728ac9c2164eea33500868ed3ea39daaebe9/pyanime4k-3.1.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:048c093650328045ff65545ee5cfbe10acf6146a14854c5810d031d224843bc6", size = 421903, upload-time = "2025-11-10T23:16:50.026Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/c5/34/de8019c6635dc10136238267848428050108536810e07664020dff39a210/pyanime4k-3.1.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:328154c7f6f485725d71208b68e1ac5fb92f0a576bd08faeadcc540688c3789c", size = 720836, upload-time = "2025-11-10T23:16:51.43Z" },
+    { url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/packages/cf/01/9b08f2704e304f600795169315db3a6d472c679edf305a83db7f0e6f1f3d/pyanime4k-3.1.0-cp313-cp313-win_amd64.whl", hash = "sha256:76dc2c9ee2049f05b0e39e8a18530f84408b0dd6564061e11f1520dc77d139d8", size = 888813, upload-time = "2025-11-10T23:16:52.673Z" },
+]
 
 [[package]]
 name = "pyaudio"

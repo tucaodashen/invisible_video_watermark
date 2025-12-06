@@ -33,13 +33,14 @@ def remove_duplicates(lst):
             unique.append(d)
     return unique
 
-def dummy(*args, **kwargs):
-    logger.debug(f"dummy function called with args: {args}, kwargs: {kwargs}",tags="ExtractUnit:dummy")
+
 class ExtracUnit(QObject):
     update_progress = Signal(float)
     receive_result = Signal()
+    error_occured = Signal(list)
     def __init__(self, video, pkl, max_worker=6):
         super().__init__()
+        self.dump_file = []
         self.executor = ConcurrentExecutor()
         self.plk_data = pickle.load(open(pkl, 'rb'))
         self.frame_count = get_frame_count(video)
@@ -50,15 +51,21 @@ class ExtracUnit(QObject):
         self.cur = 0
         self.total = 1
         self.max_worker = max_worker
-        self.dump_uuid = uuid.uuid4()
+        self.dump_uuid = str(uuid.uuid4())
         self.result = None
 
-
+    def search_dump_file(self):
+        file = os.listdir("./dumps")
+        for i in file:
+            if self.dump_uuid in str(i):
+                self.dump_file.append(i)
+        logger.debug(f"Found dump file: {self.dump_file}",tags=f"ExtractUnit:ExtractUnit:search_dump_file:{os.path.basename(self.video)}")
+        self.dump_file = list(set(self.dump_file))
 
     def generate_slice(self):
         threading.Thread(target=network.ipc_recv, args=("127.0.0.1", 1165, self.calcu_progress)).start()
         a = spitter(self.frame_count,self._slice_length)
-        logger.debug(f"generate slice {a}",tags="ExtractUnit:ExtractUnit:generate_slice")
+        logger.debug(f"generate slice {a}",tags=f"ExtractUnit:ExtractUnit:generate_slice:{os.path.basename(self.video)}")
         id = 0
         self.total = len(a)
         for ranges in a:
@@ -72,21 +79,26 @@ class ExtracUnit(QObject):
             inst.dump_uuid = self.dump_uuid
             inst.identify = {"order":id}
             self._slice_list.append(inst)
-            logger.debug(f"append slice {id} {ranges}",tags="ExtractUnit:ExtractUnit:generate_slice")
+            logger.debug(f"append slice {id} {ranges}",tags=f"ExtractUnit:ExtractUnit:generate_slice:{os.path.basename(self.video)}")
 
 
+    def report_error(self,*args):
+        print(args)
+        self.search_dump_file()
+        self.error_occured.emit([args,self.dump_file])
+        logger.critical(f"error occured {args}",tags=f"ExtractUnit:ExtractUnit:report_error:{os.path.basename(self.video)}")
 
 
     @timer_decorator
     def run(self):
         self.generate_slice()
-        logger.debug(f"start extract slice",tags="ExtractUnit:ExtractUnit:run")
-        result = self.executor.execute_concurrently(self._slice_list, self.max_worker,dummy)
+        logger.debug(f"start extract slice",tags=f"ExtractUnit:ExtractUnit:run:{os.path.basename(self.video)}")
+        result = self.executor.execute_concurrently(self._slice_list, self.max_worker,self.report_error)
         network.ipc_send("exit", "127.0.0.1", 1165)
         _result = self.post_process(result)
         self.result = _result
         self.receive_result.emit()
-        logger.debug(f"extract slice running over",tags="ExtractUnit:ExtractUnit:run")
+        logger.debug(f"extract slice running over",tags=f"ExtractUnit:ExtractUnit:run:{os.path.basename(self.video)}")
         return _result
 
 
@@ -102,7 +114,7 @@ class ExtracUnit(QObject):
         self.generate_slice()
         for i in self._slice_list:
             result.append(i.start())
-            logger.debug(f"extract slice {i.identify} {i.frame_range} result {i._result}",tags="ExtractUnit:ExtractUnit:run_debug")
+            logger.debug(f"extract slice {i.identify} {i.frame_range} result {i._result}",tags=f"ExtractUnit:ExtractUnit:run_debug:{os.path.basename(self.video)}")
         return self.sort_result(result)
 
     def post_process(self,result):
@@ -116,7 +128,7 @@ class ExtracUnit(QObject):
             for imgset in sorted:
                 if len(imgset) >= 1:
                     ret_result += imgset
-            logger.debug(f"post processed length {len(ret_result)}",tags="ExtractUnit:ExtractUnit:post_process")
+            logger.debug(f"post processed length {len(ret_result)}",tags=f"ExtractUnit:ExtractUnit:post_process:{os.path.basename(self.video)}")
         else:
             text_result = []
             for texts in result:
@@ -124,7 +136,7 @@ class ExtracUnit(QObject):
                     for item in texts:
                         text_result.append(item)
             ret_result = group_text(text_result)
-            logger.debug(f"post process {ret_result}",tags="ExtractUnit:ExtractUnit:post_process")
+            logger.debug(f"post process {ret_result}",tags=f"ExtractUnit:ExtractUnit:post_process:{os.path.basename(self.video)}")
 
         return ret_result
 
@@ -139,7 +151,7 @@ class ExtracUnit(QObject):
                 ahh_result.append(img)
         for imgs in ahh_result:
             cv2.imwrite(imgs,os.path.join(path,f"{str(uuid.uuid4())}.png"))
-        logger.success(f"save {len(ahh_result)} images to {path}",tags="ExtractUnit:ExtractUnit:sort_result")
+        logger.debug(f"save {len(ahh_result)} images to {path}",tags=f"ExtractUnit:ExtractUnit:sort_result:{os.path.basename(self.video)}")
         for i in os.listdir(path):
             pass
         return None
@@ -148,6 +160,7 @@ class ExtracUnit(QObject):
 
 class ExtractSlice:
     def __init__(self,video,frame_range,attachment_data,method):
+        self.dump_file = None
         self.video = video
         self.frame_range = frame_range
         self.attachment_data = attachment_data
@@ -177,20 +190,20 @@ class ExtractSlice:
                 exception_frame = deepest_tb.tb_frame
 
                 # 只转储异常发生的帧
-                logger.error(f"extract slice {self.identify} {self.frame_range} error {e}",tags=f"ExtractUnit:ExtractUnit:start:{os.path.basename(self.video)}:{self.identify['order']}")
+                logger.error(f"extract slice {self.identify} {self.frame_range} error {e}",tags=f"ExtractUnit:ExtractSlice:start:{os.path.basename(self.video)}:{self.identify['order']}")
                 coredumpy.dump(frame=exception_frame,
                                description="Exception trigger frame only"
                                , path=path, depth=4)
 
                 # 打印确认位置
-                logger.error(f"exception frame {exception_frame.f_code.co_filename}:{exception_frame.f_lineno}",tags=f"ExtractUnit:ExtractUnit:start:{os.path.basename(self.video)}:{self.identify['order']}")
+                logger.error(f"exception frame {exception_frame.f_code.co_filename}:{exception_frame.f_lineno}",tags=f"ExtractUnit:ExtractSlice:start:{os.path.basename(self.video)}:{self.identify['order']}")
             else:
-                logger.error(f"extract slice {self.identify} {self.frame_range} error {e}",tags=f"ExtractUnit:ExtractUnit:start:{os.path.basename(self.video)}:{self.identify['order']}")
+                logger.error(f"extract slice {self.identify} {self.frame_range} error {e}",tags=f"ExtractUnit:ExtractSlice:start:{os.path.basename(self.video)}:{self.identify['order']}")
                 coredumpy.dump(description="No traceback available", path=path, depth=4)
             raise
 
     def _start(self):
-        logger.debug(f"extract slice {self.identify} {self.frame_range}",tags=f"ExtractUnit:ExtractUnit:start:{os.path.basename(self.video)}:{self.identify['order']}")
+        logger.debug(f"extract slice {self.identify} {self.frame_range}",tags=f"ExtractUnit:ExtractSlice:start:{os.path.basename(self.video)}:{self.identify['order']}")
         frame_list = []
         for i in range(self.frame_range[0],self.frame_range[1]+1):
             frame_list.append(i)
@@ -198,8 +211,9 @@ class ExtractSlice:
         self.decode()
         return self._result
 
+
     def decode(self):
-        logger.debug(f"decode {self.identify} {self.frame_range}",tags=f"ExtractUnit:ExtractUnit:decode:{os.path.basename(self.video)}:{self.identify['order']}")
+        logger.debug(f"decode {self.identify} {self.frame_range}",tags=f"ExtractUnit:ExtractSlice:decode:{os.path.basename(self.video)}:{self.identify['order']}")
         for arr in self._frame_data:
             for atta in remove_duplicates(self.attachment_data):
                 if arr is not None:
@@ -219,7 +233,7 @@ class ExtractSlice:
                         except (UnicodeDecodeError,InvalidDataError):
                             pass
                         except Exception as e:
-                            logger.error(f"decode {self.identify} {self.frame_range} error {e}",tags=f"ExtractUnit:ExtractUnit:decode:{os.path.basename(self.video)}:{self.identify['order']}")
+                            logger.error(f"decode {self.identify} {self.frame_range} error {e}",tags=f"ExtractUnit:ExtractSlice:decode:{os.path.basename(self.video)}:{self.identify['order']}")
                             raise
                     elif self.method == WatermarkAlgorithm.TEXT_GOUFEI:
                         try:
@@ -230,7 +244,7 @@ class ExtractSlice:
                         except (ValueError,ZeroDivisionError):
                             pass
                         except Exception as e:
-                            logger.error(f"decode {self.identify} {self.frame_range} error {e}",tags=f"ExtractUnit:ExtractUnit:decode:{os.path.basename(self.video)}:{self.identify['order']}")
+                            logger.error(f"decode {self.identify} {self.frame_range} error {e}",tags=f"ExtractUnit:ExtractSlice:decode:{os.path.basename(self.video)}:{self.identify['order']}")
                             raise
                     elif self.method == WatermarkAlgorithm.TEXT_RIVAGAN:
                         try:
@@ -238,7 +252,7 @@ class ExtractSlice:
                         except UnicodeDecodeError:
                             result = None
                         except Exception as e:
-                            logger.error(f"decode {self.identify} {self.frame_range} error {e}",tags=f"ExtractUnit:ExtractUnit:decode:{os.path.basename(self.video)}:{self.identify['order']}")
+                            logger.error(f"decode {self.identify} {self.frame_range} error {e}",tags=f"ExtractUnit:ExtractSlice:decode:{os.path.basename(self.video)}:{self.identify['order']}")
                             raise
                         self._result.append(result)
         network.ipc_send("Over","127.0.0.1",1165)

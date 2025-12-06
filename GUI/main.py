@@ -2,7 +2,6 @@
 请伟大的早濑优香大人保佑这段代码吧！
 """
 import copy
-import multiprocessing
 import os.path
 import pickle
 import random
@@ -17,6 +16,7 @@ from typing import Optional
 import numpy as np
 import psutil
 
+from BasicSystem.log_client import setup_logger, get_logger
 from modules.PyAv import extract_video_frames
 from modules.GenerateVideo import get_video_parameters_simple,get_audio_parameters_simple
 import cv2
@@ -28,7 +28,7 @@ from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxL
     QHeaderView, QTableWidget, QFileDialog, QAbstractItemView
 from PySide6.QtCore import Qt, QTimer, Signal, QSize, QUrl
 from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel, RoundMenu, Action, \
-    FluentIcon, TransparentToolButton, InfoBar, InfoBarPosition
+    FluentIcon, InfoBar, InfoBarPosition
 
 from GUI.Splash import Ui_SplashDesu
 from GUI.MainWindows import Ui_MainWindow
@@ -48,6 +48,9 @@ import os
 from modules.audio import AudioPlayer
 from modules.ExtractUnit import ExtracUnit
 from modules.pltform import get_render_devices
+
+setup_logger(default_tags="main", enable_udp=True, enable_console=True)
+logger = get_logger()
 
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = 'TRUE'
 
@@ -74,6 +77,7 @@ def _get_duration_opencv(video_path: str) -> Optional[float]:
         cap.release()
 
         if fps > 0 and frame_count > 0:
+            logger.debug(f"Video duration: {frame_count / fps} seconds",tags="main:_get_duration_opencv")
             return frame_count / fps
         else:
             return None
@@ -106,6 +110,8 @@ def resize_image_to_fixed_height_simple(image, target_height=216):
         x_offset = (new_width - 384) // 2
         canvas = resized[:, x_offset:x_offset + 384]
 
+    # logger.debug(f"Resized image shape: {canvas.shape}",tags="main:resize_image_to_fixed_height_simple")
+
     return canvas
 
 
@@ -135,6 +141,7 @@ def cv2_to_qpixmap(cv_img):
         q_img = QImage(cv_img.data, w, h, bytes_per_line, QImage.Format_Grayscale8)
 
     # 复制数据以避免内存问题
+    # logger.debug(f"QImage size: {q_img.size()}",tags="main:cv2_to_qpixmap")
     return QPixmap.fromImage(q_img.copy())
 
 
@@ -232,8 +239,10 @@ class Preset_Confirm(QFrame,Ui_AP_Form):
             template.update({"output_path": self.LE_OP.text(), "watermark_content": str(self.LE_WC.text())})
         if len(self.file) == 1 or type(self.file) == str:
             template.update({"file": self.file})
+            logger.debug(f"Single preset template: {template}",tags="main:Preset_Confirm:generate_template")
             self.save.emit(template)
         else:
+            logger.debug(f"Batch preset template: {template}",tags="main:Preset_Confirm:generate_template")
             self.save_batch.emit([template,self.file])
 
 
@@ -286,7 +295,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 
+
     def update_status_message(self, message):
+        logger.debug(f"Status message: {message}",tags="main:update_status_message")
         self.statusbar.showMessage(message)
 
 
@@ -318,10 +329,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.audio_player.load(r"assets\sound\complete.wav")
             self.audio_player.play()
             self.played = True
+            logger.debug(f"Task completed",tags="main:is_task_over")
             
     def show_recover_window(self):
         self.recover_window = RecoverWindow(self)
         self.recover_window.show()
+        logger.debug(f"Recover window shown",tags="main:show_recover_window")
 
 
     def create_batch_via_button(self):
@@ -329,14 +342,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             list_files = os.listdir(self.MLTL.text())
             if len(list_files) == 0:
                 showFlyout(self,target = self.MLTL,icon = InfoBarIcon.WARNING, title = _("目录为空"), content = _("请先放入视频文件"))
+                logger.warning(f"Batch process directory is empty",tags="main:create_batch_via_button")
             else:
                 res = []
                 for i in list_files:
                     if i.split(".")[-1] in ["mp4","mkv","mov","avi"]:
                         res.append(os.path.join(self.MLTL.text(),i))
+                logger.debug(f"Batch process files: {res}",tags="main:create_batch_via_button")
                 self.add_batch_process(res)
         else:
             showFlyout(self,target = self.MLTL,icon = InfoBarIcon.WARNING, title = _("目录不存在"), content = _("请先创建目录"))
+            logger.warning(f"Batch process directory is empty",tags="main:create_batch_via_button")
 
 
     def show_context_menu(self, pos):
@@ -420,6 +436,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if i.index == index:
                 self.task_queue.remove(i)
                 self.sync_queue()
+                logger.debug(f"Task {index} deleted",tags="main:delete_selected_task")
     def suspend_selected_task(self,row_index,checked=False):
         has_single = False
         print(row_index)
@@ -432,8 +449,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     task.suspend()
                     task.running = False
                     task.statue = _("已暂停")
+            logger.debug(f"Task {index} suspended",tags="main:suspend_selected_task")
             self.set_status()
+
         if has_single:
+            logger.warning(f"Single process task {index} cannot be suspended",tags="main:suspend_selected_task")
             showFlyout(self, self.QueueList, InfoBarIcon.WARNING, _("此任务无法暂停"),
                        _("单进程任务暂时无法暂停"))
     def launch_selected_task(self,row_index, checked=False):
@@ -452,6 +472,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         task.update_progress.connect(self.update_queue_percentage)
                         task.OccurError.connect(self.handle_error)
                         sl = task.run
+                        logger.debug(f"Task {index} launched",tags="main:launch_selected_task")
                     else:
                         sl = None
 
@@ -467,6 +488,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 task.running = True
                 task.statue = _("运行中")
                 self.set_status()
+                logger.debug(f"Task {index} resumed",tags="main:launch_selected_task")
                 return 0
 
     def terminate_selected_task(self,row_index,checked=False):
@@ -478,6 +500,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 i.stopped = True
                 i.statue = _("已终止")
                 self.set_status()
+                logger.debug(f"Task {index} terminated",tags="main:terminate_selected_task")
 
 
 
@@ -490,11 +513,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         )
         if file_path:
             self.SLTL.setText(file_path)
+            logger.debug(f"Single video file {file_path} selected",tags="main:browse_single_video_file")
+
+
 
     def create_single_task_via_button(self):
         if len(self.SLTL.text()) == 0:
             return
         self.create_single_task([self.SLTL.text()])
+        logger.debug(f"Single task {self.SLTL.text()} created",tags="main:create_single_task_via_button")
 
     def scan_preset(self):
         plo = []
@@ -512,6 +539,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def create_new_preset(self):
         self.create_single_task(["Dummy"],True)
+        logger.debug(f"New preset created",tags="main:create_new_preset")
 
     def sync_queue(self):
         self.QueueList.setRowCount(0)
@@ -524,6 +552,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             metadata = {'index': index, 'name': name, 'status': statue, 'output_path': output_path, 'progress': 0,
                         "thumbnail": extract_video_frames(i.file,[0])[0]}
             self.add_to_queue(metadata)
+            logger.debug(f"Task {index} added to queue",tags="main:sync_queue")
 
 
     def update_progress(self,index,progress):
@@ -605,12 +634,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.thumbnail_thread = threading.Thread(target=self._prepare_thumbnail)
             self.thumbnail_thread.start()
 
+
     def _prepare_thumbnail(self):
 
         index = range(1, 102)
         if self.task_queue:
             for i in self.task_queue:
                 if str(i.progress_identify) not in list(self.thumbnail_cache.keys()):
+                    logger.debug(f"Thumbnail cache for task not found, preparing...", tags="main:prepare_thumbnail")
                     self.thumbnail_status_signal.emit(_("正在生成缩略图..."))
                     spf_list = []
                     for ind in index:
@@ -637,6 +668,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     if thu:
                         self.thumbnail_cache.update({str(i.progress_identify): thu})
                         self.thumbnail_status_signal.emit(_("准备就绪"))
+                        logger.success(f"Thumbnail cache for task {i.progress_identify} prepared successfully", tags="main:prepare_thumbnail")
                     else:
                         print(f"Error: No thumbnails generated for {i.progress_identify}")
 
@@ -649,6 +681,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # print(self.task_queue)
         if not self.task_queue:
             self.thumbnail_cache = {}
+            # logger.info(f"Thumbnail cache cleared successfully", tags="main:clear_useless_cache")
+
+
 
 
     def get_thumbnail(self,task):
@@ -671,7 +706,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def handle_error(self, err, _id,dump_file):
         print(err)
-        print(dump_file,"DDDDUUUUMMMPPPP")
+        print(dump_file)
         self.error_window.append(error_report.ErrorReportDialog(error=err,dump_file=dump_file))
         self.error_window[-1].show()
         for i in self.task_queue:
@@ -685,16 +720,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         progressbar = self.QueueList.cellWidget(row, 4)
                         progressbar.setValue(100)
                         self.QueueList.setItem(row, 2, QTableWidgetItem(i.statue))
-                        print("OIIAI")
 
         for ai in self.task_queue:
-            print(ai.statue)
+            logger.debug(f"Task {ai.progress_identify} status updated to {ai.statue}", tags="main:handle_error")
+
+
 
     def receive_preset(self,preset,name):
         preset['file'] = None
         preset['output_path'] = None
         preset['watermark_content'] = None
         self.save_preset(preset,name)
+        logger.info(f"Preset {name} saved successfully", tags="main:save_preset")
 
 
     def save_preset(self,template,name):
@@ -741,13 +778,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     #处理批量模板任务的函数，但是以前的名字和qt内部函数冲突。WTF？？？
     def idkwant_but_the_function_name_have_conflict_with_qt(self,arg):
-        print(arg)
         self.set_batch_file([arg[0],arg[1]])
         self.confirm_preset_form.close()
+        logger.info(f"Batch preset {arg[1]} created successfully", tags="main:idkwant_but_the_function_name_have_conflict_with_qt")
 
     def rec_pre(self,args):
         self.save_profile(args)
         self.confirm_preset_form.close()
+        logger.info(f"Batch preset {args['name']} saved successfully", tags="main:rec_pre")
 
 
     def set_batch_file(self,preset_data = None):
@@ -773,6 +811,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not preset_data:
             self.batch_setUp_form.close()
         self.sync_queue()
+        logger.info(f"Batch preset {args['name']} processed successfully", tags="main:set_batch_file")
+
+
 
         
     def save_profile(self,preset = None):
@@ -789,6 +830,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not preset:
             self.setUp_form.close()
         self.sync_queue()
+
+
 
     def setButtons(self):
         self.error_window = []
@@ -829,6 +872,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             threading_pool = ThreadPoolManager(max_workers=1)
             threading_pool.submit_tasks(start_list)
             threading_pool.start()
+        logger.debug(f"Started {len(start_list)} tasks", tags="main:queue_start")
         self.set_status()
 
     def queue_suspend(self):
@@ -844,6 +888,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.set_status()
         if has_single:
             showFlyout(self, self.QueueList, InfoBarIcon.WARNING, _("已暂停所有可暂停任务"), _("单进程任务暂时无法暂停"))
+        logger.debug(f"Paused {len(self.task_queue)} tasks", tags="main:queue_suspend")
 
 
     def queue_stop(self):
@@ -853,6 +898,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 task.running = False
                 task.completed = _("已终止")
         self.set_status()
+        logger.info(f"Stopped {len(self.task_queue)} tasks", tags="main:queue_stop")
+
+
 
     def set_first_selected(self):
         all = self.get_selected_rows()
@@ -894,6 +942,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.confirm_preset_form.setWindowModality(Qt.ApplicationModal)
                 self.confirm_preset_form.show()
                 self.confirm_preset_form.save.connect(self.rec_pre)
+                logger.info(f"Preset {self.get_current_selection()} applied successfully", tags="main:apply_preset")
+
+
 
     def apply_preset_multi(self,drag_trigger=False):
         if self.get_current_selection() is not None:
@@ -910,6 +961,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.confirm_preset_form.setWindowModality(Qt.ApplicationModal)
                     self.confirm_preset_form.show()
                     self.confirm_preset_form.save_batch.connect(self.idkwant_but_the_function_name_have_conflict_with_qt)
+                    logger.info(f"Batch preset {self.get_current_selection()} applied successfully", tags="main:apply_preset_multi")
 
     def receive_preset_drag(self,file):
         if self.get_current_selection() is None:
@@ -934,16 +986,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 
-    def start_render(self):
-        # pu = ProcessUnit.ProcessUnit()
-        # pu.update_progress.connect(self.set_progess_bar)
-        # threading.Thread(target=pu.run).start()
-
-        print(self.get_selected_rows())
-        # self.temporary.update_progress.connect(self.update_queue_percentage)
-        # self.temporary.OccurError.connect(self.handle_error)
-        # threading.Thread(target=self.temporary.run).start()
-
 
 
 
@@ -962,6 +1004,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def remove_selected_preset(self):
         if os.path.exists(os.path.join(preset_path,f"{self.get_current_selection()}.pickle")):
             os.remove(os.path.join(preset_path,f"{self.get_current_selection()}.pickle"))
+            logger.info(f"Preset {self.get_current_selection()} removed successfully", tags="main:remove_preset")
 
 
     def set_is_completed(self):
@@ -1037,6 +1080,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         output_path_item = QTableWidgetItem(str(metadata['output_path']))
         self.QueueList.setItem(row, 5, output_path_item)
+        logger.debug(f"Added task {metadata['index']} to queue", tags="main:add_to_queue")
 
 
     def set_text(self):
@@ -2167,6 +2211,16 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         self.pushButton_4.setText(_("保存当前图片"))
         self.pushButton_5.setText(_("保存所有图片"))
         self.setWindowTitle(_("恢复水印"))
+        self.error_window = []
+
+
+    def show_error_window(self,err,dump_file):
+        print(err)
+        print(dump_file)
+        if len(self.error_window) <= 10:
+            self.error_window.append(error_report.ErrorReportDialog(error=err, dump_file=dump_file))
+            self.error_window[-1].show()
+
 
 
 
@@ -2174,6 +2228,7 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         self.F_TextResult.hide()
         self.F_ImageResult.hide()
         self.label_5.setText(_("请先启动分析"))
+        logger.debug("RecoverWindow initialized", tags="main:recover_init")
 
     def check_and_start(self,files):
         if len(files) != 2:
@@ -2204,7 +2259,7 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         self.process_result(self._inst.result)
 
     def process_result(self,result):
-
+        ind = 1
         self.label_5.hide()
         self.result = result
         if self.plk_data['watermark_method'] == const.WatermarkAlgorithm.IMAGE_GUOFEI or self.plk_data[
@@ -2221,15 +2276,17 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
             self.F_TextResult.show()
             self.F_ImageResult.hide()
             st = ""
-            ind = 1
+
             for i in result:
                 st += _(f"组{ind}\n")
                 for ite in i:
                     st += f"{ite}\n"
+                ind = + 1
             self.textBrowser.setText(st)
         createSuccessInfoBar(self,_("分析完成"),_(f"请查看分析结果"))
 
         self.soundplayer.play()
+
     def save_text_to_file(self):
         if self.result:
             self._save_text_to_file(str(self.result))
@@ -2267,18 +2324,22 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
 
 
     def next_image(self):
-        if 0 < self.image_index < len(self.result):
+        if 0 < self.image_index <= len(self.result):
             self.image_index += 1
             self.set_correct_image()
             self.L_CurIndex.setText(f"{self.image_index}/{len(self.result)}")
             self.progressBar_2.setValue(self.image_index*100//len(self.result))
 
     def prev_image(self):
-        if 0 < self.image_index < len(self.result):
+        if 0 < self.image_index <= len(self.result):
             self.image_index -= 1
             self.set_correct_image()
             self.L_CurIndex.setText(f"{self.image_index}/{len(self.result)}")
             self.progressBar_2.setValue(self.image_index * 100 // len(self.result))
+
+
+    def warpper_error(self,*args):
+        self.show_error_window(args[0][0][0],args[0][1])
 
 
 
@@ -2287,8 +2348,10 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         self._inst = ExtracUnit(file,recover_file,int(self.SB_MaxWorker.value()))
         self._inst.update_progress.connect(self.set_progress)
         self._inst.receive_result.connect(self.pre_process_result)
+        self._inst.error_occured.connect(self.warpper_error)
         self.recover_process = threading.Thread(target=self._inst.run)
         self.recover_process.start()
+
 
     def set_progress(self,progress):
         if type(progress) == float:

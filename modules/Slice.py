@@ -95,6 +95,7 @@ class Slice:
 
         self.fps = cv2.VideoCapture(self.file).get(cv2.CAP_PROP_FPS)
         self._file_path = None
+        self.extract_retry_times = 0
 
 
         #FFmpeg
@@ -142,8 +143,26 @@ class Slice:
 
 
     def extract(self):
-        self.logger.debug(f"Extract {self.file} {self.video_range[0]} {self.video_range[1]} to {self._extract_path}",tags=f"Slice:Slice:extract:{os.path.basename(self.file)}:{self.identify['order']}")
-        VideoProcessor.extract_frames(self.file,self.video_range[0],self.video_range[1],self._extract_path,formate="png",callback=self.extract_callback)
+        if self.extract_retry_times >= 5:
+            self.logger.error(f"Extract {self.file} {self.video_range[0]} {self.video_range[1]} to {self._extract_path} retry times {self.extract_retry_times} failed",tags=f"Slice:Slice:extract:{os.path.basename(self.file)}:{self.identify['order']}")
+            raise RuntimeError(f"Extract {self.file} {self.video_range[0]} {self.video_range[1]} to {self._extract_path} retry times {self.extract_retry_times} failed!\nMaximum retry times exceeded.")
+        if self.extract_retry_times == 0:
+            self.logger.debug(f"Extract {self.file} {self.video_range[0]} {self.video_range[1]} to {self._extract_path}",tags=f"Slice:Slice:extract:{os.path.basename(self.file)}:{self.identify['order']}")
+        else:
+            self.logger.debug(f"Extract {self.file} {self.video_range[0]} {self.video_range[1]} to {self._extract_path} retry times {self.extract_retry_times}",tags=f"Slice:Slice:extract:{os.path.basename(self.file)}:{self.identify['order']}")
+        try:
+            VideoProcessor.extract_frames(self.file,self.video_range[0],self.video_range[1],self._extract_path,formate="png",callback=self.extract_callback)
+            self.extract_retry_times = 0
+        except RuntimeError as c:
+            if "Failed to read frame" in str(c):
+                self.extract_retry_times += 1
+                self.extract()
+            else:
+                raise
+        except:
+            raise
+
+
 
     def process(self):
 
@@ -327,7 +346,8 @@ class Slice:
             "process_progress": aa,
             "process_message": f"{msg}|{self.extract_progress}|{self.stamp_progress}",
         }
-        self.logger.debug(f"Output progress {st_N} {msg}",tags=f"Slice:Slice:output_progress_description:{os.path.basename(self.file)}:{self.identify['order']}")
+        if st_N and msg:
+            self.logger.debug(f"Output progress {st_N} {msg}",tags=f"Slice:Slice:output_progress_description:{os.path.basename(self.file)}:{self.identify['order']}")
         data = json.dumps(frame_format)
         networks.ipc_send(data,"127.0.0.1",self.ipc_port)
 

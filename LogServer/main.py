@@ -70,6 +70,8 @@ class LogServer:
                 log_context.error(message, **extra_data)
             elif level == 'critical':
                 log_context.critical(message, **extra_data)
+            elif level == 'success':
+                log_context.success(message, **extra_data)
             else:
                 log_context.info(message, **extra_data)
 

@@ -3,6 +3,7 @@ import os.path
 from PySide6.QtWidgets import QFrame,QApplication
 from GUI.error import Ui_ErrorReport
 from qfluentwidgets import setTheme, Theme
+from modules.LogProcessor import LogProcessor
 import sys
 
 class ErrorReportDialog(QFrame,Ui_ErrorReport):
@@ -21,6 +22,14 @@ class ErrorReportDialog(QFrame,Ui_ErrorReport):
                 if size != 0:
                     st += str(i) + f"({size} bytes)" + "\n"
             self.textBrowser_5.setText(st)
+        with open("identify_session.txt","r") as f:
+            session_id = f.readline()
+        name = str(session_id[0])+".txt"
+        self.lp = LogProcessor(name)
+
+
+    def set_main_log(self):
+        main_log = self.lp.output_main_process_logs(["debug","info","error","warning","critical"])
 
 
 
