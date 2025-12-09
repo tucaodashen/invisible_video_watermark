@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1600</width>
-    <height>1105</height>
+    <height>1104</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -130,7 +130,6 @@
      <string>工具</string>
     </property>
     <addaction name="action_5"/>
-    <addaction name="action_6"/>
     <addaction name="action_7"/>
     <addaction name="action_14"/>
    </widget>
@@ -645,6 +644,26 @@
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
+   <class>SubtitleLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>ImageLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>TransparentPushButton</class>
+   <extends>QPushButton</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>CaptionLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
    <class>PushButton</class>
    <extends>QPushButton</extends>
    <header>qfluentwidgets</header>
@@ -655,23 +674,8 @@
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
-   <class>TransparentPushButton</class>
-   <extends>QPushButton</extends>
-   <header>qfluentwidgets</header>
-  </customwidget>
-  <customwidget>
    <class>ProgressBar</class>
    <extends>QProgressBar</extends>
-   <header>qfluentwidgets</header>
-  </customwidget>
-  <customwidget>
-   <class>SubtitleLabel</class>
-   <extends>QLabel</extends>
-   <header>qfluentwidgets</header>
-  </customwidget>
-  <customwidget>
-   <class>CaptionLabel</class>
-   <extends>QLabel</extends>
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
@@ -689,11 +693,6 @@
    <extends>QFrame</extends>
    <header>CustomGUI</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ImageLabel</class>
-   <extends>QLabel</extends>
-   <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
    <class>DropList</class>

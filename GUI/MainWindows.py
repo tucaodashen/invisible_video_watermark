@@ -32,7 +32,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1600, 1105)
+        MainWindow.resize(1600, 1104)
         self.action = QAction(MainWindow)
         self.action.setObjectName(u"action")
         self.action_2 = QAction(MainWindow)
@@ -455,7 +455,6 @@ class Ui_MainWindow(object):
         self.menu_2.addAction(self.action_4)
         self.menu_3.addAction(self.action_9)
         self.menu_4.addAction(self.action_5)
-        self.menu_4.addAction(self.action_6)
         self.menu_4.addAction(self.action_7)
         self.menu_4.addAction(self.action_14)
         self.menu_6.addAction(self.action_11)

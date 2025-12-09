@@ -20,7 +20,8 @@ from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QSizePoli
     QWidget)
 
 from qfluentwidgets import (BodyLabel, CaptionLabel, ComboBox, ImageLabel,
-    PrimaryPushButton, PushButton, TextBrowser, TitleLabel)
+    PrimaryPushButton, PushButton, SpinBox, TextBrowser,
+    TitleLabel)
 from . import allin_rc
 
 class Ui_ErrorReport(object):
@@ -171,10 +172,10 @@ class Ui_ErrorReport(object):
 
         self.horizontalLayout_4.addWidget(self.label_6)
 
-        self.comboBox_4 = ComboBox(self.EncodeProcessorLog)
-        self.comboBox_4.setObjectName(u"comboBox_4")
+        self.spinBox = SpinBox(self.EncodeProcessorLog)
+        self.spinBox.setObjectName(u"spinBox")
 
-        self.horizontalLayout_4.addWidget(self.comboBox_4)
+        self.horizontalLayout_4.addWidget(self.spinBox)
 
 
         self.horizontalLayout_6.addLayout(self.horizontalLayout_4)
@@ -249,10 +250,10 @@ class Ui_ErrorReport(object):
 
         self.horizontalLayout_11.addWidget(self.label_9)
 
-        self.comboBox_7 = ComboBox(self.tab)
-        self.comboBox_7.setObjectName(u"comboBox_7")
+        self.spinBox_2 = SpinBox(self.tab)
+        self.spinBox_2.setObjectName(u"spinBox_2")
 
-        self.horizontalLayout_11.addWidget(self.comboBox_7)
+        self.horizontalLayout_11.addWidget(self.spinBox_2)
 
 
         self.horizontalLayout_7.addLayout(self.horizontalLayout_11)
@@ -279,16 +280,6 @@ class Ui_ErrorReport(object):
         self.gridLayout_4.addWidget(self.textBrowser_5, 0, 0, 1, 1)
 
         self.LogBrowser.addTab(self.tab_2, "")
-        self.tab_3 = QWidget()
-        self.tab_3.setObjectName(u"tab_3")
-        self.gridLayout_5 = QGridLayout(self.tab_3)
-        self.gridLayout_5.setObjectName(u"gridLayout_5")
-        self.textBrowser_6 = QTextBrowser(self.tab_3)
-        self.textBrowser_6.setObjectName(u"textBrowser_6")
-
-        self.gridLayout_5.addWidget(self.textBrowser_6, 0, 0, 1, 1)
-
-        self.LogBrowser.addTab(self.tab_3, "")
 
         self.verticalLayout_4.addWidget(self.LogBrowser)
 
@@ -320,7 +311,7 @@ class Ui_ErrorReport(object):
 
         self.retranslateUi(ErrorReport)
 
-        self.LogBrowser.setCurrentIndex(0)
+        self.LogBrowser.setCurrentIndex(2)
 
 
         QMetaObject.connectSlotsByName(ErrorReport)
@@ -344,7 +335,6 @@ class Ui_ErrorReport(object):
         self.label_9.setText(QCoreApplication.translate("ErrorReport", u"\u8fdb\u7a0b", None))
         self.LogBrowser.setTabText(self.LogBrowser.indexOf(self.tab), QCoreApplication.translate("ErrorReport", u"\u89e3\u7801\u5355\u5143\u65e5\u5fd7", None))
         self.LogBrowser.setTabText(self.LogBrowser.indexOf(self.tab_2), QCoreApplication.translate("ErrorReport", u"\u6838\u5fc3\u8f6c\u50a8\u4fe1\u606f", None))
-        self.LogBrowser.setTabText(self.LogBrowser.indexOf(self.tab_3), QCoreApplication.translate("ErrorReport", u"VizTracer\u4fe1\u606f", None))
         self.label_10.setText(QCoreApplication.translate("ErrorReport", u"\u4e0d\u8981\u4ec5\u4ec5\u53ea\u662f\u622a\u56fe\u6b64\u754c\u9762\uff0c\u8bf7\u5c06\u9519\u8bef\u65e5\u5fd7\u4e00\u540c\u63d0\u4ea4\u7ed9\u5f00\u53d1\u4eba\u5458\uff01", None))
         self.pushButton.setText(QCoreApplication.translate("ErrorReport", u"\u5173\u95ed(\u7ed3\u675f\u7a0b\u5e8f)", None))
         self.pushButton_2.setText(QCoreApplication.translate("ErrorReport", u"\u63d0\u4ea4\u9519\u8bef", None))

@@ -30,9 +30,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-148</y>
+        <y>0</y>
         <width>768</width>
-        <height>1019</height>
+        <height>663</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -177,156 +177,6 @@
         </widget>
        </item>
        <item>
-        <widget class="QFrame" name="frame_4">
-         <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Shadow::Raised</enum>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_5">
-          <item>
-           <widget class="TitleLabel" name="VideoSetting">
-            <property name="text">
-             <string>视频设置</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_9">
-            <item>
-             <widget class="BodyLabel" name="DefaultEncoderLabel">
-              <property name="text">
-               <string>默认编码器</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="ComboBox" name="DefaultEncoder_comboBox_4"/>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_10">
-            <item>
-             <widget class="BodyLabel" name="QualityControl">
-              <property name="text">
-               <string>默认质量控制方式</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="ComboBox" name="DefaultQualityControl"/>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_11">
-            <item>
-             <widget class="BodyLabel" name="MaximumBitRateLabel">
-              <property name="text">
-               <string>默认最大码率</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="LineEdit" name="MaximumBitrateTL"/>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_12">
-            <item>
-             <widget class="BodyLabel" name="TargetBitrateLabel">
-              <property name="text">
-               <string>默认目标码率</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="LineEdit" name="TargetBitrateTL"/>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_13">
-            <item>
-             <widget class="BodyLabel" name="DefaultTargetLabel">
-              <property name="text">
-               <string>默认目标格式</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="ComboBox" name="TargetFormatDefaultComboBox"/>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QFrame" name="frame_3">
-         <property name="frameShape">
-          <enum>QFrame::Shape::StyledPanel</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Shadow::Raised</enum>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_4">
-          <item>
-           <widget class="TitleLabel" name="ProcessSettingLabel">
-            <property name="text">
-             <string>处理设置</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_6">
-            <item>
-             <widget class="BodyLabel" name="DefaultWatermarkMethod">
-              <property name="text">
-               <string>默认水印处理方式</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="ComboBox" name="DefaultMethodComboBox"/>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_7">
-            <item>
-             <widget class="BodyLabel" name="PerTaskPararllelCountLabel">
-              <property name="text">
-               <string>任务并行数量</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="SpinBox" name="PerTaskPrarllelCountInput"/>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_8">
-            <item>
-             <widget class="BodyLabel" name="PerProjMaxProcessLabel">
-              <property name="text">
-               <string>单任务最大进程数</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="SpinBox" name="PerProjMaxProcessInput"/>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
         <widget class="QFrame" name="frame_5">
          <property name="frameShape">
           <enum>QFrame::Shape::StyledPanel</enum>
@@ -371,24 +221,6 @@
             </item>
             <item>
              <widget class="CheckBox" name="DumpCoreDataWhenExceptionOccuredCheckBox">
-              <property name="text">
-               <string>重新启动后生效</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_16">
-            <item>
-             <widget class="BodyLabel" name="ManualCoreDump">
-              <property name="text">
-               <string>手动核心转储</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="CheckBox" name="ManualCoreDumpCheckBox">
               <property name="text">
                <string>重新启动后生效</string>
               </property>
@@ -540,6 +372,11 @@
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
+   <class>TextBrowser</class>
+   <extends>QTextBrowser</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
    <class>PushButton</class>
    <extends>QPushButton</extends>
    <header>qfluentwidgets</header>
@@ -547,17 +384,6 @@
   <customwidget>
    <class>LineEdit</class>
    <extends>QLineEdit</extends>
-   <header>qfluentwidgets</header>
-  </customwidget>
-  <customwidget>
-   <class>ScrollArea</class>
-   <extends>QScrollArea</extends>
-   <header>qfluentwidgets</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>TextBrowser</class>
-   <extends>QTextBrowser</extends>
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
@@ -571,9 +397,10 @@
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
-   <class>SpinBox</class>
-   <extends>QSpinBox</extends>
+   <class>ScrollArea</class>
+   <extends>QScrollArea</extends>
    <header>qfluentwidgets</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

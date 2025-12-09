@@ -20,8 +20,7 @@ from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
     QWidget)
 
 from qfluentwidgets import (BodyLabel, CheckBox, ComboBox, LineEdit,
-    PushButton, ScrollArea, SpinBox, TextBrowser,
-    TitleLabel)
+    PushButton, ScrollArea, TextBrowser, TitleLabel)
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -40,7 +39,7 @@ class Ui_Form(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, -148, 768, 1019))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 768, 663))
         self.verticalLayout_8 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
         self.frame = QFrame(self.scrollAreaWidgetContents)
@@ -171,154 +170,6 @@ class Ui_Form(object):
 
         self.verticalLayout_8.addWidget(self.frame_2)
 
-        self.frame_4 = QFrame(self.scrollAreaWidgetContents)
-        self.frame_4.setObjectName(u"frame_4")
-        self.frame_4.setFrameShape(QFrame.Shape.StyledPanel)
-        self.frame_4.setFrameShadow(QFrame.Shadow.Raised)
-        self.verticalLayout_5 = QVBoxLayout(self.frame_4)
-        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
-        self.VideoSetting = TitleLabel(self.frame_4)
-        self.VideoSetting.setObjectName(u"VideoSetting")
-
-        self.verticalLayout_5.addWidget(self.VideoSetting)
-
-        self.horizontalLayout_9 = QHBoxLayout()
-        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
-        self.DefaultEncoderLabel = BodyLabel(self.frame_4)
-        self.DefaultEncoderLabel.setObjectName(u"DefaultEncoderLabel")
-
-        self.horizontalLayout_9.addWidget(self.DefaultEncoderLabel)
-
-        self.DefaultEncoder_comboBox_4 = ComboBox(self.frame_4)
-        self.DefaultEncoder_comboBox_4.setObjectName(u"DefaultEncoder_comboBox_4")
-
-        self.horizontalLayout_9.addWidget(self.DefaultEncoder_comboBox_4)
-
-
-        self.verticalLayout_5.addLayout(self.horizontalLayout_9)
-
-        self.horizontalLayout_10 = QHBoxLayout()
-        self.horizontalLayout_10.setObjectName(u"horizontalLayout_10")
-        self.QualityControl = BodyLabel(self.frame_4)
-        self.QualityControl.setObjectName(u"QualityControl")
-
-        self.horizontalLayout_10.addWidget(self.QualityControl)
-
-        self.DefaultQualityControl = ComboBox(self.frame_4)
-        self.DefaultQualityControl.setObjectName(u"DefaultQualityControl")
-
-        self.horizontalLayout_10.addWidget(self.DefaultQualityControl)
-
-
-        self.verticalLayout_5.addLayout(self.horizontalLayout_10)
-
-        self.horizontalLayout_11 = QHBoxLayout()
-        self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
-        self.MaximumBitRateLabel = BodyLabel(self.frame_4)
-        self.MaximumBitRateLabel.setObjectName(u"MaximumBitRateLabel")
-
-        self.horizontalLayout_11.addWidget(self.MaximumBitRateLabel)
-
-        self.MaximumBitrateTL = LineEdit(self.frame_4)
-        self.MaximumBitrateTL.setObjectName(u"MaximumBitrateTL")
-
-        self.horizontalLayout_11.addWidget(self.MaximumBitrateTL)
-
-
-        self.verticalLayout_5.addLayout(self.horizontalLayout_11)
-
-        self.horizontalLayout_12 = QHBoxLayout()
-        self.horizontalLayout_12.setObjectName(u"horizontalLayout_12")
-        self.TargetBitrateLabel = BodyLabel(self.frame_4)
-        self.TargetBitrateLabel.setObjectName(u"TargetBitrateLabel")
-
-        self.horizontalLayout_12.addWidget(self.TargetBitrateLabel)
-
-        self.TargetBitrateTL = LineEdit(self.frame_4)
-        self.TargetBitrateTL.setObjectName(u"TargetBitrateTL")
-
-        self.horizontalLayout_12.addWidget(self.TargetBitrateTL)
-
-
-        self.verticalLayout_5.addLayout(self.horizontalLayout_12)
-
-        self.horizontalLayout_13 = QHBoxLayout()
-        self.horizontalLayout_13.setObjectName(u"horizontalLayout_13")
-        self.DefaultTargetLabel = BodyLabel(self.frame_4)
-        self.DefaultTargetLabel.setObjectName(u"DefaultTargetLabel")
-
-        self.horizontalLayout_13.addWidget(self.DefaultTargetLabel)
-
-        self.TargetFormatDefaultComboBox = ComboBox(self.frame_4)
-        self.TargetFormatDefaultComboBox.setObjectName(u"TargetFormatDefaultComboBox")
-
-        self.horizontalLayout_13.addWidget(self.TargetFormatDefaultComboBox)
-
-
-        self.verticalLayout_5.addLayout(self.horizontalLayout_13)
-
-
-        self.verticalLayout_8.addWidget(self.frame_4)
-
-        self.frame_3 = QFrame(self.scrollAreaWidgetContents)
-        self.frame_3.setObjectName(u"frame_3")
-        self.frame_3.setFrameShape(QFrame.Shape.StyledPanel)
-        self.frame_3.setFrameShadow(QFrame.Shadow.Raised)
-        self.verticalLayout_4 = QVBoxLayout(self.frame_3)
-        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        self.ProcessSettingLabel = TitleLabel(self.frame_3)
-        self.ProcessSettingLabel.setObjectName(u"ProcessSettingLabel")
-
-        self.verticalLayout_4.addWidget(self.ProcessSettingLabel)
-
-        self.horizontalLayout_6 = QHBoxLayout()
-        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-        self.DefaultWatermarkMethod = BodyLabel(self.frame_3)
-        self.DefaultWatermarkMethod.setObjectName(u"DefaultWatermarkMethod")
-
-        self.horizontalLayout_6.addWidget(self.DefaultWatermarkMethod)
-
-        self.DefaultMethodComboBox = ComboBox(self.frame_3)
-        self.DefaultMethodComboBox.setObjectName(u"DefaultMethodComboBox")
-
-        self.horizontalLayout_6.addWidget(self.DefaultMethodComboBox)
-
-
-        self.verticalLayout_4.addLayout(self.horizontalLayout_6)
-
-        self.horizontalLayout_7 = QHBoxLayout()
-        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        self.PerTaskPararllelCountLabel = BodyLabel(self.frame_3)
-        self.PerTaskPararllelCountLabel.setObjectName(u"PerTaskPararllelCountLabel")
-
-        self.horizontalLayout_7.addWidget(self.PerTaskPararllelCountLabel)
-
-        self.PerTaskPrarllelCountInput = SpinBox(self.frame_3)
-        self.PerTaskPrarllelCountInput.setObjectName(u"PerTaskPrarllelCountInput")
-
-        self.horizontalLayout_7.addWidget(self.PerTaskPrarllelCountInput)
-
-
-        self.verticalLayout_4.addLayout(self.horizontalLayout_7)
-
-        self.horizontalLayout_8 = QHBoxLayout()
-        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
-        self.PerProjMaxProcessLabel = BodyLabel(self.frame_3)
-        self.PerProjMaxProcessLabel.setObjectName(u"PerProjMaxProcessLabel")
-
-        self.horizontalLayout_8.addWidget(self.PerProjMaxProcessLabel)
-
-        self.PerProjMaxProcessInput = SpinBox(self.frame_3)
-        self.PerProjMaxProcessInput.setObjectName(u"PerProjMaxProcessInput")
-
-        self.horizontalLayout_8.addWidget(self.PerProjMaxProcessInput)
-
-
-        self.verticalLayout_4.addLayout(self.horizontalLayout_8)
-
-
-        self.verticalLayout_8.addWidget(self.frame_3)
-
         self.frame_5 = QFrame(self.scrollAreaWidgetContents)
         self.frame_5.setObjectName(u"frame_5")
         self.frame_5.setFrameShape(QFrame.Shape.StyledPanel)
@@ -359,21 +210,6 @@ class Ui_Form(object):
 
 
         self.verticalLayout_6.addLayout(self.horizontalLayout_15)
-
-        self.horizontalLayout_16 = QHBoxLayout()
-        self.horizontalLayout_16.setObjectName(u"horizontalLayout_16")
-        self.ManualCoreDump = BodyLabel(self.frame_5)
-        self.ManualCoreDump.setObjectName(u"ManualCoreDump")
-
-        self.horizontalLayout_16.addWidget(self.ManualCoreDump)
-
-        self.ManualCoreDumpCheckBox = CheckBox(self.frame_5)
-        self.ManualCoreDumpCheckBox.setObjectName(u"ManualCoreDumpCheckBox")
-
-        self.horizontalLayout_16.addWidget(self.ManualCoreDumpCheckBox)
-
-
-        self.verticalLayout_6.addLayout(self.horizontalLayout_16)
 
         self.horizontalLayout_17 = QHBoxLayout()
         self.horizontalLayout_17.setObjectName(u"horizontalLayout_17")
@@ -507,23 +343,11 @@ class Ui_Form(object):
         self.CacheDirLabel.setText(QCoreApplication.translate("Form", u"\u7f13\u5b58\u76ee\u5f55", None))
         self.CacheBrowButton.setText(QCoreApplication.translate("Form", u"\u6d4f\u89c8", None))
         self.OutputStructureLabel.setText(QCoreApplication.translate("Form", u"\u8f93\u51fa\u683c\u5f0f", None))
-        self.VideoSetting.setText(QCoreApplication.translate("Form", u"\u89c6\u9891\u8bbe\u7f6e", None))
-        self.DefaultEncoderLabel.setText(QCoreApplication.translate("Form", u"\u9ed8\u8ba4\u7f16\u7801\u5668", None))
-        self.QualityControl.setText(QCoreApplication.translate("Form", u"\u9ed8\u8ba4\u8d28\u91cf\u63a7\u5236\u65b9\u5f0f", None))
-        self.MaximumBitRateLabel.setText(QCoreApplication.translate("Form", u"\u9ed8\u8ba4\u6700\u5927\u7801\u7387", None))
-        self.TargetBitrateLabel.setText(QCoreApplication.translate("Form", u"\u9ed8\u8ba4\u76ee\u6807\u7801\u7387", None))
-        self.DefaultTargetLabel.setText(QCoreApplication.translate("Form", u"\u9ed8\u8ba4\u76ee\u6807\u683c\u5f0f", None))
-        self.ProcessSettingLabel.setText(QCoreApplication.translate("Form", u"\u5904\u7406\u8bbe\u7f6e", None))
-        self.DefaultWatermarkMethod.setText(QCoreApplication.translate("Form", u"\u9ed8\u8ba4\u6c34\u5370\u5904\u7406\u65b9\u5f0f", None))
-        self.PerTaskPararllelCountLabel.setText(QCoreApplication.translate("Form", u"\u4efb\u52a1\u5e76\u884c\u6570\u91cf", None))
-        self.PerProjMaxProcessLabel.setText(QCoreApplication.translate("Form", u"\u5355\u4efb\u52a1\u6700\u5927\u8fdb\u7a0b\u6570", None))
         self.DebugLabel.setText(QCoreApplication.translate("Form", u"Debug", None))
         self.DisplayLogLabel.setText(QCoreApplication.translate("Form", u"\u663e\u793a\u65e5\u5fd7", None))
         self.DisplayLogButton.setText(QCoreApplication.translate("Form", u"PushButton", None))
         self.DumpCoreDataWhenExceptionOccuredLabel.setText(QCoreApplication.translate("Form", u"\u9519\u8bef\u65f6\u6838\u5fc3\u8f6c\u50a8", None))
         self.DumpCoreDataWhenExceptionOccuredCheckBox.setText(QCoreApplication.translate("Form", u"\u91cd\u65b0\u542f\u52a8\u540e\u751f\u6548", None))
-        self.ManualCoreDump.setText(QCoreApplication.translate("Form", u"\u624b\u52a8\u6838\u5fc3\u8f6c\u50a8", None))
-        self.ManualCoreDumpCheckBox.setText(QCoreApplication.translate("Form", u"\u91cd\u65b0\u542f\u52a8\u540e\u751f\u6548", None))
         self.ManualCoreDumpShortCutLabel.setText(QCoreApplication.translate("Form", u"\u624b\u52a8\u6838\u5fc3\u8f6c\u50a8\u5feb\u6377\u952e", None))
         self.BugReportLabel.setText(QCoreApplication.translate("Form", u"\u53cd\u9988Bug", None))
         self.BugReportButton.setText(QCoreApplication.translate("Form", u"PushButton", None))

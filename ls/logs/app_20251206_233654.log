@@ -1,0 +1,5 @@
+2025-12-06 23:37:05.332 | DEBUG    | main | This is a debug
+2025-12-06 23:37:05.333 | INFO     | main | This is an info
+2025-12-06 23:37:05.333 | ERROR    | main | This is an error
+2025-12-06 23:37:05.334 | CRITICAL | main | This is a critical
+2025-12-06 23:37:05.335 | SUCCESS  | main | This is a success

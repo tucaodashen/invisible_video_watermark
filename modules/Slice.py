@@ -213,7 +213,7 @@ class Slice:
         #     raise
 
     def _process(self):
-        # raise RuntimeError("TEST")
+        raise RuntimeError("TEST")
         self.logger.debug(f"Start processing {self.identify['order']},sort UUID {str(self.log_sort_uuid)}",tags=f"Slice:Slice:process:{os.path.basename(self.file)}:{self.identify['order']}")
         self.output_progress_description(0,_("Start processing"))
         FileSystem.create_workspace(self.identify['name'])

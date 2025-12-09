@@ -110,9 +110,28 @@ class LogProcessor:
             if "main" in str(i).split("|")[2]:
                 non_sorted_log.append(str(i).replace("\n",""))
         for ia in sort_logs(non_sorted_log):
-            if str(ia).split("|")[1].replace(" ","").lower() in level or True:
+            if str(ia).split("|")[1].replace(" ","").lower() in level:
                 final_lost.append(ia)
         return final_lost
+
+    def get_all_embed_task(self):
+        available_task = []
+        for i in self.log_lines:
+            if "ProcessUnit:ProcessUnit" in i:
+                task = str(i).split("|")[2].split(":")[-1]
+                if task not in available_task:
+                    available_task.append(task)
+        return available_task
+
+    def get_all_extract_task(self):
+        available_task = []
+        for i in self.log_lines:
+            if "ExtractUnit:ExtractUnit" in i:
+                task = str(i).split("|")[2].split(":")[-1]
+                if task not in available_task:
+                    available_task.append(task)
+        return available_task
+
 
 
 
@@ -122,7 +141,7 @@ if __name__ == "__main__":
     print(log_processor.available_level)
     log_processor.output_process_unit_logs("short.mp4",["error"],"0")
     resu = log_processor.output_extract_unit_logs("embedded.mp4",["debug","info"],"1")
-    resu = log_processor.output_main_process_logs(["debug"])
+    # resu = log_processor.get_all_extract_task()
     for i in resu:
         print(i)
 

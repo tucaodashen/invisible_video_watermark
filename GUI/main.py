@@ -15,8 +15,11 @@ from typing import Optional
 
 import numpy as np
 import psutil
+import pyanime4k
 
 from BasicSystem.log_client import setup_logger, get_logger
+from GUI.NonCW import Ui_NonCriticalError
+from GUI.UpScale import Ui_UpScaleAni
 from modules.PyAv import extract_video_frames
 from modules.GenerateVideo import get_video_parameters_simple,get_audio_parameters_simple
 import cv2
@@ -25,26 +28,22 @@ from PySide6.QtGui import QPixmap, QImage, QDesktopServices
 from BasicSystem import const
 from modules import ProcessUnit, PyAv
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout, QTableWidgetItem, QProgressBar, \
-    QHeaderView, QTableWidget, QFileDialog, QAbstractItemView
+    QHeaderView, QTableWidget, QFileDialog, QAbstractItemView, QLineEdit
 from PySide6.QtCore import Qt, QTimer, Signal, QSize, QUrl
 from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel, RoundMenu, Action, \
-    FluentIcon, InfoBar, InfoBarPosition
+    FluentIcon, InfoBar, InfoBarPosition, PushButton, LineEdit
 
-from GUI.Splash import Ui_SplashDesu
 from GUI.MainWindows import Ui_MainWindow
 from GUI.Setting import Ui_Form as Ui_Setting
 from GUI.SetUp import Ui_SetUpNewForm
 from GUI.PresetApplyConfirm import Ui_AP_Form
 from GUI.RecoverWindow import Ui_Recover_Form
-
-import sys
-from GUI import PrepareRequirements
 import gettext
 from PySide6.QtCore import Qt
 from GUI import error_report
+from GUI.credit import Ui_Credit
 from modules.ThreadingScheduler import ThreadPoolManager
 import os
-
 from modules.audio import AudioPlayer
 from modules.ExtractUnit import ExtracUnit
 from modules.pltform import get_render_devices
@@ -60,6 +59,31 @@ print(_devices)
 preset_path = "./preset"
 
 from qfluentwidgets import Dialog, setTheme, Theme, PrimaryPushButton, MessageBoxBase, SubtitleLabel, ProgressBar, BodyLabel
+
+
+def non_critical_error_info_bar(self,error):
+    content = _("主处理程序疑似发生错误，这一错误可能不会影响程序的运行，但有可能导致对编解码模块的配置异常。")
+    w = InfoBar(
+        icon=InfoBarIcon.ERROR,
+        title=_(f'主程序发生错误:{error[0]}'),
+        content=content,
+        orient=Qt.Vertical,  # vertical layout
+        isClosable=True,
+        position=InfoBarPosition.BOTTOM_RIGHT,
+        duration=4000,
+        parent=self
+    )
+    def show_detail_window(error):
+        detail_window = NonCriticalErrorDetail(error,parent=self)
+        detail_window.show()
+
+    detail_button = PrimaryPushButton(_("了解详情"))
+    detail_button.clicked.connect(lambda : self.show_detail_window(error))
+    w.addWidget(detail_button)
+    w.show()
+
+
+
 
 
 def _get_duration_opencv(video_path: str) -> Optional[float]:
@@ -145,6 +169,80 @@ def cv2_to_qpixmap(cv_img):
     return QPixmap.fromImage(q_img.copy())
 
 
+class UpscaleWindow(QWidget,Ui_UpScaleAni):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.setWindowTitle(_("超分辨率"))
+        self.lineEdit.setPlaceholderText(_("请输入图片路径，若输入目录则会批量处理"))
+        self.lineEdit_2.setPlaceholderText(_("请输入输出目录"))
+        self.pushButton.setText(_("浏览"))
+        self.pushButton_3.setText(_("浏览"))
+        self.pushButton_2.setText(_("启动"))
+        self.pushButton.clicked.connect(lambda: self.browse_filename(self.lineEdit))
+        self.pushButton_3.clicked.connect(lambda: self.browse_output_dir(self.lineEdit_2))
+        self.pushButton_2.clicked.connect(self.process)
+
+    def browse_filename(self, lineEdit:LineEdit):
+        filename, a_ = QFileDialog.getOpenFileName(self, _("选择文件"), "", _("图片文件 (*.png *.jpg *.jpeg)"))
+        if filename:
+            lineEdit.setText(filename)
+
+    def browse_output_dir(self, lineEdit:LineEdit):
+        dirname = QFileDialog.getExistingDirectory(self, _("选择目录"))
+        if dirname:
+            lineEdit.setText(dirname)
+
+    def process(self):
+        self.pushButton_2.setText(_("处理中..."))
+        self.pushButton_2.setEnabled(
+                False
+        )
+        processor = pyanime4k.Processor(
+            processor_type="opencl",
+            device=0,
+            model="acnet-hdn0"
+        )
+        if len(self.lineEdit.text()) == 0 or len(self.lineEdit_2.text()) == 0:
+            InfoBar.error(
+                title=_("错误"),
+                content=_("请输入图片路径和输出目录"),
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self
+            )
+            self.pushButton_2.setEnabled(
+                True
+            )
+            self.pushButton_2.setText(_("启动"))
+            return
+        if os.path.isfile(self.lineEdit.text()) and os.path.exists(self.lineEdit_2.text()):
+            src = cv2.imread(self.lineEdit.text())
+            dst = processor(src)
+            cv2.imwrite(filename=os.path.join(self.lineEdit_2.text(), str(os.path.basename(self.lineEdit.text()))), img=dst)
+            self.pushButton_2.setEnabled(
+                True
+            )
+            self.pushButton_2.setText(_("启动"))
+        if not os.path.isfile(self.lineEdit.text()) and os.path.exists(self.lineEdit_2.text()):
+            for file in os.listdir(self.lineEdit.text()):
+                if file.endswith(".png") or file.endswith(".jpg") or file.endswith(".jpeg"):
+                    src = cv2.imread(os.path.join(self.lineEdit.text(), file))
+                    dst = processor(src)
+                    cv2.imwrite(filename=os.path.join(self.lineEdit_2.text(), file), img=dst)
+            self.pushButton_2.setEnabled(
+                True
+            )
+            self.pushButton_2.setText(_("启动"))
+        InfoBar.success(
+            title=_("处理完成"),
+            content=_("Yay!"),
+            position=InfoBarPosition.TOP,
+            duration=2000,
+            parent=self
+        )
+
+
 class SettingUi_L(QFrame,Ui_Setting):
     def __init__(self):
         super().__init__()
@@ -177,41 +275,32 @@ class SettingUi_L(QFrame,Ui_Setting):
         self.OutputStructureComboBox.addItem(_("目录"),"dir")
         self.OutputStructureComboBox.addItem(_("压缩文件(ZIP)"),"zip-file")
         self.SoftwareVersionDetial.setText(_("InvisibleWatermarkToolboxNEXT ParySoftware © 2020-2025 All rights reserved.\nThis software is licensed under the MIT license.\nVersion:{version}").format(version=_("0.1 Alpha_α")))
-        self.VideoSetting.setText(_("视频设置"))
-        self.DefaultEncoderLabel.setText(_("默认编码器"))
-        self.DefaultEncoder_comboBox_4.addItem(_("CPU编码器"),"CPU")
-        self.DefaultEncoder_comboBox_4.addItem(_("GPU编码器"),"GPU")
-        self.DefaultQualityControl.addItem(_("CRF"),"CRF")
-        self.DefaultQualityControl.addItem(_("CBR"),"CBR")
-        self.DefaultQualityControl.addItem(_("VBR"),"VBR")
-        self.DefaultQualityControl.addItem(_("CVBR"),"CVBR")
-        self.QualityControl.setText(_("质量控制"))
-        self.MaximumBitRateLabel.setText(_("最大码率"))
-        self.TargetBitrateLabel.setText(_("目标码率"))
-        self.DefaultTargetLabel.setText(_("默认目标格式"))
-        self.TargetFormatDefaultComboBox.addItem(_("MP4"),"mp4")
-        self.TargetFormatDefaultComboBox.addItem(_("MKV"),"mkv")
-        self.TargetFormatDefaultComboBox.addItem(_("AVI"),"avi")
-        self.ProcessSettingLabel.setText(_("处理设置"))
-        self.DefaultWatermarkMethod.setText(_("默认水印方法"))
-        self.DefaultMethodComboBox.addItem(_("图片水印(FireKeeper)"),"FK_Image")
-        self.DefaultMethodComboBox.addItem(_("图片水印(GuoFei)"),"GF_Image")
-        self.DefaultMethodComboBox.addItem(_("文字水印(GuoFei)"),"GF_Text")
-        self.DefaultMethodComboBox.addItem(_("文字水印(ShieldMint)"),"SM_Text")
-        self.PerTaskPararllelCountLabel.setText(_("任务并行数"))
-        self.PerProjMaxProcessLabel.setText(_("单任务最大进程数"))
         self.DisplayLogLabel.setText(_("显示日志"))
         self.DisplayLogButton.setText(_("显示"))
         self.DumpCoreDataWhenExceptionOccuredLabel.setText(_("发生异常时转储核心数据"))
         self.DumpCoreDataWhenExceptionOccuredCheckBox.setText(_("重启后生效"))
-        self.ManualCoreDump.setText(_("手动转储核心数据"))
-        self.ManualCoreDumpCheckBox.setText(_("重启后生效"))
         self.ManualCoreDumpShortCutLabel.setText(_("手动转储快捷键"))
         self.BugReportLabel.setText(_("报告错误"))
         self.BugReportButton.setText(_("报告"))
         self.VersionLabel.setText(_("版本信息"))
         self.SoftwareVersionLabel.setText(_("软件版本"))
         self.SoftwareVersionCheckButton.setText(_("检查更新"))
+
+class CreditWindow(QWidget,Ui_Credit):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.label_22.setImage("./assets/image/slogan.png")
+        self.label_22.scaledToHeight(64)
+        self.label_2.setImage("./assets/image/Tucaodashen.png")
+        self.label_2.setRadius(50)
+        self.label_3.setImage("./assets/image/Chengshi.jpg")
+        self.label_3.setRadius(50)
+        self.label_4.setText("雨泽.")
+        self.label_4.setRadius(50)
+
 
 class Preset_Confirm(QFrame,Ui_AP_Form):
     save = Signal(dict)
@@ -254,6 +343,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     thumbnail_status_signal = Signal(str)
     def __init__(self):
         super().__init__()
+        self.upscale_window = None
         self.log_process = None
         self.recover_window = None
         self.played = False
@@ -322,6 +412,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.PresentList.receive_file.connect(self.receive_preset_drag)
         self.action_14.triggered.connect(self.show_recover_window)
         self.action_12.triggered.connect(lambda : self.jump_to_website("https://opensource.org/license/mit"))
+        self.action_7.triggered.connect(self.display_upscale_window)
 
 
     def is_task_over(self):
@@ -353,6 +444,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             showFlyout(self,target = self.MLTL,icon = InfoBarIcon.WARNING, title = _("目录不存在"), content = _("请先创建目录"))
             logger.warning(f"Batch process directory is empty",tags="main:create_batch_via_button")
+
+    def display_upscale_window(self):
+        self.upscale_window = UpscaleWindow()
+        self.upscale_window.show()
+        logger.debug(f"Upscale window shown",tags="main:display_upscale_window")
 
 
     def show_context_menu(self, pos):
@@ -1159,115 +1255,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 
-
-
-
-class SplashScreen(QWidget,Ui_SplashDesu):
-    timers = QTimer()
-    def __init__(self):
-        super().__init__()
-        self.process = None
-        self.timer_st_oneshot = QTimer()
-        self.timer_st_oneshot.timeout.connect(self.start_now)
-        self.timer_st_oneshot.setSingleShot(True)
-        self.setupUi(self)
-        self.setInvisible()
-        self.Tips.setText("Loading...")
-        self.progressBar.setValue(0)
-        self.MainWindow = MainWindow()
-        self.prepare()
-
-
-
-
-
-    def setInvisible(self): 
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground)
-
-    def adjust_size_based_on_resolution(self):
-        pass
-
-    def prepare(self):
-        self.timers.stop()
-        self.Tips.setText(_("检查FFmpeg中..."))
-        if not PrepareRequirements.is_ffmpeg_exist():
-            self.Tips.setText(_("安装FFMpeg"))
-            self.display_dialog()
-        self.Tips.setText(_("清理松散文件中..."))
-        if os.path.exists("WorkPath"):
-            shutil.rmtree("WorkPath")
-        os.mkdir("WorkPath")
-        self.Tips.setText(_("启动日志服务器..."))
-        self.run_log()
-        self.Tips.setText(_("加载主页面..."))
-        self.timer_st_oneshot.start(3000)
-
-    def run_log(self):
-        print("当前工作目录:", os.getcwd())
-        self.process,pid = run_process_and_get_pid(["ls/LogServer.exe"])
-
-    def start_now(self):
-        self.MainWindow.log_process = self.process
-        self.MainWindow.showMaximized()
-        self.close()
-
-
-
-    def display_dialog(self):
-        title = _("FFmpeg未安装")
-        content = _("FFmpeg是此程序和依赖库MoviePy的核心组件。如果你想自行安装FFmpeg并添加到环境变量中，请点击否。点击是将自动下载并安装FFmpeg。(不会添加到环境变量中)")
-        w = Dialog(title, content, self)
-        if w.exec():
-            w = FFmpegDownloadPage(self)
-            if w.exec():
-                # print(w.urlLineEdit.text())
-                pass
-        else:
-            print('Cancel button is pressed')
-
-    def download_dialog(self):
-        pass
-
-class FFmpegDownloadPage(MessageBoxBase):
-    """ Custom message box """
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.titleLabel = SubtitleLabel(_('FFmpeg正在下载'), self)
-        self.progressBar = ProgressBar(self)
-        self.labels = BodyLabel(_('请耐心等待下载完成'), self)
-
-
-        # add widget to view layout
-        self.viewLayout.addWidget(self.titleLabel)
-        self.viewLayout.addWidget(self.progressBar)
-        self.viewLayout.addWidget(self.labels)
-
-        # change the text of button
-        self.yesButton.hide()
-        self.cancelButton.hide()
-
-        self.widget.setMinimumWidth(350)
-
-        # self.hideYesButton()
-        self.download_thread = PrepareRequirements.FFmpegPrepare()
-        self.download_thread.progress.connect(self.set_progress)
-        self.download_thread.progress_text.connect(self.set_progress_text)
-        self.download_thread.success.connect(self.is_success)
-        try:
-            self.download_thread.start()
-        except Exception as e:
-            self.labels.setText(str(e))
-
-    def set_progress(self, value):
-        self.progressBar.setVal(value)
-    def set_progress_text(self, text):
-        self.labels.setText(text)
-
-    def is_success(self, value):
-        if value:
-            self.close()
 
 class CreateNewProject(QFrame,Ui_SetUpNewForm):
     complete = Signal()
@@ -2114,14 +2101,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             self.F_Video.hide()
 
 
-def start():
-    QApplication.setHighDpiScaleFactorRoundingPolicy(
-        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
-    app = QApplication(sys.argv)
 
-    window = SplashScreen()
-    window.show()
-    sys.exit(app.exec())
 
 def showFlyout(self,target,icon,content,title):
     Flyout.create(
@@ -2358,24 +2338,24 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
             self.progressBar.setValue(progress*100)
 
 
-def run_process_and_get_pid(command):
-    """
-    运行命令并返回进程对象和PID
+class NonCriticalErrorDetail(QWidget,Ui_NonCriticalError):
+    def __init__(self,error,parent=None):
+        super().__init__(parent,Qt.Window)
+        self.setupUi(self)
+        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowTitle(_("啊哈哈...发生非致命性错误"))
+        self.label_2.setImage("./assets/image/NCW.png")
+        self.label_2.scaledToHeight(64)
+        self.label_2.setBorderRadius(8, 8, 8, 8)
+        self.pushButton_2.setText(_("忽略"))
+        self.pushButton.setText(_("报告错误"))
+        self.label.setText(error[0])
+        self.textBrowser.setText(error[1])
+        self.pushButton_2.clicked.connect(self.close)
 
-    Args:
-        command (str/list): 要执行的命令，可以是字符串或列表
 
-    Returns:
-        tuple: (process对象, PID)
-    """
-    # 如果command是字符串，需要设置shell=True
-    if isinstance(command, str):
-        process = subprocess.Popen(command, shell=True)
-    else:
-        process = subprocess.Popen(command)
 
-    pid = process.pid
-    return process, pid
+
 
 
 
@@ -2415,10 +2395,4 @@ def is_running_simple(process_name):
 
 
 if __name__ == "__main__":
-    QApplication.setHighDpiScaleFactorRoundingPolicy(
-        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
-    app = QApplication(sys.argv)
-
-    window = SplashScreen()
-    window.show()
-    sys.exit(app.exec())
+    print("Hello World!")

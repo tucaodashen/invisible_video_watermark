@@ -79,7 +79,7 @@
       <enum>QTabWidget::TabShape::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="tab_4">
       <attribute name="title">
@@ -202,7 +202,7 @@
               </widget>
              </item>
              <item>
-              <widget class="ComboBox" name="comboBox_4"/>
+              <widget class="SpinBox" name="spinBox"/>
              </item>
             </layout>
            </item>
@@ -292,7 +292,7 @@
               </widget>
              </item>
              <item>
-              <widget class="ComboBox" name="comboBox_7"/>
+              <widget class="SpinBox" name="spinBox_2"/>
              </item>
             </layout>
            </item>
@@ -312,16 +312,6 @@
       <layout class="QGridLayout" name="gridLayout_4">
        <item row="0" column="0">
         <widget class="QTextBrowser" name="textBrowser_5"/>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="tab_3">
-      <attribute name="title">
-       <string>VizTracer信息</string>
-      </attribute>
-      <layout class="QGridLayout" name="gridLayout_5">
-       <item row="0" column="0">
-        <widget class="QTextBrowser" name="textBrowser_6"/>
        </item>
       </layout>
      </widget>
@@ -402,9 +392,15 @@
    <extends>QComboBox</extends>
    <header>qfluentwidgets</header>
   </customwidget>
+  <customwidget>
+   <class>SpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
  </customwidgets>
  <resources>
   <include location="../GUI/allin.qrc"/>
+  <include location="C:/Users/ASUS/.designer/GUI/allin.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -2,28 +2,24 @@ import multiprocessing
 import os
 import socket
 
-def is_port_in_use(port: int, host: str = 'localhost') -> bool:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(1)  # 设置连接超时时间
+def is_port_available(port: int, host: str = '0.0.0.0') -> bool:
+    """检查端口是否可用（未被占用）"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         try:
-            # 尝试连接指定端口
-            result = s.connect_ex((host, port))
-            # 如果连接成功（返回0），则端口被占用
-            return result == 0
-        except socket.gaierror:
-            # 主机名解析失败
+            sock.bind((host, port))
+            return True
+        except OSError:
             return False
         except Exception:
-            # 其他异常情况
             return False
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     if not os.path.exists("assets"):
         raise RuntimeError("文件不完整，无法运行")
-    if is_port_in_use(1165):
+    if not is_port_available(1165):
         raise RuntimeError("端口1165已被占用，无法运行")
-    if is_port_in_use(9999):
+    if not is_port_available(9999):
         raise RuntimeError("端口9999已被占用，无法运行")
-    from GUI import main
-    main.start()
+    from GUI import Startup_Splash
+    Startup_Splash.start()
