@@ -16,8 +16,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
-    QKeySequenceEdit, QLabel, QSizePolicy, QVBoxLayout,
-    QWidget)
+    QLabel, QSizePolicy, QVBoxLayout, QWidget)
 
 from qfluentwidgets import (BodyLabel, CheckBox, ComboBox, LineEdit,
     PushButton, ScrollArea, TextBrowser, TitleLabel)
@@ -39,7 +38,7 @@ class Ui_Form(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 768, 663))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 768, 571))
         self.verticalLayout_8 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
         self.frame = QFrame(self.scrollAreaWidgetContents)
@@ -67,21 +66,6 @@ class Ui_Form(object):
 
 
         self.verticalLayout_2.addLayout(self.horizontalLayout_21)
-
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.StartPageLabel = BodyLabel(self.frame)
-        self.StartPageLabel.setObjectName(u"StartPageLabel")
-
-        self.horizontalLayout.addWidget(self.StartPageLabel)
-
-        self.StartPageCombo = ComboBox(self.frame)
-        self.StartPageCombo.setObjectName(u"StartPageCombo")
-
-        self.horizontalLayout.addWidget(self.StartPageCombo)
-
-
-        self.verticalLayout_2.addLayout(self.horizontalLayout)
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
@@ -131,26 +115,6 @@ class Ui_Form(object):
 
 
         self.verticalLayout_3.addLayout(self.horizontalLayout_3)
-
-        self.horizontalLayout_4 = QHBoxLayout()
-        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.CacheDirLabel = BodyLabel(self.frame_2)
-        self.CacheDirLabel.setObjectName(u"CacheDirLabel")
-
-        self.horizontalLayout_4.addWidget(self.CacheDirLabel)
-
-        self.CacheDirTL = LineEdit(self.frame_2)
-        self.CacheDirTL.setObjectName(u"CacheDirTL")
-
-        self.horizontalLayout_4.addWidget(self.CacheDirTL)
-
-        self.CacheBrowButton = PushButton(self.frame_2)
-        self.CacheBrowButton.setObjectName(u"CacheBrowButton")
-
-        self.horizontalLayout_4.addWidget(self.CacheBrowButton)
-
-
-        self.verticalLayout_3.addLayout(self.horizontalLayout_4)
 
         self.horizontalLayout_5 = QHBoxLayout()
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
@@ -210,21 +174,6 @@ class Ui_Form(object):
 
 
         self.verticalLayout_6.addLayout(self.horizontalLayout_15)
-
-        self.horizontalLayout_17 = QHBoxLayout()
-        self.horizontalLayout_17.setObjectName(u"horizontalLayout_17")
-        self.ManualCoreDumpShortCutLabel = BodyLabel(self.frame_5)
-        self.ManualCoreDumpShortCutLabel.setObjectName(u"ManualCoreDumpShortCutLabel")
-
-        self.horizontalLayout_17.addWidget(self.ManualCoreDumpShortCutLabel)
-
-        self.ManualCoreDumpKeySeq = QKeySequenceEdit(self.frame_5)
-        self.ManualCoreDumpKeySeq.setObjectName(u"ManualCoreDumpKeySeq")
-
-        self.horizontalLayout_17.addWidget(self.ManualCoreDumpKeySeq)
-
-
-        self.verticalLayout_6.addLayout(self.horizontalLayout_17)
 
         self.horizontalLayout_18 = QHBoxLayout()
         self.horizontalLayout_18.setObjectName(u"horizontalLayout_18")
@@ -334,21 +283,17 @@ class Ui_Form(object):
         self.SettingTitleLabel.setText(QCoreApplication.translate("Form", u"TextLabel", None))
         self.General_label.setText(QCoreApplication.translate("Form", u"\u901a\u7528", None))
         self.LanguageLabel.setText(QCoreApplication.translate("Form", u"\u8bed\u8a00", None))
-        self.StartPageLabel.setText(QCoreApplication.translate("Form", u"\u542f\u52a8\u65f6\u9875\u9762", None))
         self.CompleteDing.setText(QCoreApplication.translate("Form", u"\u5b8c\u6210\u540e\u63d0\u793a\u97f3", None))
         self.CompleteDingCheck.setText("")
         self.FileRelatedLabel.setText(QCoreApplication.translate("Form", u"\u6587\u4ef6", None))
         self.DefaultSaveDictLabel.setText(QCoreApplication.translate("Form", u"\u9ed8\u8ba4\u4fdd\u5b58\u76ee\u5f55", None))
         self.DefaultSaveDictBrowserButton.setText(QCoreApplication.translate("Form", u"\u6d4f\u89c8", None))
-        self.CacheDirLabel.setText(QCoreApplication.translate("Form", u"\u7f13\u5b58\u76ee\u5f55", None))
-        self.CacheBrowButton.setText(QCoreApplication.translate("Form", u"\u6d4f\u89c8", None))
         self.OutputStructureLabel.setText(QCoreApplication.translate("Form", u"\u8f93\u51fa\u683c\u5f0f", None))
         self.DebugLabel.setText(QCoreApplication.translate("Form", u"Debug", None))
         self.DisplayLogLabel.setText(QCoreApplication.translate("Form", u"\u663e\u793a\u65e5\u5fd7", None))
         self.DisplayLogButton.setText(QCoreApplication.translate("Form", u"PushButton", None))
         self.DumpCoreDataWhenExceptionOccuredLabel.setText(QCoreApplication.translate("Form", u"\u9519\u8bef\u65f6\u6838\u5fc3\u8f6c\u50a8", None))
         self.DumpCoreDataWhenExceptionOccuredCheckBox.setText(QCoreApplication.translate("Form", u"\u91cd\u65b0\u542f\u52a8\u540e\u751f\u6548", None))
-        self.ManualCoreDumpShortCutLabel.setText(QCoreApplication.translate("Form", u"\u624b\u52a8\u6838\u5fc3\u8f6c\u50a8\u5feb\u6377\u952e", None))
         self.BugReportLabel.setText(QCoreApplication.translate("Form", u"\u53cd\u9988Bug", None))
         self.BugReportButton.setText(QCoreApplication.translate("Form", u"PushButton", None))
         self.VersionLabel.setText(QCoreApplication.translate("Form", u"\u7248\u672c", None))

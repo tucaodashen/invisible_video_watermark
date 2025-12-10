@@ -1,7 +1,14 @@
+import json
+import re
+import subprocess
+import time
+
 import cv2
 import random
 import os
 import ffmpeg
+import numpy as np
+
 from BasicSystem import const
 from BasicSystem.log_client import setup_logger,get_logger
 setup_logger(default_tags="VideoProcessor", enable_udp=True, enable_console=True)
@@ -167,6 +174,168 @@ def extract_frame_by_index(video_path, frame_index, output_path):
 
     cap.release()
 
+
+def ffmpeg_extract_frames(video_path, start_frame, end_frame, output_dir, formate="png", callback=None):
+    """
+    提取视频中指定帧范围的所有帧 (使用 FFmpeg 直接输出，避免数据流经 Python)
+
+    参数:
+    video_path: 视频文件路径
+    start_frame: 起始帧号(包含)
+    end_frame: 结束帧号(包含)
+    output_dir: 输出目录路径
+    """
+    # 确保输出目录存在
+    os.makedirs(output_dir, exist_ok=True)
+
+    # ==========================================
+    # 1. 使用 ffprobe 获取视频元数据
+    # ==========================================
+    if not os.path.exists(video_path):
+        logger.error(f"Failed to open video file: {video_path}", tags="VideoProcessor:extract_frames")
+        raise FileNotFoundError(f"Failed to open video file: {video_path}")
+
+    try:
+        # 构建 ffprobe 命令获取总帧数
+        probe_cmd = [
+            'ffprobe',
+            '-v', 'error',
+            '-select_streams', 'v:0',
+            '-show_entries', 'stream=nb_frames',
+            '-of', 'json',
+            video_path
+        ]
+        probe_result = subprocess.run(probe_cmd, capture_output=True, text=True, check=True)
+        video_info = json.loads(probe_result.stdout)['streams'][0]
+
+        if 'nb_frames' not in video_info:
+            raise RuntimeError("Could not determine total frames using ffprobe.")
+
+        total_frames = int(video_info['nb_frames'])
+
+    except Exception as e:
+        logger.error(f"Failed to probe video file: {video_path}, error: {e}", tags="VideoProcessor:extract_frames")
+        # 抛出更具体的错误，如果文件不存在则抛出 FileNotFoundError
+        raise FileNotFoundError(f"Failed to open video file: {video_path}")
+
+    logger.info(f"total_frames: {total_frames}", tags="VideoProcessor:extract_frames")
+
+    # 验证帧范围有效性
+    if start_frame < 0 or end_frame >= total_frames or start_frame > end_frame:
+        logger.warning(f"Invalid frame range: {start_frame} to {end_frame}", tags="VideoProcessor:extract_frames")
+        return
+
+    extract_count = end_frame - start_frame + 1
+
+    # ==========================================
+    # 2. 构建 FFmpeg 命令 (与上一个版本相同)
+    # ==========================================
+
+    ffmpeg_cmd = [
+        'ffmpeg',
+        '-i', video_path,
+        '-vsync', 'vfr',
+        '-q:v', '2',
+        '-vf', f"select='between(n,{start_frame},{end_frame})'",
+        '-frames:v', str(extract_count),
+        os.path.join(output_dir, f"frame_%06d.{formate}")
+    ]
+
+    # ==========================================
+    # 3. 执行 FFmpeg 子进程并处理进度 (Progress Monitoring)
+    # ==========================================
+
+    logger.info(f"Starting FFmpeg to extract frames {start_frame} to {end_frame}...", tags="VideoProcessor:extract_frames")
+
+    process = subprocess.Popen(ffmpeg_cmd, stderr=subprocess.PIPE, universal_newlines=True)
+
+    processed_frames = 0
+    total_frames_to_extract = extract_count
+    frame_pattern = re.compile(r'frame=\s*(\d+)')
+
+    try:
+        while process.poll() is None:
+            line = process.stderr.readline()
+            if not line:
+                break
+
+            match = frame_pattern.search(line)
+            if match:
+                processed_frames = int(match.group(1))
+
+                # 更新日志
+                current_original_frame = start_frame + processed_frames - 1
+                logger.debug(f"FFmpeg progress: Output frame {processed_frames}/{total_frames_to_extract}. (Approx. Original frame: {current_original_frame})",
+                             tags=f"VideoProcessor:extract_frames:{os.path.basename(video_path)}")
+
+                # 执行进度回调
+                if callback is not None and total_frames_to_extract > 0:
+                    cur = processed_frames * 1.0
+                    total = total_frames_to_extract * 1.0
+                    try:
+                        progress = cur / total
+                        if progress <= 0.98:
+                            callback(progress)
+                    except TypeError:
+                        pass
+
+            time.sleep(0.01)
+
+        process.wait()
+
+        if process.returncode != 0:
+            # 读取所有剩余的错误输出
+            error_output = process.stderr.read()
+            logger.critical(f"FFmpeg failed with error code {process.returncode}:\n{error_output}", tags="VideoProcessor:extract_frames")
+            raise RuntimeError(f"FFmpeg extraction failed. See log for details.")
+
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            process.wait()
+
+    # ==========================================
+    # 4. 文件重命名 (修正 FFmpeg 序列号从 1 开始的问题)
+    # ==========================================
+
+    logger.info("Renaming extracted files...", tags="VideoProcessor:extract_frames")
+
+    # 我们知道 FFmpeg 的序列号从 1 开始，对应我们要提取的第一帧 (start_frame)
+    for i in range(extract_count):
+        # FFmpeg 输出的文件名序列号 (1, 2, 3, ...)
+        # 原来的 i 是 0, 1, 2...
+        ffmpeg_seq_num = i + 1
+        ffmpeg_filename = f"frame_{ffmpeg_seq_num:06d}.{formate}"
+        old_path = os.path.join(output_dir, ffmpeg_filename)
+
+        # 原始视频对应的帧号 (start_frame, start_frame + 1, ...)
+        original_frame_num = start_frame + i
+        original_filename = f"frame_{original_frame_num:06d}.{formate}"
+        new_path = os.path.join(output_dir, original_filename)
+
+        if os.path.exists(old_path):
+            try:
+                os.rename(old_path, new_path)
+            except OSError as e:
+                logger.error(f"Failed to rename {old_path} to {new_path}: {e}", tags="VideoProcessor:extract_frames")
+                # 如果重命名失败，我们不能抛出 FileNotFoundError，但应该抛出 RuntimeError
+                raise RuntimeError(f"Failed to rename extracted file: {e}")
+        else:
+            # 捕获您遇到的错误：如果缺少期望的第一个文件 (frame_000001.png)
+            logger.critical(f"Missing expected output file: {old_path}", tags="VideoProcessor:extract_frames")
+            # 这里的 FileNotFoundError 是正确的，因为文件确实缺失
+            raise FileNotFoundError(f"FFmpeg did not produce expected output file: {old_path}")
+
+    # 最终回调确保进度为 1
+    if callback is not None:
+        try:
+            callback(1)
+        except TypeError:
+            pass
+
+    logger.info(f"\nOver! Extracted {extract_count} frames to {output_dir}", tags=f"VideoProcessor:extract_frames:{os.path.basename(video_path)}")
+
+
 def extract_frames(video_path, start_frame, end_frame, output_dir,formate="png",callback=None):
     """
     提取视频中指定帧范围的所有帧
@@ -249,7 +418,13 @@ def spitter(total_frame_count,split_size):
 
 
 if __name__ == '__main__':
-    print(spitter(100,10))
+    ffmpeg_extract_frames("./test.mp4",0,280,"./")
+    # import cv2
+    #
+    # cap = cv2.VideoCapture("./short.mp4")
+    # total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    # print(f"视频总帧数: {total_frames}")
+    # cap.release()
 
 
 

@@ -246,8 +246,15 @@ class UpscaleWindow(QWidget,Ui_UpScaleAni):
 class SettingUi_L(QFrame,Ui_Setting):
     def __init__(self):
         super().__init__()
+        self.viewer = None
         self.setupUi(self)
         self.set_text()
+        self.credit_window = None
+        self.set_slot()
+
+    def display_credit(self):
+        self.credit_window = CreditWindow()
+        self.credit_window.show()
 
 
     def set_text(self):
@@ -259,18 +266,11 @@ class SettingUi_L(QFrame,Ui_Setting):
         self.LanguagecomboBox.addItem(_("中文(繁體)"),"zh_TW")
         self.LanguagecomboBox.addItem(_("English"),"en_US")
         self.LanguagecomboBox.addItem(_("日本語"),"ja_JP")
-        self.StartPageLabel.setText(_("开始页"))
-        self.StartPageCombo.addItem(_("视频水印主页面"))
-        self.StartPageCombo.addItem(_("图片水印主页面"))
-        self.StartPageCombo.addItem(_("解码主页面"))
         self.CompleteDing.setText(_("完成时声音提醒"))
         self.FileRelatedLabel.setText(_("文件相关设置"))
         self.DefaultSaveDictTextEdit.setPlaceholderText(_("默认保存路径"))
         self.DefaultSaveDictLabel.setText(_("默认保存路径"))
         self.DefaultSaveDictBrowserButton.setText(_("浏览"))
-        self.CacheDirLabel.setText(_("缓存目录"))
-        self.CacheDirTL.setPlaceholderText(_("缓存目录"))
-        self.CacheBrowButton.setText(_("浏览"))
         self.OutputStructureLabel.setText(_("输出结构"))
         self.OutputStructureComboBox.addItem(_("目录"),"dir")
         self.OutputStructureComboBox.addItem(_("压缩文件(ZIP)"),"zip-file")
@@ -279,12 +279,15 @@ class SettingUi_L(QFrame,Ui_Setting):
         self.DisplayLogButton.setText(_("显示"))
         self.DumpCoreDataWhenExceptionOccuredLabel.setText(_("发生异常时转储核心数据"))
         self.DumpCoreDataWhenExceptionOccuredCheckBox.setText(_("重启后生效"))
-        self.ManualCoreDumpShortCutLabel.setText(_("手动转储快捷键"))
         self.BugReportLabel.setText(_("报告错误"))
         self.BugReportButton.setText(_("报告"))
         self.VersionLabel.setText(_("版本信息"))
         self.SoftwareVersionLabel.setText(_("软件版本"))
         self.SoftwareVersionCheckButton.setText(_("检查更新"))
+
+    def set_slot(self):
+        pass
+
 
 class CreditWindow(QWidget,Ui_Credit):
     def __init__(self):
@@ -343,6 +346,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     thumbnail_status_signal = Signal(str)
     def __init__(self):
         super().__init__()
+        self.preference_window = None
         self.upscale_window = None
         self.log_process = None
         self.recover_window = None
@@ -413,6 +417,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.action_14.triggered.connect(self.show_recover_window)
         self.action_12.triggered.connect(lambda : self.jump_to_website("https://opensource.org/license/mit"))
         self.action_7.triggered.connect(self.display_upscale_window)
+        self.action_4.triggered.connect(self.display_preference)
+
+    def display_preference(self):
+        if self.preference_window is None:
+            self.preference_window = SettingUi_L()
+            self.preference_window.show()
+        else:
+            self.preference_window.raise_()
+            self.preference_window.activateWindow()
 
 
     def is_task_over(self):

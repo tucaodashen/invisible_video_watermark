@@ -143,7 +143,7 @@ class Slice:
 
 
     def extract(self):
-        if self.extract_retry_times >= 5:
+        if self.extract_retry_times >= 75:
             self.logger.error(f"Extract {self.file} {self.video_range[0]} {self.video_range[1]} to {self._extract_path} retry times {self.extract_retry_times} failed",tags=f"Slice:Slice:extract:{os.path.basename(self.file)}:{self.identify['order']}")
             raise RuntimeError(f"Extract {self.file} {self.video_range[0]} {self.video_range[1]} to {self._extract_path} retry times {self.extract_retry_times} failed!\nMaximum retry times exceeded.")
         if self.extract_retry_times == 0:
@@ -155,6 +155,7 @@ class Slice:
             self.extract_retry_times = 0
         except RuntimeError as c:
             if "Failed to read frame" in str(c):
+                print(c,"_____________________")
                 self.extract_retry_times += 1
                 self.extract()
             else:
@@ -213,7 +214,7 @@ class Slice:
         #     raise
 
     def _process(self):
-        raise RuntimeError("TEST")
+        # raise RuntimeError("TEST")
         self.logger.debug(f"Start processing {self.identify['order']},sort UUID {str(self.log_sort_uuid)}",tags=f"Slice:Slice:process:{os.path.basename(self.file)}:{self.identify['order']}")
         self.output_progress_description(0,_("Start processing"))
         FileSystem.create_workspace(self.identify['name'])
