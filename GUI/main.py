@@ -7,8 +7,10 @@ import pickle
 import random
 import shutil
 import subprocess
+import sys
 import threading
 import time
+import traceback
 import uuid
 from functools import partial
 from typing import Optional
@@ -62,6 +64,10 @@ _devices = get_render_devices()
 print(_devices)
 preset_path = "./preset"
 
+
+
+
+
 from qfluentwidgets import Dialog, setTheme, Theme, PrimaryPushButton, MessageBoxBase, SubtitleLabel, ProgressBar, BodyLabel
 
 
@@ -79,10 +85,11 @@ def non_critical_error_info_bar(self,error):
     )
     def show_detail_window(error):
         detail_window = NonCriticalErrorDetail(error,parent=self)
+        detail_window.pushButton.clicked.connect(self.show_error_feedback)
         detail_window.show()
 
     detail_button = PrimaryPushButton(_("了解详情"))
-    detail_button.clicked.connect(lambda : self.show_detail_window(error))
+    detail_button.clicked.connect(lambda : show_detail_window(error))
     w.addWidget(detail_button)
     w.show()
 
@@ -311,6 +318,7 @@ class SettingUi_L(QFrame,Ui_Setting):
 
 class CreditWindow(QWidget,Ui_Credit):
     def __init__(self):
+        raise Exception(_("CreditWindow is not implemented"))
         super().__init__()
         self.setupUi(self)
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
@@ -448,6 +456,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.action_7.triggered.connect(self.display_upscale_window)
         self.action_4.triggered.connect(self.display_preference)
         self.action_13.triggered.connect(self.display_credit)
+        self.action_15.triggered.connect(self.show_error_feedback)
+
+    def show_NCW(self,err):
+        error_list.append([err[0],"WARNING",err[1],[],get_log()])
+        non_critical_error_info_bar(self,err)
         
         
     def display_credit(self):
@@ -1387,7 +1400,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             return None
         if self._prev_temp['FFmpegEncoder'] == const.Encoder.NVIDIA_AV1:
             encoding = "AV1"
-        elif self._prev_temp['FFmpegEncoder'] == const.Encoder.NVIDIA_HEVC or self._prev_temp['FFmpegEncoder'] == const.Encoder.AMD_HW_HEVC:
+        elif self._prev_temp['FFmpegEncoder'] == const.Encoder.NVIDIA_HEVC or self._prev_temp['FFmpegEncoder'] == const.Encoder.AMD_HEVC:
             encoding = "HEVC"
         elif self._prev_temp['FFmpegEncoder'] == const.Encoder.NVIDIA_H264 or self._prev_temp['FFmpegEncoder'] == const.Encoder.X264 or self._prev_temp['FFmpegEncoder'] == const.Encoder.AMD_H264:
             encoding = "H264"

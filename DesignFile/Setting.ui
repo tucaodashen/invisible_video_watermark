@@ -13,15 +13,15 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
+  <layout class="QGridLayout" name="gridLayout_4">
+   <item row="0" column="0">
     <widget class="TitleLabel" name="SettingTitleLabel">
      <property name="text">
       <string>TextLabel</string>
      </property>
     </widget>
    </item>
-   <item>
+   <item row="1" column="0">
     <widget class="ScrollArea" name="scrollArea">
      <property name="widgetResizable">
       <bool>true</bool>
@@ -32,7 +32,7 @@
         <x>0</x>
         <y>0</y>
         <width>768</width>
-        <height>571</height>
+        <height>603</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -67,6 +67,20 @@
            </layout>
           </item>
           <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="QLabel" name="Theme">
+              <property name="text">
+               <string>主题</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="CB_Theme"/>
+            </item>
+           </layout>
+          </item>
+          <item>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
              <widget class="BodyLabel" name="CompleteDing">
@@ -79,6 +93,9 @@
              <widget class="CheckBox" name="CompleteDingCheck">
               <property name="text">
                <string/>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -313,23 +330,13 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>TitleLabel</class>
-   <extends>QLabel</extends>
+   <class>CheckBox</class>
+   <extends>QCheckBox</extends>
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
    <class>BodyLabel</class>
    <extends>QLabel</extends>
-   <header>qfluentwidgets</header>
-  </customwidget>
-  <customwidget>
-   <class>PushButton</class>
-   <extends>QPushButton</extends>
-   <header>qfluentwidgets</header>
-  </customwidget>
-  <customwidget>
-   <class>LineEdit</class>
-   <extends>QLineEdit</extends>
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
@@ -343,8 +350,18 @@
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
-   <class>CheckBox</class>
-   <extends>QCheckBox</extends>
+   <class>TitleLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>PushButton</class>
+   <extends>QPushButton</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>

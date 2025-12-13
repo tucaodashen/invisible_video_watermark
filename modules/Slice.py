@@ -168,6 +168,7 @@ class Slice:
     def process(self):
 
         try:
+            raise RuntimeError("Test Exception")
             result = self._process()
             return result
         except Exception as e:

@@ -65,6 +65,8 @@ class Ui_MainWindow(object):
         self.action_13.setObjectName(u"action_13")
         self.action_14 = QAction(MainWindow)
         self.action_14.setObjectName(u"action_14")
+        self.action_15 = QAction(MainWindow)
+        self.action_15.setObjectName(u"action_15")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout_7 = QVBoxLayout(self.centralwidget)
@@ -452,6 +454,7 @@ class Ui_MainWindow(object):
         self.menu_6.addAction(self.action_11)
         self.menu_6.addAction(self.action_12)
         self.menu_6.addAction(self.action_13)
+        self.menu_6.addAction(self.action_15)
 
         self.retranslateUi(MainWindow)
 
@@ -479,6 +482,7 @@ class Ui_MainWindow(object):
         self.action_12.setText(QCoreApplication.translate("MainWindow", u"\u8bb8\u53ef\u8bc1", None))
         self.action_13.setText(QCoreApplication.translate("MainWindow", u"\u5173\u4e8e", None))
         self.action_14.setText(QCoreApplication.translate("MainWindow", u"\u6062\u590d\u6c34\u5370\u5185\u5bb9", None))
+        self.action_15.setText(QCoreApplication.translate("MainWindow", u"\u9519\u8bef\u62a5\u544a", None))
         self.QueueLabel.setText(QCoreApplication.translate("MainWindow", u"\u4efb\u52a1\u961f\u5217", None))
         self.StartButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.PauseButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
