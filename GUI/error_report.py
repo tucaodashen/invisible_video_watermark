@@ -1,16 +1,16 @@
 import os.path
 
 from PySide6.QtWidgets import QFrame,QApplication
+from PySide6.QtCore import Signal
 from GUI.error import Ui_ErrorReport
-from qfluentwidgets import setTheme, Theme
 from modules.LogProcessor import LogProcessor
 import sys
 
 class ErrorReportDialog(QFrame,Ui_ErrorReport):
+    error_signal = Signal()
     def __init__(self, parent=None,error=None,dump_file=None):
         super().__init__(parent)
         self.setupUi(self)
-        setTheme(Theme.DARK)
         self.Image_lab.scaledToHeight(64)
         if error is not None:
             self.L_ErrorType.setText(str(error[0]))
@@ -32,7 +32,7 @@ class ErrorReportDialog(QFrame,Ui_ErrorReport):
         self.comboBox_5.currentIndexChanged.connect(self.get_target_extract_log)
         self.comboBox_6.currentIndexChanged.connect(self.get_target_extract_log)
         self.spinBox_2.valueChanged.connect(self.get_target_extract_log)
-
+        self.pushButton_2.clicked.connect(self.show_error_report)
         self.comboBox_2.currentIndexChanged.connect(self.get_target_process_log)
         self.comboBox_3.currentIndexChanged.connect(self.get_target_process_log)
         self.spinBox.valueChanged.connect(self.get_target_process_log)
@@ -102,6 +102,9 @@ class ErrorReportDialog(QFrame,Ui_ErrorReport):
             self.textBrowser_3.clear()
             for i in process_log:
                 self.textBrowser_3.append(i)
+
+    def show_error_report(self):
+        self.error_signal.emit()
 
 
 

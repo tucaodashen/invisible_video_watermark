@@ -20,6 +20,8 @@ import pyanime4k
 from BasicSystem.log_client import setup_logger, get_logger
 from GUI.NonCW import Ui_NonCriticalError
 from GUI.UpScale import Ui_UpScaleAni
+from GUI.UserInterfaceErrorFeedback import ErrorFeedbackUi_L
+from GUI.log_viewer import LogViewerWindow
 from modules.PyAv import extract_video_frames
 from modules.GenerateVideo import get_video_parameters_simple,get_audio_parameters_simple
 import cv2
@@ -47,6 +49,8 @@ import os
 from modules.audio import AudioPlayer
 from modules.ExtractUnit import ExtracUnit
 from modules.pltform import get_render_devices
+
+error_list = []
 
 setup_logger(default_tags="main", enable_udp=True, enable_console=True)
 logger = get_logger()
@@ -246,15 +250,31 @@ class UpscaleWindow(QWidget,Ui_UpScaleAni):
 class SettingUi_L(QFrame,Ui_Setting):
     def __init__(self):
         super().__init__()
+        self.log_process = None
         self.viewer = None
         self.setupUi(self)
         self.set_text()
         self.credit_window = None
         self.set_slot()
+        self.AboutButton.clicked.connect(self.display_credit)
 
     def display_credit(self):
-        self.credit_window = CreditWindow()
+        if self.credit_window is None:
+            self.credit_window = CreditWindow()
         self.credit_window.show()
+
+    def display_log_window(self):
+        if self.log_process is None:
+            self.log_process = LogViewerWindow()
+            with open("identify_session.txt", "r") as f:
+                session_id = f.readline()
+            name = os.path.join("./logs", "app_" + str(session_id) + ".log")
+            self.log_process._load_file(name)
+            self.log_process.show()
+        else:
+            self.log_process.raise_()
+            self.log_process.activateWindow()
+            self.log_process.show()
 
 
     def set_text(self):
@@ -274,7 +294,7 @@ class SettingUi_L(QFrame,Ui_Setting):
         self.OutputStructureLabel.setText(_("输出结构"))
         self.OutputStructureComboBox.addItem(_("目录"),"dir")
         self.OutputStructureComboBox.addItem(_("压缩文件(ZIP)"),"zip-file")
-        self.SoftwareVersionDetial.setText(_("InvisibleWatermarkToolboxNEXT ParySoftware © 2020-2025 All rights reserved.\nThis software is licensed under the MIT license.\nVersion:{version}").format(version=_("0.1 Alpha_α")))
+        self.SoftwareVersionDetial.setText(_("InvisibleWatermarkToolboxNEXT ParySoftware © 2020-2025 All rights reserved.\nThis software is licensed under the MIT license.\nVersion:{version}").format(version=_(const.__version__)))
         self.DisplayLogLabel.setText(_("显示日志"))
         self.DisplayLogButton.setText(_("显示"))
         self.DumpCoreDataWhenExceptionOccuredLabel.setText(_("发生异常时转储核心数据"))
@@ -286,7 +306,7 @@ class SettingUi_L(QFrame,Ui_Setting):
         self.SoftwareVersionCheckButton.setText(_("检查更新"))
 
     def set_slot(self):
-        pass
+        self.DisplayLogButton.clicked.connect(self.display_log_window)
 
 
 class CreditWindow(QWidget,Ui_Credit):
@@ -338,6 +358,12 @@ class Preset_Confirm(QFrame,Ui_AP_Form):
             self.save_batch.emit([template,self.file])
 
 
+def get_log():
+    with open("identify_session.txt","r") as f:
+        session_id = f.readline()
+    name = os.path.join("./logs","app_"+str(session_id)+".log")
+    return name
+
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     QueueProgressUpdater = QTimer()
@@ -346,6 +372,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     thumbnail_status_signal = Signal(str)
     def __init__(self):
         super().__init__()
+        self.credit_window = None
+        self.error_feedback_ui = None
         self.preference_window = None
         self.upscale_window = None
         self.log_process = None
@@ -385,6 +413,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.thumbnail_lock = threading.Lock()  # 防止竞态条件
         self.default_detail_show = None
         self.started = False
+        self.browser.setDisabled(True)
 
 
 
@@ -418,6 +447,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.action_12.triggered.connect(lambda : self.jump_to_website("https://opensource.org/license/mit"))
         self.action_7.triggered.connect(self.display_upscale_window)
         self.action_4.triggered.connect(self.display_preference)
+        self.action_13.triggered.connect(self.display_credit)
+        
+        
+    def display_credit(self):
+        if self.credit_window is None:
+            self.credit_window = CreditWindow()
+        self.credit_window.show()
+
+
+
+
 
     def display_preference(self):
         if self.preference_window is None:
@@ -426,6 +466,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             self.preference_window.raise_()
             self.preference_window.activateWindow()
+            self.preference_window.show()
+        self.preference_window.BugReportButton.clicked.connect(self.show_error_feedback)
 
 
     def is_task_over(self):
@@ -809,14 +851,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def jump_to_website(self,url):
         QDesktopServices.openUrl(QUrl(url))
 
-
-
-
+    def show_error_feedback(self):
+        if self.error_feedback_ui is None:
+            self.error_feedback_ui = ErrorFeedbackUi_L()
+        if error_list:
+            for i in error_list:
+                self.error_feedback_ui.add_error(i[0],i[1],i[2],i[3],i[4])
+        self.error_feedback_ui.show()
 
     def handle_error(self, err, _id,dump_file):
         print(err)
         print(dump_file)
-        self.error_window.append(error_report.ErrorReportDialog(error=err,dump_file=dump_file))
+        window = error_report.ErrorReportDialog(error=err,dump_file=dump_file)
+        window.error_signal.connect(self.show_error_feedback)
+        self.error_window.append(window)
+        error_list.append([err[0],"CRITICAL",err[1],dump_file,get_log()])
         self.error_window[-1].show()
         for i in self.task_queue:
             if i.progress_identify == _id:
@@ -1269,6 +1318,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 
+
 class CreateNewProject(QFrame,Ui_SetUpNewForm):
     complete = Signal()
     create_preset = Signal(dict,str)
@@ -1337,7 +1387,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             return None
         if self._prev_temp['FFmpegEncoder'] == const.Encoder.NVIDIA_AV1:
             encoding = "AV1"
-        elif self._prev_temp['FFmpegEncoder'] == const.Encoder.NVIDIA_HEVC or self._prev_temp['FFmpegEncoder'] == const.FFmpegEncoder.AMD_HW_HEVC:
+        elif self._prev_temp['FFmpegEncoder'] == const.Encoder.NVIDIA_HEVC or self._prev_temp['FFmpegEncoder'] == const.Encoder.AMD_HW_HEVC:
             encoding = "HEVC"
         elif self._prev_temp['FFmpegEncoder'] == const.Encoder.NVIDIA_H264 or self._prev_temp['FFmpegEncoder'] == const.Encoder.X264 or self._prev_temp['FFmpegEncoder'] == const.Encoder.AMD_H264:
             encoding = "H264"

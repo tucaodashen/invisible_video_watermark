@@ -20,9 +20,9 @@ from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QSizePoli
     QWidget)
 
 from qfluentwidgets import (BodyLabel, CaptionLabel, ComboBox, ImageLabel,
-    PrimaryPushButton, PushButton, SpinBox, TextBrowser,
-    TitleLabel)
+    PushButton, SpinBox, TextBrowser, TitleLabel)
 from . import allin_rc
+
 
 class Ui_ErrorReport(object):
     def setupUi(self, ErrorReport):
@@ -300,18 +300,13 @@ class Ui_ErrorReport(object):
 
         self.horizontalLayout_13.addWidget(self.pushButton_2)
 
-        self.pushButton_3 = PrimaryPushButton(ErrorReport)
-        self.pushButton_3.setObjectName(u"pushButton_3")
-
-        self.horizontalLayout_13.addWidget(self.pushButton_3)
-
 
         self.verticalLayout_4.addLayout(self.horizontalLayout_13)
 
 
         self.retranslateUi(ErrorReport)
 
-        self.LogBrowser.setCurrentIndex(2)
+        self.LogBrowser.setCurrentIndex(3)
 
 
         QMetaObject.connectSlotsByName(ErrorReport)
@@ -338,6 +333,5 @@ class Ui_ErrorReport(object):
         self.label_10.setText(QCoreApplication.translate("ErrorReport", u"\u4e0d\u8981\u4ec5\u4ec5\u53ea\u662f\u622a\u56fe\u6b64\u754c\u9762\uff0c\u8bf7\u5c06\u9519\u8bef\u65e5\u5fd7\u4e00\u540c\u63d0\u4ea4\u7ed9\u5f00\u53d1\u4eba\u5458\uff01", None))
         self.pushButton.setText(QCoreApplication.translate("ErrorReport", u"\u5173\u95ed(\u7ed3\u675f\u7a0b\u5e8f)", None))
         self.pushButton_2.setText(QCoreApplication.translate("ErrorReport", u"\u63d0\u4ea4\u9519\u8bef", None))
-        self.pushButton_3.setText(QCoreApplication.translate("ErrorReport", u"\u5bfc\u51fa\u9519\u8bef\u62a5\u544a", None))
     # retranslateUi
 

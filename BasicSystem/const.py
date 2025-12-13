@@ -83,14 +83,6 @@ class FFmpegPreset(Enum):
     X264_PLACEBO = 19
     X264_UlTRAFAST = 20
 
-class FFmpegEncoder(Enum):
-    X264 = 1
-    NVIDIA_HEVC = 2
-    NVIDIA_H264 = 3
-    NVIDIA_AV1 = 4
-    AMD_HW_H264 = 5
-    AMD_HW_HEVC = 6
-    Resolume_DXV = 7
 
 class WatermarkAlgorithm(Enum):
     TEXT_GOUFEI = 1
@@ -135,6 +127,8 @@ process_unit_template = {
     "output_format":None,
     "two_pass":None,
 }
+
+rollbar_token = "758277cc22ea4655b27f5cfbce61c7b51b3fe548b91539cd99784ed5995ec6622595257bc724b3cefff6dd36a3f4daa1"
 
 
 
