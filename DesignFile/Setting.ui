@@ -69,14 +69,30 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
-             <widget class="QLabel" name="Theme">
+             <widget class="BodyLabel" name="Theme">
               <property name="text">
                <string>主题</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="CB_Theme"/>
+             <widget class="ComboBox" name="CB_Theme">
+              <item>
+               <property name="text">
+                <string>暗色</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>亮色</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>跟随系统</string>
+               </property>
+              </item>
+             </widget>
             </item>
            </layout>
           </item>
@@ -255,9 +271,9 @@
             <property name="frameShadow">
              <enum>QFrame::Shadow::Raised</enum>
             </property>
-            <layout class="QGridLayout" name="gridLayout">
-             <item row="0" column="0">
-              <layout class="QHBoxLayout" name="horizontalLayout_19">
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_4">
                <item>
                 <layout class="QVBoxLayout" name="verticalLayout_7">
                  <item>
@@ -278,15 +294,26 @@
                 </layout>
                </item>
                <item>
-                <widget class="PushButton" name="SoftwareVersionCheckButton">
-                 <property name="text">
-                  <string>PushButton</string>
-                 </property>
-                </widget>
+                <layout class="QVBoxLayout" name="verticalLayout">
+                 <item>
+                  <widget class="PushButton" name="SoftwareVersionCheckButton">
+                   <property name="text">
+                    <string>PushButton</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="CB_autocheck">
+                   <property name="text">
+                    <string>自动检查</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </item>
               </layout>
              </item>
-             <item row="1" column="0">
+             <item>
               <widget class="QFrame" name="frame_8">
                <property name="frameShape">
                 <enum>QFrame::Shape::StyledPanel</enum>

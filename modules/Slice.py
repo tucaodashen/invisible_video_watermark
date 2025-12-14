@@ -168,10 +168,15 @@ class Slice:
     def process(self):
 
         try:
-            raise RuntimeError("Test Exception")
+            # raise RuntimeError("Test Exception")
             result = self._process()
             return result
         except Exception as e:
+            with open("setting.json", "r", encoding="utf-8") as f:
+                json_data = f.read()
+            preference_args = json.loads(json_data)
+            if not preference_args['EnableCoreDump']:
+                raise
             self.logger.debug(f"Exception {e}",tags=f"Slice:Slice:process:{os.path.basename(self.file)}:{self.identify['order']}")
             path = f"./dumps/coredumpy_{os.path.basename(self.file)}_{self.identify['order']}_{self.dump_uuid}.dump"
             # 获取异常信息

@@ -2,6 +2,7 @@
 请伟大的早濑优香大人保佑这段代码吧！
 """
 import copy
+import json
 import os.path
 import pickle
 import random
@@ -20,9 +21,11 @@ import psutil
 import pyanime4k
 
 from BasicSystem.log_client import setup_logger, get_logger
+from GUI.NewVersionFround import Ui_NewVersion
 from GUI.NonCW import Ui_NonCriticalError
 from GUI.UpScale import Ui_UpScaleAni
 from GUI.UserInterfaceErrorFeedback import ErrorFeedbackUi_L
+from GUI.download_newversion import Ui_DownloadNew
 from GUI.log_viewer import LogViewerWindow
 from modules.PyAv import extract_video_frames
 from modules.GenerateVideo import get_video_parameters_simple,get_audio_parameters_simple
@@ -30,7 +33,7 @@ import cv2
 from PySide6.QtGui import QPixmap, QImage, QDesktopServices
 
 from BasicSystem import const
-from modules import ProcessUnit, PyAv
+from modules import ProcessUnit, PyAv, multithread_downloader, update_check
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout, QTableWidgetItem, QProgressBar, \
     QHeaderView, QTableWidget, QFileDialog, QAbstractItemView, QLineEdit
 from PySide6.QtCore import Qt, QTimer, Signal, QSize, QUrl
@@ -69,7 +72,24 @@ preset_path = "./preset"
 
 
 from qfluentwidgets import Dialog, setTheme, Theme, PrimaryPushButton, MessageBoxBase, SubtitleLabel, ProgressBar, BodyLabel
+import qdarktheme
 
+if os.path.exists("setting.json"):
+    with open("setting.json", "r", encoding="utf-8") as f:
+        json_data = f.read()
+    preference_args = json.loads(json_data)
+    if preference_args['Theme'] == "dark":
+        setTheme(Theme.DARK)
+
+    elif preference_args['Theme'] == "light":
+        setTheme(Theme.LIGHT)
+        qdarktheme.setup_theme("light")
+    else:
+        setTheme(Theme.AUTO)
+        qdarktheme.setup_theme("auto")
+else:
+    setTheme(Theme.AUTO)
+    qdarktheme.setup_theme("auto")
 
 def non_critical_error_info_bar(self,error):
     content = _("主处理程序疑似发生错误，这一错误可能不会影响程序的运行，但有可能导致对编解码模块的配置异常。")
@@ -255,6 +275,7 @@ class UpscaleWindow(QWidget,Ui_UpScaleAni):
 
 
 class SettingUi_L(QFrame,Ui_Setting):
+    reload_settings = Signal()
     def __init__(self):
         super().__init__()
         self.log_process = None
@@ -264,6 +285,18 @@ class SettingUi_L(QFrame,Ui_Setting):
         self.credit_window = None
         self.set_slot()
         self.AboutButton.clicked.connect(self.display_credit)
+        self.setting_list = {
+            "language":"ZH_CN",
+            "CompleteNotice":True,
+            "DefaultSavePath":"./",
+            "OutputStructure":"dir",
+            "EnableCoreDump":True,
+            "AutoCheckUpdate":True,
+            "Theme":"dark"
+        }
+        if not os.path.exists("setting.json"):
+            self.initial()
+        self.load_and_set_correct_optiton()
 
     def display_credit(self):
         if self.credit_window is None:
@@ -289,18 +322,18 @@ class SettingUi_L(QFrame,Ui_Setting):
         self.SettingTitleLabel.setText(_("设置"))
         self.General_label.setText(_("通用设置"))
         self.LanguageLabel.setText(_("语言/Language/言語"))
-        self.LanguagecomboBox.addItem(_("中文(简体)"),"zh_CN")
-        self.LanguagecomboBox.addItem(_("中文(繁體)"),"zh_TW")
-        self.LanguagecomboBox.addItem(_("English"),"en_US")
-        self.LanguagecomboBox.addItem(_("日本語"),"ja_JP")
+        self.LanguagecomboBox.addItem(_("中文(简体)"),userData="zh_CN")
+        self.LanguagecomboBox.addItem(_("中文(繁體)"),userData="zh_TW")
+        self.LanguagecomboBox.addItem(_("English"),userData="en_US")
+        self.LanguagecomboBox.addItem(_("日本語"),userData="ja_JP")
         self.CompleteDing.setText(_("完成时声音提醒"))
         self.FileRelatedLabel.setText(_("文件相关设置"))
         self.DefaultSaveDictTextEdit.setPlaceholderText(_("默认保存路径"))
         self.DefaultSaveDictLabel.setText(_("默认保存路径"))
         self.DefaultSaveDictBrowserButton.setText(_("浏览"))
         self.OutputStructureLabel.setText(_("输出结构"))
-        self.OutputStructureComboBox.addItem(_("目录"),"dir")
-        self.OutputStructureComboBox.addItem(_("压缩文件(ZIP)"),"zip-file")
+        self.OutputStructureComboBox.addItem(_("目录"),userData="dir")
+        self.OutputStructureComboBox.addItem(_("压缩文件(ZIP)"),userData="zip-file")
         self.SoftwareVersionDetial.setText(_("InvisibleWatermarkToolboxNEXT ParySoftware © 2020-2025 All rights reserved.\nThis software is licensed under the MIT license.\nVersion:{version}").format(version=_(const.__version__)))
         self.DisplayLogLabel.setText(_("显示日志"))
         self.DisplayLogButton.setText(_("显示"))
@@ -311,14 +344,82 @@ class SettingUi_L(QFrame,Ui_Setting):
         self.VersionLabel.setText(_("版本信息"))
         self.SoftwareVersionLabel.setText(_("软件版本"))
         self.SoftwareVersionCheckButton.setText(_("检查更新"))
+        self.CB_Theme.clear()
+        self.CB_Theme.addItem(_("深色"),userData="dark")
+        self.CB_Theme.addItem(_("浅色"),userData="light")
+        self.CB_Theme.addItem(_("系统默认"),userData="system")
+
+
 
     def set_slot(self):
         self.DisplayLogButton.clicked.connect(self.display_log_window)
+        self.DefaultSaveDictBrowserButton.clicked.connect(self.set_default_save_path)
+
+    def set_default_save_path(self):
+        path = QFileDialog.getExistingDirectory(self, _("选择默认保存路径"))
+        if path:
+            self.DefaultSaveDictTextEdit.setText(path)
+
+    def load_and_set_correct_optiton(self):
+        with open("setting.json", "r", encoding="utf-8") as f:
+            self.setting_list = json.load(f)
+        self.LanguagecomboBox.setCurrentIndex(self.LanguagecomboBox.findData(self.setting_list["language"]))
+        self.CompleteDingCheck.setChecked(self.setting_list["CompleteNotice"])
+        self.DefaultSaveDictTextEdit.setText(self.setting_list["DefaultSavePath"])
+        self.OutputStructureComboBox.setCurrentIndex(self.OutputStructureComboBox.findData(self.setting_list["OutputStructure"]))
+        self.DumpCoreDataWhenExceptionOccuredCheckBox.setChecked(self.setting_list["EnableCoreDump"])
+        self.CB_autocheck.setChecked(self.setting_list["AutoCheckUpdate"])
+        self.CB_Theme.setCurrentIndex(self.CB_Theme.findData(self.setting_list["Theme"]))
+
+    def initial(self):
+        self.setting_list["language"] = self.LanguagecomboBox.currentData()
+        if self.CompleteDingCheck.isChecked():
+            self.setting_list["CompleteNotice"] = True
+        else:
+            self.setting_list["CompleteNotice"] = False
+        self.setting_list["DefaultSavePath"] = self.DefaultSaveDictTextEdit.text()
+        self.setting_list["OutputStructure"] = self.OutputStructureComboBox.currentData()
+        if self.DumpCoreDataWhenExceptionOccuredCheckBox.isChecked():
+            self.setting_list["EnableCoreDump"] = True
+        else:
+            self.setting_list["EnableCoreDump"] = False
+        if self.CB_autocheck.isChecked():
+            self.setting_list["AutoCheckUpdate"] = True
+        else:
+            self.setting_list["AutoCheckUpdate"] = False
+        self.setting_list["Theme"] = self.CB_Theme.currentData()
+        json_data = json.dumps(self.setting_list, ensure_ascii=False, indent=4)
+        with open("setting.json", "w", encoding="utf-8") as f:
+            f.write(json_data)
+        self.reload_settings.emit()
+
+    def closeEvent(self, event):
+        self.setting_list["language"] = self.LanguagecomboBox.currentData()
+        if self.CompleteDingCheck.isChecked():
+            self.setting_list["CompleteNotice"] = True
+        else:
+            self.setting_list["CompleteNotice"] = False
+        self.setting_list["DefaultSavePath"] = self.DefaultSaveDictTextEdit.text()
+        self.setting_list["OutputStructure"] = self.OutputStructureComboBox.currentData()
+        if self.DumpCoreDataWhenExceptionOccuredCheckBox.isChecked():
+            self.setting_list["EnableCoreDump"] = True
+        else:
+            self.setting_list["EnableCoreDump"] = False
+        if self.CB_autocheck.isChecked():
+            self.setting_list["AutoCheckUpdate"] = True
+        else:
+            self.setting_list["AutoCheckUpdate"] = False
+        self.setting_list["Theme"] = self.CB_Theme.currentData()
+        json_data = json.dumps(self.setting_list, ensure_ascii=False, indent=4)
+        with open("setting.json", "w", encoding="utf-8") as f:
+            f.write(json_data)
+        self.reload_settings.emit()
+        event.accept()
 
 
 class CreditWindow(QWidget,Ui_Credit):
     def __init__(self):
-        raise Exception(_("CreditWindow is not implemented"))
+        # raise Exception(_("CreditWindow is not implemented"))
         super().__init__()
         self.setupUi(self)
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
@@ -373,13 +474,31 @@ def get_log():
     return name
 
 
+def run_updater():
+    command = 'start AobaUpdater.exe'
+
+    subprocess.Popen(
+        command,
+        shell=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+
+
 class MainWindow(QMainWindow, Ui_MainWindow):
     QueueProgressUpdater = QTimer()
     freq_detail = QTimer()
     update_detail = QTimer()
     thumbnail_status_signal = Signal(str)
+    update_button_signal = Signal(bool)
+    snw = Signal(list)
+    anv = Signal()
+    check_update_timer = QTimer()
     def __init__(self):
         super().__init__()
+        self.check_thread = None
+        self.update_close = False
+        self.new_version_window = None
         self.credit_window = None
         self.error_feedback_ui = None
         self.preference_window = None
@@ -387,6 +506,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.log_process = None
         self.recover_window = None
         self.played = False
+        self.preference_window = SettingUi_L()
         self.audio_player = AudioPlayer()
         self.confirm_preset_form = None
         self.update_image_thread = None
@@ -400,7 +520,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.statusbar.showMessage(_("准备就绪"))
         self.set_text()
         self.set_slot()
-        setTheme(Theme.DARK)
+
         self.action_9.triggered.connect(self.show_all)
         self.setButtons()
         self.temporary = None
@@ -422,7 +542,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.default_detail_show = None
         self.started = False
         self.browser.setDisabled(True)
+        self.preference_args = {}
+        self.load_setting()
+        self.update_button_signal.connect(self.set_button_status)
 
+        self.snw.connect(self.show_new_version_window)
+        self.anv.connect(self.already_latese)
+        if self.preference_args['AutoCheckUpdate']:
+            self.check_update_timer.singleShot(15000,self.check_update_from_github)
+
+
+
+    def load_setting(self):
+        if os.path.exists("setting.json"):
+            with open("setting.json", "r", encoding="utf-8") as f:
+                json_data = f.read()
+            self.preference_args = json.loads(json_data)
+            print(self.preference_args)
 
 
 
@@ -481,13 +617,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.preference_window.activateWindow()
             self.preference_window.show()
         self.preference_window.BugReportButton.clicked.connect(self.show_error_feedback)
+        self.preference_window.reload_settings.connect(self.load_setting)
+        self.preference_window.SoftwareVersionCheckButton.clicked.connect(self.check_update_from_github)
+
 
 
     def is_task_over(self):
         if int(self.QueueProgressBar.value()) == 100 and self.started and not self.played:
-            self.audio_player.load(r"assets\sound\complete.wav")
-            self.audio_player.play()
-            self.played = True
+            if self.preference_args["CompleteNotice"]:
+                self.audio_player.load(r"assets\sound\complete.wav")
+                self.audio_player.play()
+                self.played = True
             logger.debug(f"Task completed",tags="main:is_task_over")
             
     def show_recover_window(self):
@@ -1314,17 +1454,83 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.MediaBrowserDock.show()
 
     def closeEvent(self, event):
-        print("TryToClose")
-        if self.log_process:
-            self.log_process.terminate()
-        if is_running_simple("ffmpeg.exe"):
-            if kill_process_by_name("ffmpeg"):
-                event.accept()
+        print("TryToClose",self.update_close)
+        try:
+            if self.credit_window is not None:
+                self.credit_window.close()
+            if self.new_version_window is not None:
+                self.new_version_window.close()
+            if self.error_feedback_ui is not None:
+                self.error_feedback_ui.close()
+            if self.preference_window is not None:
+                self.preference_window.close()
+            if self.upscale_window is not None:
+                self.upscale_window.close()
+            if self.recover_window is not None:
+                self.recover_window.close()
+            if self.confirm_preset_form is not None:
+                self.confirm_preset_form.close()
+            if not self.error_window:
+                for i in self.error_window:
+                    i.close()
+            if self.setUp_form is not None:
+                self.setUp_form.close()
+        finally:
+            if self.log_process:
+                self.log_process.terminate()
+            if is_running_simple("ffmpeg.exe"):
+                if kill_process_by_name("ffmpeg"):
+                    if self.update_close:
+                        run_updater()
+                    event.accept()
+                else:
+                    event.ignore()
             else:
-                event.ignore()
-        else:
-            event.accept()
+                if self.update_close:
+                    run_updater()
+                event.accept()
+                
+                
+    def set_button_status(self,status):
+        self.preference_window.SoftwareVersionCheckButton.setEnabled(status)
 
+    def show_new_version_window(self,data):
+        self.new_version_window = check_update(data[0], data[1], data[2])
+        self.new_version_window.update_signal.connect(self.close_for_update)
+        self.new_version_window.show()
+        
+    def check_update_from_github(self):
+        if self.check_thread is None:
+            self.check_thread = threading.Thread(target=self._check_update_from_github)
+            self.check_thread.start()
+
+    def already_latese(self):
+        showFlyout(self, self.preference_window.SoftwareVersionCheckButton, InfoBarIcon.SUCCESS, _("已检查最新版本"),
+                   _("当前版本为最新版本"))
+
+    def _check_update_from_github(self):
+        try:
+            self.update_button_signal.emit(False)
+            _version , _log = update_check.get_latest_github_release_info(const.owner,const.name)
+            ignorance = ""
+            if os.path.exists("ignore_version.txt"):
+                with open("ignore_version.txt","r") as f:
+                    ignorance = f.read()
+            if _version not in ignorance and _version != const.__version__:
+                data = update_check.get_latest_release_assets(const.owner, const.name)
+                self.snw.emit([_version,_log,data])
+            else:
+                self.anv.emit()
+                self.update_button_signal.emit(True)
+        finally:
+            self.update_button_signal.emit(True)
+            self.check_thread = None
+
+
+
+    def close_for_update(self):
+        self.update_close = True
+        self.close()
 
 
 
@@ -1356,6 +1562,17 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.PB_saveaspreset.clicked.connect(self.generate_preset)
         self.detail_timer.timeout.connect(self.display_detail)
         self.detail_timer.start(100)
+        self.CB_MultiProcess.setChecked(True)
+        self.CB_MultiProcess.setEnabled(False)
+        self.CB_ProjectType.setEnabled(False)
+        self.L_D_OutputPath.setText("")
+        self.L_D_CalculateOccupation.setText("")
+        self.PB_wmcontent.clicked.connect(self.select_image)
+        if os.path.exists("setting.json"):
+            with open("setting.json","r") as f:
+                self.preference_args = json.load(f)
+        self.LE_VideoExportPath.setText(self.preference_args["DefaultSavePath"])
+        self.PB_VideoExportPath.clicked.connect(self.set_out_path)
 
 
 
@@ -1372,6 +1589,11 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         else:
             if os.path.exists(self.file_path[0]):
                 self.video_length = float(_get_duration_opencv(self.file_path[0]) / 60)
+
+    def select_image(self):
+        path = QFileDialog.getOpenFileName(self, _("选择水印图片"), os.path.expanduser("~"), "图片文件 (*.png *.jpg *.jpeg)")
+        if path[0]:
+            self.LE_WatermarkContent.setText(path[0])
 
 
 
@@ -1767,6 +1989,13 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                     FFmpegTune = const.FFmpegTune.NV_AV1_LL
                 elif str(self.CB_Tune.text()) == "Super Low Latency":
                     FFmpegTune = const.FFmpegTune.NV_AV1_SLL
+        elif self.render_device[current_device] == "amd":
+            if self.CB_FFmpegPresent.currentData() == "quality":
+                FFmpegPresent = const.FFmpegPreset.AMD_QUALITY
+            elif self.CB_FFmpegPresent.currentData() == "balance":
+                FFmpegPresent = const.FFmpegPreset.AMD_BALANCE
+            elif self.CB_FFmpegPresent.currentData() == "speed":
+                FFmpegPresent = const.FFmpegPreset.AMD_SPEED
 
         if self.CB_Foreward.isChecked():
             FFmpegForeward = int(self.SB_Forward.value())
@@ -1810,7 +2039,10 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             return process_unit_template
 
 
-
+    def set_out_path(self):
+        path = QFileDialog.getExistingDirectory(self, "选择输出目录")
+        if path:
+            self.LE_VideoExportPath.setText(path)
 
 
 
@@ -2139,9 +2371,9 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
 
         if "AMD" in current_encoder:
             self.CB_FFmpegPresent.clear()
-            self.CB_FFmpegPresent.addItem(_("质量"))
-            self.CB_FFmpegPresent.addItem(_("均衡"))
-            self.CB_FFmpegPresent.addItem(_("速度"))
+            self.CB_FFmpegPresent.addItem(_("质量"),userData="quality")
+            self.CB_FFmpegPresent.addItem(_("均衡"),userData="balance")
+            self.CB_FFmpegPresent.addItem(_("速度"),userData="speed")
             self.CB_Tune.hide()
 
         if "NVENC" in current_encoder:
@@ -2428,6 +2660,105 @@ class NonCriticalErrorDetail(QWidget,Ui_NonCriticalError):
         self.label.setText(error[0])
         self.textBrowser.setText(error[1])
         self.pushButton_2.clicked.connect(self.close)
+
+
+class check_update(QWidget,Ui_NewVersion):
+    update_signal = Signal()
+    def __init__(self,version,change_log,data):
+        super().__init__()
+        self.setupUi(self)
+        # 设置为无边框透明窗口
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.version = version
+        self.change_log = change_log
+        for i in data:
+            print(i)
+            if i["name"] == "Windows_amd64.zip":
+                self.download_url = i["download_url"]
+                self.download_name = i["name"]
+            if i["name"] == "AobaUpdater.exe":
+                self.updater_url = i["download_url"]
+                self.updater_name = i["name"]
+        self.label_2.setText(self.version)
+        self.textBrowser.setText(self.change_log)
+        self.signal()
+        self.download_window = None
+
+    def signal(self):
+        self.pushButton.clicked.connect(self.close)
+        self.pushButton_3.clicked.connect(self.update)
+        self.pushButton_2.clicked.connect(self.ignore_version)
+
+    def ignore_version(self):
+        if os.path.exists("ignore_version.txt"):
+            os.remove("ignore_version.txt")
+        with open("ignore_version.txt","w") as f:
+            f.write(self.version)
+        self.close()
+
+    def update(self):
+        if self.download_window is None:
+            self.download_window = DownloadWindow(self.download_url, self.download_name,self.updater_name,self.updater_url)
+        self.download_window.show()
+        self.download_window.rea.connect(self.ready)
+
+    def ready(self):
+        self.update_signal.emit()
+
+
+class DownloadWindow(QWidget,Ui_DownloadNew):
+    download_over_signal = Signal()
+    rea = Signal()
+    def __init__(self,download_url,download_name,updater_name,updater_url):
+        super().__init__()
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self._downloader = None
+        self.updater_name = updater_name
+        self.updater_url = updater_url
+        self.setupUi(self)
+        self.download_url = download_url
+        self.download_name = download_name
+        print(self.download_url,self.download_name)
+        self.pushButton.hide()
+        self.label_2.setText(self.download_name)
+        name = "archive."+str(self.download_name.split(".")[-1])
+        self.downloader = multithread_downloader.MultiThreadDownloader(self.download_url,os.path.join("./download",name))
+        self.downloader.progress_updated.connect(self.update_progress)
+        self.downloader.download_finished.connect(self.download_over)
+        self.signal()
+        self.download_updater()
+
+
+    def signal(self):
+        self.pushButton.clicked.connect(self.download)
+
+    def download_updater(self):
+        self._downloader = multithread_downloader.MultiThreadDownloader(self.updater_url,os.path.join("./download",self.updater_name),thread_count=4)
+        self._downloader.progress_updated.connect(self.update_progress)
+        self._downloader.download_finished.connect(self.download)
+        self._downloader.start_download()
+
+    def update_progress(self, progress):
+        self.progressBar.setValue(progress)
+        self.label_2.setText(f"{progress:.2f}%")
+
+    def download_over(self):
+        self.post_download()
+        self.download_over_signal.emit()
+
+
+
+    def download(self):
+        self.downloader.start_download()
+
+    def post_download(self):
+        os.remove("AobaUpdater.exe")
+        shutil.copy2("./download/AobaUpdater.exe","./")
+        self.rea.emit()
+        self.close()
+
 
 
 

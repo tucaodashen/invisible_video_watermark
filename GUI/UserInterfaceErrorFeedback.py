@@ -22,7 +22,6 @@ def _(text):
 
 class ErrorFeedbackUi_L(QFrame,Ui_ErrorFeedback):
     def __init__(self):
-        setTheme(Theme.DARK)
         super().__init__()
         self.setupUi(self)
         self.checkBox_5.checkStateChanged.connect(self.set_correct_button)

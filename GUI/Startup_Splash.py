@@ -6,30 +6,25 @@ import subprocess
 import sys
 import traceback
 
+# 假设这些模块和类已经存在于您的项目中
 from PySide6.QtWidgets import QWidget, QApplication
 from qfluentwidgets import Dialog, MessageBoxBase, SubtitleLabel, ProgressBar, BodyLabel
 
 from GUI import PrepareRequirements
 from GUI.Splash import Ui_SplashDesu
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QTimer, Qt, Signal, QThread  # 导入 QThread 和 Signal
 
+# -----------------------------------------------------------
+# ⚠️ 注意: 由于我无法访问您的 GUI.PrepareRequirements 模块，
+# 我假设 FFmpegPrepare 是 QThread 的子类，并包含必要的信号。
+# -----------------------------------------------------------
 
 _ = gettext.gettext
-
-
-
-
 
 
 def run_process_and_get_pid(command):
     """
     运行命令并返回进程对象和PID
-
-    Args:
-        command (str/list): 要执行的命令，可以是字符串或列表
-
-    Returns:
-        tuple: (process对象, PID)
     """
     # 如果command是字符串，需要设置shell=True
     if isinstance(command, str):
@@ -40,8 +35,12 @@ def run_process_and_get_pid(command):
     pid = process.pid
     return process, pid
 
-class SplashScreen(QWidget,Ui_SplashDesu):
+
+class SplashScreen(QWidget, Ui_SplashDesu):
     timers = QTimer()
+    # 增加一个成员变量用于保存下载窗口的引用
+    ffmpeg_download_window = None
+
     def __init__(self):
         super().__init__()
         self.process = None
@@ -53,11 +52,7 @@ class SplashScreen(QWidget,Ui_SplashDesu):
         self.Tips.setText("Loading...")
         self.progressBar.setValue(0)
 
-        self.prepare()
-
-
-
-
+        self.prepare()  # 从这里开始检查环境
 
     def setInvisible(self):
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
@@ -67,11 +62,25 @@ class SplashScreen(QWidget,Ui_SplashDesu):
         pass
 
     def prepare(self):
+        """
+        检查环境的起始方法。如果需要下载FFmpeg，则暂停流程并进入下载异步等待。
+        """
         self.timers.stop()
         self.Tips.setText(_("检查FFmpeg中..."))
+
         if not PrepareRequirements.is_ffmpeg_exist():
             self.Tips.setText(_("安装FFMpeg"))
             self.display_dialog()
+            # 关键：如果需要下载，在此处返回，后续流程将在 handle_ffmpeg_download_result 中启动
+            return
+
+            # --- FFmpeg 检查通过或下载成功的后续流程 ---
+        self.continue_after_ffmpeg_check()
+
+    def continue_after_ffmpeg_check(self):
+        """
+        FFmpeg 检查通过或下载成功后继续执行的流程。
+        """
         self.Tips.setText(_("清理松散文件中..."))
         if os.path.exists("WorkPath"):
             shutil.rmtree("WorkPath")
@@ -83,9 +92,9 @@ class SplashScreen(QWidget,Ui_SplashDesu):
 
     def run_log(self):
         print("当前工作目录:", os.getcwd())
-        self.process,pid = run_process_and_get_pid(["ls/LogServer.exe"])
+        self.process, pid = run_process_and_get_pid(["ls/LogServer.exe"])
 
-    def custom_exception_hook(self,exc_type, exc_value, exc_traceback):
+    def custom_exception_hook(self, exc_type, exc_value, exc_traceback):
         """
         这是一个自定义的异常钩子函数，用于捕获所有未处理的异常。
         """
@@ -105,14 +114,8 @@ class SplashScreen(QWidget,Ui_SplashDesu):
         full_traceback_string = "".join(formatted_traceback_lines)
         print(full_traceback_string)
 
-        # 也可以将信息写入日志文件
-        # logging.error("未处理的致命错误:", exc_info=(exc_type, exc_value, exc_traceback))
-
-        # --- 2. 可选：执行清理工作或优雅退出 ---
-        # 例如：关闭数据库连接、保存临时文件等。
-
         print("=" * 60)
-        self.MainWindow.show_NCW([str(exc_value),full_traceback_string])
+        self.MainWindow.show_NCW([str(exc_value), full_traceback_string])
 
     def start_now(self):
         from GUI.main import MainWindow
@@ -122,22 +125,57 @@ class SplashScreen(QWidget,Ui_SplashDesu):
         sys.excepthook = self.custom_exception_hook
         self.close()
 
-
-
     def display_dialog(self):
+        """
+        显示是否下载 FFmpeg 的对话框，并连接信号。
+        """
         title = _("FFmpeg未安装")
-        content = _("FFmpeg是此程序和依赖库MoviePy的核心组件。如果你想自行安装FFmpeg并添加到环境变量中，请点击否。点击是将自动下载并安装FFmpeg。(不会添加到环境变量中)")
-        w = Dialog(title, content, self)
-        if w.exec():
-            w = FFmpegDownloadPage(self)
-            if w.exec():
-                # print(w.urlLineEdit.text())
-                pass
-        else:
-            print('Cancel button is pressed')
+        content = _(
+            "FFmpeg是此程序和依赖库MoviePy的核心组件。如果你想自行安装FFmpeg并添加到环境变量中，请点击否。点击是将自动下载并安装FFmpeg。(不会添加到环境变量中)")
 
-    def download_dialog(self):
-        pass
+        w = Dialog(title, content, self)
+
+        # 移除 w.exec()
+        # 连接用户点击“是”（Accepted）和“否”（Rejected）的信号
+        w.accepted.connect(self.start_ffmpeg_download)
+        w.rejected.connect(lambda: print('User chose to skip FFmpeg download'))
+
+        w.show()  # 非模态显示，等待用户选择
+
+    def start_ffmpeg_download(self):
+        """
+        用户点击“是”后，开始 FFmpeg 下载并显示进度条窗口。
+        """
+        # 实例化下载窗口，并保存为成员变量防止被垃圾回收
+        self.ffmpeg_download_window = FFmpegDownloadPage(self)
+
+        # 连接下载线程的 success 信号到处理结果的方法
+        self.ffmpeg_download_window.download_thread.success.connect(self.handle_ffmpeg_download_result)
+
+        # 非模态显示下载窗口。这是关键，让主线程不阻塞，可以处理绘制和进度信号。
+        self.ffmpeg_download_window.show()
+
+    def handle_ffmpeg_download_result(self, is_success):
+        """
+        处理 FFmpeg 下载线程的结果。
+        """
+        if self.ffmpeg_download_window:
+            # 无论成功失败，都关闭下载进度窗口
+            self.ffmpeg_download_window.close()
+            # 清理引用
+            self.ffmpeg_download_window = None
+
+        if is_success:
+            print("FFmpeg下载成功，继续启动流程。")
+            self.continue_after_ffmpeg_check()
+        else:
+            print("FFmpeg下载失败，请手动安装或重试。")
+            # 可以在这里显示一个错误对话框，并让用户决定是退出还是继续。
+            error_msg = MessageBoxBase(_("下载失败"), _("FFmpeg下载失败，应用可能无法正常工作。是否退出？"), self)
+            if error_msg.exec():
+                sys.exit(1)
+            else:
+                self.continue_after_ffmpeg_check()  # 允许用户忽略并继续
 
 
 class FFmpegDownloadPage(MessageBoxBase):
@@ -148,7 +186,6 @@ class FFmpegDownloadPage(MessageBoxBase):
         self.titleLabel = SubtitleLabel(_('FFmpeg正在下载'), self)
         self.progressBar = ProgressBar(self)
         self.labels = BodyLabel(_('请耐心等待下载完成'), self)
-
 
         # add widget to view layout
         self.viewLayout.addWidget(self.titleLabel)
@@ -161,24 +198,34 @@ class FFmpegDownloadPage(MessageBoxBase):
 
         self.widget.setMinimumWidth(350)
 
-        # self.hideYesButton()
+        # 实例化 QThread 子类 (假设 PrepareRequirements.FFmpegPrepare 是)
         self.download_thread = PrepareRequirements.FFmpegPrepare()
         self.download_thread.progress.connect(self.set_progress)
         self.download_thread.progress_text.connect(self.set_progress_text)
         self.download_thread.success.connect(self.is_success)
+
         try:
+            # 启动线程，下载在后台进行，不阻塞主 GUI 线程
             self.download_thread.start()
         except Exception as e:
             self.labels.setText(str(e))
+            # 立即发送失败信号，通知 SplashScreen
+            self.download_thread.success.emit(False)
 
     def set_progress(self, value):
         self.progressBar.setVal(value)
+
     def set_progress_text(self, text):
         self.labels.setText(text)
 
     def is_success(self, value):
+        # 这里的关闭只是关闭进度条窗口本身，后续流程由 SplashScreen 的 signal/slot 机制处理
         if value:
-            self.close()
+            # self.close() # 在 handle_ffmpeg_download_result 中关闭，以确保流程控制统一
+            pass  # 仅接收信号，不立即关闭窗口
+        else:
+            self.labels.setText(_("下载失败，请检查网络或日志。"))
+
 
 def is_port_in_use(port: int, host: str = 'localhost') -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -194,6 +241,7 @@ def is_port_in_use(port: int, host: str = 'localhost') -> bool:
         except Exception:
             # 其他异常情况
             return False
+
 
 def start():
     QApplication.setHighDpiScaleFactorRoundingPolicy(

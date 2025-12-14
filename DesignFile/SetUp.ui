@@ -23,7 +23,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-417</y>
+        <y>-180</y>
         <width>377</width>
         <height>1066</height>
        </rect>
@@ -234,6 +234,9 @@
             </item>
             <item>
              <widget class="SpinBox" name="SB_MultiProcess">
+              <property name="minimum">
+               <number>2</number>
+              </property>
               <property name="maximum">
                <number>61</number>
               </property>
@@ -678,12 +681,27 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>TitleLabel</class>
-   <extends>QLabel</extends>
+   <class>CheckBox</class>
+   <extends>QCheckBox</extends>
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
    <class>BodyLabel</class>
+   <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>TextBrowser</class>
+   <extends>QTextBrowser</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>ComboBox</class>
+   <extends>QComboBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>TitleLabel</class>
    <extends>QLabel</extends>
    <header>qfluentwidgets</header>
   </customwidget>
@@ -713,16 +731,6 @@
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
-   <class>ComboBox</class>
-   <extends>QComboBox</extends>
-   <header>qfluentwidgets</header>
-  </customwidget>
-  <customwidget>
-   <class>CheckBox</class>
-   <extends>QCheckBox</extends>
-   <header>qfluentwidgets</header>
-  </customwidget>
-  <customwidget>
    <class>SpinBox</class>
    <extends>QSpinBox</extends>
    <header>qfluentwidgets</header>
@@ -730,11 +738,6 @@
   <customwidget>
    <class>Slider</class>
    <extends>QSlider</extends>
-   <header>qfluentwidgets</header>
-  </customwidget>
-  <customwidget>
-   <class>TextBrowser</class>
-   <extends>QTextBrowser</extends>
    <header>qfluentwidgets</header>
   </customwidget>
  </customwidgets>

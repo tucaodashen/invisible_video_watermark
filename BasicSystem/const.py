@@ -6,6 +6,10 @@ __version__ = "0.0.1_Omicron"
 
 COMPATIBLE_VERSIONS = ["0.0.1_Omicron"]
 
+owner = "tucaodashen"
+name = "IVWNEXTCOMPILE"
+
+
 class File_Return_Type(Enum):
     PATH = 0
     ATTRIBUTE = 1

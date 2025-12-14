@@ -4,7 +4,7 @@ import traceback
 
 import ffmpeg
 
-from modules import VideoProcessor
+from modules import VideoProcessor, packup
 from pathlib import Path
 from BasicSystem import const
 from modules.Slice import Slice
@@ -213,6 +213,9 @@ class ProcessUnit(QObject):
         self.start_time = None
         self.consumed_timer = None
         self.statue = None
+        if os.path.exists("setting.json"):
+            with open("setting.json","r") as f:
+                self.preference_args = json.load(f)
 
 
     def audio_process(self,input_video, path):
@@ -466,6 +469,18 @@ class ProcessUnit(QObject):
             f.write(data)
         self.logger.debug(f"Recover data saved to: {json_path}",tags=f"ProcessUnit:ProcessUnit:after_processing:{os.path.basename(self.file)}")
         FileSystem.mapping_list = {}
+        if os.path.exists("setting.json"):
+            with open("setting.json","r") as f:
+                data = json.load(f)
+            if data['OutputStructure'] != "dir":
+                packup.pack_files_to_zip(
+                    file_paths=[json_path,os.path.join(self._temporary_path,f"{self.output_name}.{self.output_format}")],
+                    output_dir=self._temporary_path,
+                    zip_name=f"{self.output_name}",
+                    preserve_structure=False
+                )
+                os.remove(json_path)
+                os.remove(os.path.join(self._temporary_path,f"{self.output_name}.{self.output_format}"))
         self.stop()
 
 

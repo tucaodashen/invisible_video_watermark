@@ -34,7 +34,7 @@ class Ui_SetUpNewForm(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, -417, 377, 1066))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, -180, 377, 1066))
         self.verticalLayout_7 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.L_CreateProject = TitleLabel(self.scrollAreaWidgetContents)
@@ -230,6 +230,7 @@ class Ui_SetUpNewForm(object):
 
         self.SB_MultiProcess = SpinBox(self.F_Video)
         self.SB_MultiProcess.setObjectName(u"SB_MultiProcess")
+        self.SB_MultiProcess.setMinimum(2)
         self.SB_MultiProcess.setMaximum(61)
 
         self.horizontalLayout_31.addWidget(self.SB_MultiProcess)

@@ -15,8 +15,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
-    QLabel, QSizePolicy, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QFrame, QGridLayout,
+    QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout,
+    QWidget)
 
 from qfluentwidgets import (BodyLabel, CheckBox, ComboBox, LineEdit,
     PushButton, ScrollArea, TextBrowser, TitleLabel)
@@ -26,19 +27,19 @@ class Ui_Form(object):
         if not Form.objectName():
             Form.setObjectName(u"Form")
         Form.resize(800, 580)
-        self.verticalLayout = QVBoxLayout(Form)
-        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.gridLayout_4 = QGridLayout(Form)
+        self.gridLayout_4.setObjectName(u"gridLayout_4")
         self.SettingTitleLabel = TitleLabel(Form)
         self.SettingTitleLabel.setObjectName(u"SettingTitleLabel")
 
-        self.verticalLayout.addWidget(self.SettingTitleLabel)
+        self.gridLayout_4.addWidget(self.SettingTitleLabel, 0, 0, 1, 1)
 
         self.scrollArea = ScrollArea(Form)
         self.scrollArea.setObjectName(u"scrollArea")
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 768, 571))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 768, 603))
         self.verticalLayout_8 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
         self.frame = QFrame(self.scrollAreaWidgetContents)
@@ -67,6 +68,24 @@ class Ui_Form(object):
 
         self.verticalLayout_2.addLayout(self.horizontalLayout_21)
 
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.Theme = BodyLabel(self.frame)
+        self.Theme.setObjectName(u"Theme")
+
+        self.horizontalLayout.addWidget(self.Theme)
+
+        self.CB_Theme = ComboBox(self.frame)
+        self.CB_Theme.addItem("")
+        self.CB_Theme.addItem("")
+        self.CB_Theme.addItem("")
+        self.CB_Theme.setObjectName(u"CB_Theme")
+
+        self.horizontalLayout.addWidget(self.CB_Theme)
+
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout)
+
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.CompleteDing = BodyLabel(self.frame)
@@ -76,6 +95,7 @@ class Ui_Form(object):
 
         self.CompleteDingCheck = CheckBox(self.frame)
         self.CompleteDingCheck.setObjectName(u"CompleteDingCheck")
+        self.CompleteDingCheck.setChecked(True)
 
         self.horizontalLayout_2.addWidget(self.CompleteDingCheck)
 
@@ -208,10 +228,10 @@ class Ui_Form(object):
         self.frame_7.setObjectName(u"frame_7")
         self.frame_7.setFrameShape(QFrame.Shape.StyledPanel)
         self.frame_7.setFrameShadow(QFrame.Shadow.Raised)
-        self.gridLayout = QGridLayout(self.frame_7)
-        self.gridLayout.setObjectName(u"gridLayout")
-        self.horizontalLayout_19 = QHBoxLayout()
-        self.horizontalLayout_19.setObjectName(u"horizontalLayout_19")
+        self.verticalLayout_4 = QVBoxLayout(self.frame_7)
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.verticalLayout_7 = QVBoxLayout()
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.SoftwareVersionLabel = BodyLabel(self.frame_7)
@@ -228,15 +248,25 @@ class Ui_Form(object):
         self.verticalLayout_7.addWidget(self.SoftwareVersionDetial)
 
 
-        self.horizontalLayout_19.addLayout(self.verticalLayout_7)
+        self.horizontalLayout_4.addLayout(self.verticalLayout_7)
 
+        self.verticalLayout = QVBoxLayout()
+        self.verticalLayout.setObjectName(u"verticalLayout")
         self.SoftwareVersionCheckButton = PushButton(self.frame_7)
         self.SoftwareVersionCheckButton.setObjectName(u"SoftwareVersionCheckButton")
 
-        self.horizontalLayout_19.addWidget(self.SoftwareVersionCheckButton)
+        self.verticalLayout.addWidget(self.SoftwareVersionCheckButton)
+
+        self.CB_autocheck = QCheckBox(self.frame_7)
+        self.CB_autocheck.setObjectName(u"CB_autocheck")
+
+        self.verticalLayout.addWidget(self.CB_autocheck)
 
 
-        self.gridLayout.addLayout(self.horizontalLayout_19, 0, 0, 1, 1)
+        self.horizontalLayout_4.addLayout(self.verticalLayout)
+
+
+        self.verticalLayout_4.addLayout(self.horizontalLayout_4)
 
         self.frame_8 = QFrame(self.frame_7)
         self.frame_8.setObjectName(u"frame_8")
@@ -260,7 +290,7 @@ class Ui_Form(object):
         self.gridLayout_3.addLayout(self.horizontalLayout_20, 0, 0, 1, 1)
 
 
-        self.gridLayout.addWidget(self.frame_8, 1, 0, 1, 1)
+        self.verticalLayout_4.addWidget(self.frame_8)
 
 
         self.gridLayout_2.addWidget(self.frame_7, 1, 0, 1, 1)
@@ -270,7 +300,7 @@ class Ui_Form(object):
 
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 
-        self.verticalLayout.addWidget(self.scrollArea)
+        self.gridLayout_4.addWidget(self.scrollArea, 1, 0, 1, 1)
 
 
         self.retranslateUi(Form)
@@ -283,6 +313,11 @@ class Ui_Form(object):
         self.SettingTitleLabel.setText(QCoreApplication.translate("Form", u"TextLabel", None))
         self.General_label.setText(QCoreApplication.translate("Form", u"\u901a\u7528", None))
         self.LanguageLabel.setText(QCoreApplication.translate("Form", u"\u8bed\u8a00", None))
+        self.Theme.setText(QCoreApplication.translate("Form", u"\u4e3b\u9898", None))
+        self.CB_Theme.setItemText(0, QCoreApplication.translate("Form", u"\u6697\u8272", None))
+        self.CB_Theme.setItemText(1, QCoreApplication.translate("Form", u"\u4eae\u8272", None))
+        self.CB_Theme.setItemText(2, QCoreApplication.translate("Form", u"\u8ddf\u968f\u7cfb\u7edf", None))
+
         self.CompleteDing.setText(QCoreApplication.translate("Form", u"\u5b8c\u6210\u540e\u63d0\u793a\u97f3", None))
         self.CompleteDingCheck.setText("")
         self.FileRelatedLabel.setText(QCoreApplication.translate("Form", u"\u6587\u4ef6", None))
@@ -299,6 +334,7 @@ class Ui_Form(object):
         self.VersionLabel.setText(QCoreApplication.translate("Form", u"\u7248\u672c", None))
         self.SoftwareVersionLabel.setText(QCoreApplication.translate("Form", u"\u8f6f\u4ef6\u7248\u672c", None))
         self.SoftwareVersionCheckButton.setText(QCoreApplication.translate("Form", u"PushButton", None))
+        self.CB_autocheck.setText(QCoreApplication.translate("Form", u"\u81ea\u52a8\u68c0\u67e5", None))
         self.AboutLabel.setText(QCoreApplication.translate("Form", u"\u5173\u4e8e", None))
         self.AboutButton.setText(QCoreApplication.translate("Form", u"\u6253\u5f00", None))
     # retranslateUi
