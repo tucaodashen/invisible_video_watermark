@@ -7,7 +7,7 @@
 <div align="center">
 
 
-![Logo](readme/Splash.jpg)
+![Logo](readme/Splash.png)
 
 **先进的视频隐形水印解决方案**
 
@@ -302,5 +302,6 @@ InvisibleVideoWatermarkNEXT/
 **[⬆ 回到顶部](#invisiblevideowatermarknext)**
 
 Made with ❤️ by PraySoftware
+<br>
 ![Logo](readme/slogan.png)
 </div>
