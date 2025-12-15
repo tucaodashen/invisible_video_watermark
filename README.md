@@ -1,6 +1,11 @@
 # InvisibleVideoWatermarkNEXT
+![Alt](https://repobeats.axiom.co/api/embed/30e3f4c85c3c74c1e22a1c0872a1165809c7ace8.svg "Repobeats analytics image")
+简体中文 |
+[繁体中文](readme/README_TW.md)
 
+ ![Alt](https://moe-counter.glitch.me/get/@:tucaodashen?theme=rule34 "Repobeats analytics image")
 <div align="center">
+
 
 ![Logo](readme/Splash.jpg)
 
@@ -10,7 +15,6 @@
 [![PySide6](https://img.shields.io/badge/PySide6-6.9.1-green.svg)](https://doc.qt.io/qtforpython/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[功能特性](#功能特性) • [快速开始](#快速开始) • [使用指南](#使用指南) • [技术架构](#技术架构) • [贡献指南](#贡献指南)
 
 </div>
 
@@ -97,6 +101,58 @@ uv run MainEntrance.py
 
 确保满足这些条件后，应用将显示启动画面并进入主界面。
 
+## 编译并发布
+
+### 编译步骤
+
+#### 使用自动脚本(推荐)
+1. **确保项目目录结构正确**
+   - 项目根目录下包含 `MainEntrance.py`、`requirements.txt`、`pyproject.toml` 等必要文件
+   - `assets/` 文件夹包含必要的资源文件
+
+2. **运行编译脚本**
+```bash
+cd make
+./compile.bat
+```
+
+3. **编译完成**
+   - 编译后的可执行文件将在 `Release/` 目录下生成
+   - 包含所有依赖项和资源文件
+#### 手动编译
+1. **同步环境**
+```bash
+uv sync
+```
+
+2. **编译更新程序**
+```bash
+uv run python -m nuitka --standalone --show-memory --output-filename="AobaUpdater" --main="./updater/aoba_updater.py" --windows-icon-from-ico="./make/aoba.ico" --company-name="PraySoftware" --product-name="AobaUpdater" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="SoftwareUpdater" --onefile --remove-output
+```
+
+3. **编译日志记录器**
+```bash
+uv run python -m nuitka --standalone --show-memory --output-filename="LogServer" --main="./LogServer/main.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="NetworkLogger" --onefile --remove-output --product-name="LogServer"
+```
+
+4.**编译主程序**
+- 下载[Upx](https://github.com/upx/upx/releases)压缩包并解压到`make/upx/`目录下
+```bash
+uv run python -m nuitka --standalone --show-memory --output-filename="IVW_Omicron" --main="./MainEntrance.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="InvisivleWatermarkMaker" --remove-output --product-name="IVWNext" --output-dir="output" --report="compile_log" --windows-icon-from-ico="./make/pw.ico" --enable-plugins="pyside6","upx" --lto=yes --upx-binary="./make/upx/upx.exe"
+```
+5,**准备资源文件**
+- 将`assets/`文件夹复制到`output/MainEntrance.dist/`目录下
+- 将`preset/`文件夹复制到`output/MainEntrance.dist/`目录下
+- 将`dumps/`文件夹复制到`output/MainEntrance.dist/`目录下
+- 将`logs/`文件夹复制到`output/MainEntrance.dist/`目录下
+- 将`download/`文件夹复制到`output/MainEntrance.dist/`目录下
+- 将`AobaUpdater.exe`文件复制到`output/MainEntrance.dist/`目录下
+- 将`LogServer.exe`文件复制到`output/MainEntrance.dist/`目录下
+
+6,**打包发布**
+- 将`output/MainEntrance.dist/`目录下的所有文件压缩为`IVWNext.zip`
+- 发布`IVWNext.zip`文件
+
 ## 📖 使用指南
 
 ### 基本操作流程
@@ -106,6 +162,18 @@ uv run MainEntrance.py
 3. **设置参数**：配置水印内容、密码等参数
 4. **开始处理**：点击"开始处理"按钮
 5. **查看结果**：处理完成后查看输出文件
+
+#### 采样器相关
+##### 采样方式
+- **随机采样**：随机选择视频帧进行水印嵌入
+- **全量采样**：对所有视频帧进行水印嵌入
+- **平均采样**：平均选择视频帧进行水印嵌入
+- **手动采样**：根据手动输入的采样表进行采样
+
+##### 采样数
+- 总共执行的采样次数
+#### 采样延续
+- 即在采样器原始结果上向后延续的帧数
 
 ### 高级功能
 
@@ -139,6 +207,8 @@ InvisibleVideoWatermarkNEXT/
 │   └── log_client.py     # 日志系统
 ├── assets/               # 资源文件
 ├── preset/               # 预设配置
+├── LogServer.exe          # 日志服务器
+├── AobaUpdater.exe          # 自动更新程序
 └── MainEntrance.py       # 程序入口
 ```
 
@@ -181,6 +251,14 @@ InvisibleVideoWatermarkNEXT/
 - **质量设置**：码率、预设、调优选项
 - **格式选择**：输出容器格式
 
+## 注意事项
+
+- **多进程**：最好设置为自己CPU的物理核心数，超出物理核心数的进程不会带来显著提升。在使用RivaGan算法时，不建议使用过多进程，容易造成卡死。
+- **水印内容**：建议水印内容为文本或图片，避免使用复杂字符或特殊字体，而且不要太长或太大。
+- **输出**：不要设置太低的码率，如果你不知道自己在调节什么，就不要动默认参数。
+- **FFmpeg**：如果自动下载的FFmpeg下载失败，那么你可以自己下载并解压到根目录下或者将FFmpeg和FFprobe添加到环境变量中。
+
+
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
@@ -192,12 +270,30 @@ InvisibleVideoWatermarkNEXT/
 - [OpenCV](https://opencv.org/) - 计算机视觉库
 - [FFmpeg](https://ffmpeg.org/) - 多媒体处理框架
 - [qfluentwidgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) - Fluent Design 组件
+- [blind_watermark](https://github.com/guofei9987/blind_watermark) -Guofei算法
+- [BlindWatermark](https://github.com/fire-keeper/BlindWatermark) - Firekeeper算法
+- [invisible-watermark](https://github.com/ShieldMnt/invisible-watermark) - ShieldMnt算法
+
+### 特别鸣谢
+- **“雨泽.”(VJ行业从业者)** 提供了对项目的一部分资金支持和前期测试(byx33448687)
+- **"Tifeng_City"** 提供了项目的一部分测试以及CI/CD的支持
 
 ## 📞 联系我们
 
-- **项目主页**：[GitHub Repository](https://github.com/your-username/InvisibleVideoWatermarkNEXT)
-- **问题反馈**：[Issues](https://github.com/your-username/InvisibleVideoWatermarkNEXT/issues)
-- **讨论交流**：[Discussions](https://github.com/your-username/InvisibleVideoWatermarkNEXT/discussions)
+- **项目主页**：[GitHub Repository](https://github.com/tucaodashen/invisible_video_watermark)
+- **问题反馈**：[Issues](https://github.com/tucaodashen/invisible_video_watermark/issues)
+- **讨论交流**：[Discussions](https://github.com/tucaodashen/invisible_video_watermark/discussions)
+- **联系作者**：[Email](mailto:tucaodashenofficial@gmail.com)
+- **项目捐赠**：[爱发电](https://afdian.com/a/AnkhTheOtherSphere)
+- **Discord**：[Join our server](https://discord.gg/5fwFVYSV)
+
+## Todo:
+- [ ] 完善文档
+- [ ] 添加多语言
+- [ ] 优化高切片长度下的处理性能
+- [ ] 完善日志系统
+- [ ] 优化解码功能的内存占用
+- [ ] 开发心理视觉采样器
 
 ---
 

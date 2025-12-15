@@ -1,0 +1,15 @@
+帧选择评分信息:
+========================================
+total_score: 1483.5974
+brightness_variation: 119.6582
+brightness_std: 62.0832
+brightness_range: 254.0000
+texture_complexity: 3203.4168
+brightness_optimal: 0.7946
+solid_ratio: 0.1329
+white_ratio: 0.0005
+black_ratio: 0.0182
+has_large_solid_region: 0.0000
+has_large_white_region: 0.0000
+has_large_black_region: 0.0000
+solid_penalty: 1.0000

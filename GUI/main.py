@@ -430,8 +430,15 @@ class CreditWindow(QWidget,Ui_Credit):
         self.label_2.setRadius(50)
         self.label_3.setImage("./assets/image/Chengshi.jpg")
         self.label_3.setRadius(50)
-        self.label_4.setText("雨泽.")
+        self.label_4.setText(_("雨泽."))
         self.label_4.setRadius(50)
+        self.label_11.setText(("雨泽."))
+        self.label_13.setText(const.__version__)
+        self.pushButton.clicked.connect(self.jump_to_url)
+
+    def jump_to_url(self):
+        QDesktopServices.openUrl(QUrl("https://afdian.com/a/AnkhTheOtherSphere"))
+
 
 
 class Preset_Confirm(QFrame,Ui_AP_Form):
