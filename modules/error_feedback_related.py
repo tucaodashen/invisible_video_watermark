@@ -1,10 +1,13 @@
 import datetime
+import hashlib
 import io
 import os
 import platform
+import re
 import shutil
 import socket
 import tarfile
+import time
 
 import psutil
 import wmi
@@ -36,7 +39,12 @@ def pack_error(error_list,is_device_info = False,output_path="./"):
     for lg in log_list:
         shutil.copy2(lg, os.path.join(temple_path, "log"))
     for st in stack_list:
-        with open(os.path.join(temple_path, "stack", f"{list(st.keys())[0]}.txt"), "w") as f:
+        timestamp = int(time.time())
+        error_hash = hashlib.md5(str(list(st.keys())[0]).encode()).hexdigest()[:8]
+        # 清理错误消息用于文件名
+        clean_msg = re.sub(r'[<>:"/\\|?*]', '_', str(list(st.keys())[0])[:50])
+        file_name = f'{timestamp}_{error_hash}_{clean_msg}.txt'
+        with open(os.path.join(temple_path, "stack", file_name), "w") as f:
             f.write(list(st.values())[0])
     check_list = deepcopy(error_list)
     with open(os.path.join(temple_path, "check.txt"), "w") as f:

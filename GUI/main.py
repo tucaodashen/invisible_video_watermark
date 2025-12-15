@@ -549,7 +549,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.snw.connect(self.show_new_version_window)
         self.anv.connect(self.already_latese)
         if self.preference_args['AutoCheckUpdate']:
-            self.check_update_timer.singleShot(15000,self.check_update_from_github)
+            self.check_update_timer.timeout.connect(self.check_update_from_github)
+            self.check_update_timer.setSingleShot(True)
+            self.check_update_timer.start(3000)
 
 
 

@@ -92,7 +92,7 @@ class SplashScreen(QWidget, Ui_SplashDesu):
 
     def run_log(self):
         print("当前工作目录:", os.getcwd())
-        self.process, pid = run_process_and_get_pid(["ls/LogServer.exe"])
+        self.process, pid = run_process_and_get_pid(["LogServer.exe"])
 
     def custom_exception_hook(self, exc_type, exc_value, exc_traceback):
         """
@@ -138,7 +138,7 @@ class SplashScreen(QWidget, Ui_SplashDesu):
         # 移除 w.exec()
         # 连接用户点击“是”（Accepted）和“否”（Rejected）的信号
         w.accepted.connect(self.start_ffmpeg_download)
-        w.rejected.connect(lambda: print('User chose to skip FFmpeg download'))
+        w.rejected.connect(lambda: sys.exit(0))
 
         w.show()  # 非模态显示，等待用户选择
 

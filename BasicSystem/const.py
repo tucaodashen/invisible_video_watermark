@@ -2,12 +2,12 @@ from enum import Enum
 
 
 
-__version__ = "0.0.1_Omicron"
+__version__ = "v0.1.0_Omicron"
 
-COMPATIBLE_VERSIONS = ["0.0.1_Omicron"]
+COMPATIBLE_VERSIONS = ["v0.1.0_Omicron"]
 
 owner = "tucaodashen"
-name = "IVWNEXTCOMPILE"
+name = "invisible_video_watermark"
 
 
 class File_Return_Type(Enum):
