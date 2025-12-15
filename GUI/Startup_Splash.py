@@ -46,7 +46,6 @@ class SplashScreen(QWidget, Ui_SplashDesu):
         self.process = None
         self.timer_st_oneshot = QTimer()
         self.timer_st_oneshot.timeout.connect(self.start_now)
-        self.timer_st_oneshot.setSingleShot(True)
         self.setupUi(self)
         self.setInvisible()
         self.Tips.setText("Loading...")
@@ -124,6 +123,7 @@ class SplashScreen(QWidget, Ui_SplashDesu):
         self.MainWindow.showMaximized()
         sys.excepthook = self.custom_exception_hook
         self.close()
+        self.timer_st_oneshot.stop()
 
     def display_dialog(self):
         """
