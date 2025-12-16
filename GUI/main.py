@@ -16,6 +16,7 @@ import uuid
 from functools import partial
 from typing import Optional
 
+import PySide6.QtCore
 import numpy as np
 import psutil
 import pyanime4k
@@ -355,6 +356,7 @@ class SettingUi_L(QFrame,Ui_Setting):
         self.DisplayLogButton.clicked.connect(self.display_log_window)
         self.DefaultSaveDictBrowserButton.clicked.connect(self.set_default_save_path)
 
+
     def set_default_save_path(self):
         path = QFileDialog.getExistingDirectory(self, _("选择默认保存路径"))
         if path:
@@ -453,10 +455,25 @@ class Preset_Confirm(QFrame,Ui_AP_Form):
         self.setWindowTitle(_("预设应用确认"))
         self.PB_OP.setText(_("浏览"))
         self.PB_WC.setText(_("浏览"))
+        self.Confirm.setText(_("确认"))
+        self.Cancel.setText(_("取消"))
         self.preset_name = preset_name
         self.file = file
         self.Confirm.clicked.connect(self.generate_template)
         self.Cancel.clicked.connect(self.close)
+        self.PB_OP.clicked.connect(self.select_folder)
+        self.PB_WC.clicked.connect(self.select_input)
+
+
+    def select_folder(self):
+        folder_path = QFileDialog.getExistingDirectory(self, _("选择文件夹"))
+        if folder_path:
+            self.LE_OP.setText(folder_path)
+
+    def select_input(self):
+        file_path, __ = QFileDialog.getOpenFileName(self, _("选择文件"), "", _("图片文件 (*.png *.jpg *.jpeg)"))
+        if file_path:
+            self.LE_WC.setText(file_path)
 
     def generate_template(self):
         with open(os.path.join(preset_path, f"{self.preset_name}.pickle"), "rb") as f:
@@ -472,6 +489,7 @@ class Preset_Confirm(QFrame,Ui_AP_Form):
         else:
             logger.debug(f"Batch preset template: {template}",tags="main:Preset_Confirm:generate_template")
             self.save_batch.emit([template,self.file])
+        self.close()
 
 
 def get_log():
@@ -602,6 +620,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.action_4.triggered.connect(self.display_preference)
         self.action_13.triggered.connect(self.display_credit)
         self.action_15.triggered.connect(self.show_error_feedback)
+        self.MLBrowser.clicked.connect(self.select_folder)
 
     def show_NCW(self,err):
         error_list.append([err[0],"WARNING",err[1],[],get_log()])
@@ -1105,7 +1124,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def rec_pre(self,args):
         self.save_profile(args)
         self.confirm_preset_form.close()
-        logger.info(f"Batch preset {args['name']} saved successfully", tags="main:rec_pre")
+        logger.info(f"Batch preset {args} saved successfully", tags="main:rec_pre")
 
 
     def set_batch_file(self,preset_data = None):
@@ -1131,7 +1150,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not preset_data:
             self.batch_setUp_form.close()
         self.sync_queue()
-        logger.info(f"Batch preset {args['name']} processed successfully", tags="main:set_batch_file")
+        logger.info(f"Batch preset {args} processed successfully", tags="main:set_batch_file")
 
 
 
@@ -1168,6 +1187,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.played = False
         corre_ = threading.Thread(target=self.queue_start)
         corre_.start()
+
+    def select_folder(self):
+        folder_path = QFileDialog.getExistingDirectory(self, _("选择文件夹"))
+        if folder_path:
+            self.MLTL.setText(folder_path)
 
 
     def queue_start(self,resume_task=False):
@@ -1252,10 +1276,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 task.OccurError.connect(self.handle_error)
 
     def apply_preset(self,drag_trigger=False):
+        if type(drag_trigger) == PySide6.QtCore.QPoint:
+            drag_trigger = False
         if self.get_current_selection() is not None:
-            if drag_trigger or len(self.SLTL.text()) > 0:
+            if drag_trigger != False or len(self.SLTL.text()) > 0:
                 if not drag_trigger:
-                    self.confirm_preset_form = Preset_Confirm(parent=self, file=self.SLTL.text(), preset_name=self.get_current_selection())
+                    self.confirm_preset_form = Preset_Confirm(parent=self, file=str(self.SLTL.text()), preset_name=self.get_current_selection())
                 else:
                     self.confirm_preset_form = Preset_Confirm(parent=self, file=drag_trigger,
                                                               preset_name=self.get_current_selection())
@@ -1267,14 +1293,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
     def apply_preset_multi(self,drag_trigger=False):
+        if type(drag_trigger) == PySide6.QtCore.QPoint:
+            drag_trigger = False
         if self.get_current_selection() is not None:
-            if drag_trigger != False or len(self.MLTL.text()) > 0:
+            if len(self.MLTL.text()) > 0 or drag_trigger != False:
                 if not drag_trigger:
                     if os.path.exists(self.MLTL.text()):
                         file_list = os.listdir(self.MLTL.text())
                         path_list = []
                         for i in file_list:
-                            path_list.append(os.path.join(self.MLTL.text(),i))
+                            if str(i).split(".")[-1] in ["mp4","avi","mov","mkv"]:
+                                path_list.append(os.path.join(self.MLTL.text(),i))
+                        self.confirm_preset_form = Preset_Confirm(parent=self, file=path_list,
+                                                                  preset_name=self.get_current_selection())
+                        self.confirm_preset_form.setWindowModality(Qt.ApplicationModal)
+                        self.confirm_preset_form.show()
+                        self.confirm_preset_form.save_batch.connect(
+                            self.idkwant_but_the_function_name_have_conflict_with_qt)
                 else:
                     path_list = drag_trigger
                     self.confirm_preset_form = Preset_Confirm(parent=self,file=path_list,preset_name=self.get_current_selection())
@@ -1292,7 +1327,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 showFlyout(self, self.PresentList, InfoBarIcon.ERROR, _("仅支持视频文件"), _("错误"))
                 return
         if len(file) == 1:
-            self.apply_preset(drag_trigger=file)
+            self.apply_preset(drag_trigger=file[0])
         elif len(file) > 1:
             self.apply_preset_multi(drag_trigger=file)
 
