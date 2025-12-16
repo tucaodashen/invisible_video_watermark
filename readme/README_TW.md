@@ -1,5 +1,5 @@
 # InvisibleVideoWatermarkNEXT
-![Alt](https://repobeats.axiom.co/api/embed/30e3f4c85c3c74c1e22a1c0872a1165809c7ace8.svg "Repobeats analytics image")
+![Alt](https://repobeats.axiom.co/api/embed/f8d15e63860b5c0c200c0a4e531d4ad9218ac1c6.svg "Repobeats analytics image")
 <br>
 [简体中文](../README.md) |
 繁體中文
@@ -264,6 +264,7 @@ InvisibleVideoWatermarkNEXT/
 
 - **FFmpeg**：如果自動下載的 FFmpeg 失敗，您可以自行下載並解壓縮到根目錄下，或者將 FFmpeg 和 FFprobe 路徑加入環境變數中。
 
+- **不要多開**：不要同時運行多個實例，否則會導致資源衝突。
 ## 📄 授權條款
 
 本專案採用 MIT 授權條款 - 檢視 [LICENSE](LICENSE) 檔案了解詳情。

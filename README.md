@@ -1,5 +1,5 @@
 # InvisibleVideoWatermarkNEXT
-![Alt](https://repobeats.axiom.co/api/embed/30e3f4c85c3c74c1e22a1c0872a1165809c7ace8.svg "Repobeats analytics image")
+![Alt](https://repobeats.axiom.co/api/embed/f8d15e63860b5c0c200c0a4e531d4ad9218ac1c6.svg "Repobeats analytics image")
 <br>
 简体中文 |
 [繁体中文](readme/README_TW.md)
@@ -258,6 +258,7 @@ InvisibleVideoWatermarkNEXT/
 - **水印内容**：建议水印内容为文本或图片，避免使用复杂字符或特殊字体，而且不要太长或太大。
 - **输出**：不要设置太低的码率，如果你不知道自己在调节什么，就不要动默认参数。
 - **FFmpeg**：如果自动下载的FFmpeg下载失败，那么你可以自己下载并解压到根目录下或者将FFmpeg和FFprobe添加到环境变量中。
+- **不要多开**：不要同时运行多个实例，否则会导致资源冲突。
 
 
 ## 📄 许可证
