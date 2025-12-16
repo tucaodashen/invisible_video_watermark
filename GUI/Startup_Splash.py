@@ -114,6 +114,8 @@ class SplashScreen(QWidget, Ui_SplashDesu):
         print(full_traceback_string)
 
         print("=" * 60)
+        if "scroll_bar.py" in full_traceback_string:
+            return
         self.MainWindow.show_NCW([str(exc_value), full_traceback_string])
 
     def start_now(self):

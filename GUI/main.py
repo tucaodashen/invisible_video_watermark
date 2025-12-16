@@ -557,6 +557,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.anv.connect(self.already_latese)
         if self.preference_args['AutoCheckUpdate']:
             self.check_update_timer.timeout.connect(self.check_update_from_github)
+            self.check_update_timer.setSingleShot(True)
             self.check_update_timer.start(3000)
 
 
@@ -1511,7 +1512,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.check_thread is None:
             self.check_thread = threading.Thread(target=self._check_update_from_github)
             self.check_thread.start()
-        self.check_update_timer.stop()
 
     def already_latese(self):
         showFlyout(self, self.preference_window.SoftwareVersionCheckButton, InfoBarIcon.SUCCESS, _("已检查最新版本"),
