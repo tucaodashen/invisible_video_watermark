@@ -78,8 +78,8 @@ InvisibleVideoWatermarkNEXT 是一個功能強大的視頻隱形浮水印處理�
 
 1. **複製專案**
 ```bash
-git clone https://github.com/your-username/InvisibleVideoWatermarkNEXT.git
-cd InvisibleVideoWatermarkNEXT
+git https://github.com/tucaodashen/invisible_video_watermark.git
+cd invisible_video_watermark
 ```
 
 2. **建立虛擬環境**
@@ -288,7 +288,6 @@ InvisibleVideoWatermarkNEXT/
 
 - **專案首頁**：[GitHub Repository](https://github.com/tucaodashen/invisible_video_watermark)
 - **問題回報**：[Issues](https://github.com/tucaodashen/invisible_video_watermark/issues)
-- **討論交流**：[Discussions](https://github.com/tucaodashen/invisible_video_watermark/discussions)
 - **聯絡作者**：[Email](mailto:tucaodashenofficial@gmail.com)
 - **專案贊助**：[愛發電](https://afdian.com/a/AnkhTheOtherSphere)
 - **Discord**：[Join our server](https://discord.gg/5fwFVYSV)
