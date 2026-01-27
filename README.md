@@ -1,10 +1,10 @@
 # InvisibleVideoWatermarkNEXT
 ![Alt](https://repobeats.axiom.co/api/embed/f8d15e63860b5c0c200c0a4e531d4ad9218ac1c6.svg "Repobeats analytics image")
 <br>
-简体中文 |
+简体中文 | 
 [繁体中文](readme/README_TW.md)
 
- ![Alt](https://moe-counter.glitch.me/get/@:tucaodashen?theme=rule34 "Repobeats analytics image")
+ ![Alt](https://count.getloli.com/get/@:tucaodashen?theme=rule34 "Repobeats analytics image")
 <div align="center">
 
 
