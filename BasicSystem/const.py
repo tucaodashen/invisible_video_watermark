@@ -1,8 +1,11 @@
 from enum import Enum
 
 
+studio = "PraySoftware"
+__version__ = "v0.1.1-Omicron"
+alias = "Omicron"
+software_name = "Invisible Video Watermark NEXT"
 
-__version__ = "v0.1.0_Omicron"
 
 COMPATIBLE_VERSIONS = ["v0.1.0_Omicron"]
 

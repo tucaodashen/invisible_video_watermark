@@ -132,7 +132,7 @@ def get_audio_tracks_info(video_path):
 class ProcessUnit(QObject):
     update_progress = Signal(float,str,str)
     OccurError = Signal(list,str,list)
-    def __init__(self,file):
+    def __init__(self,file,image=False):
         super().__init__()
         self.audio_file_list = []
         self.error_occured = False
@@ -205,7 +205,8 @@ class ProcessUnit(QObject):
         self.saved_file_path = [None,None]
         self.dump_uuid = None
         self.root_dir = None
-        self.frame_count = VideoProcessor.get_frame_count(file)
+        if not image:
+            self.frame_count = VideoProcessor.get_frame_count(file)
         self.progress = 0
         self.batch_files = []
         self.stopped = False

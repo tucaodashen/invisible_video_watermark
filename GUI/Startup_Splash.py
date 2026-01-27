@@ -5,19 +5,11 @@ import socket
 import subprocess
 import sys
 import traceback
-
-# 假设这些模块和类已经存在于您的项目中
 from PySide6.QtWidgets import QWidget, QApplication
 from qfluentwidgets import Dialog, MessageBoxBase, SubtitleLabel, ProgressBar, BodyLabel
-
 from GUI import PrepareRequirements
 from GUI.Splash import Ui_SplashDesu
 from PySide6.QtCore import QTimer, Qt, Signal, QThread  # 导入 QThread 和 Signal
-
-# -----------------------------------------------------------
-# ⚠️ 注意: 由于我无法访问您的 GUI.PrepareRequirements 模块，
-# 我假设 FFmpegPrepare 是 QThread 的子类，并包含必要的信号。
-# -----------------------------------------------------------
 
 _ = gettext.gettext
 

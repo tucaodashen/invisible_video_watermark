@@ -36,10 +36,10 @@ from PySide6.QtGui import QPixmap, QImage, QDesktopServices
 from BasicSystem import const
 from modules import ProcessUnit, PyAv, multithread_downloader, update_check
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout, QTableWidgetItem, QProgressBar, \
-    QHeaderView, QTableWidget, QFileDialog, QAbstractItemView, QLineEdit
+    QHeaderView, QTableWidget, QFileDialog, QAbstractItemView, QLineEdit, QScrollArea, QGridLayout
 from PySide6.QtCore import Qt, QTimer, Signal, QSize, QUrl
 from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel, RoundMenu, Action, \
-    FluentIcon, InfoBar, InfoBarPosition, PushButton, LineEdit
+    FluentIcon, InfoBar, InfoBarPosition, PushButton, LineEdit, PixmapLabel
 
 from GUI.MainWindows import Ui_MainWindow
 from GUI.Setting import Ui_Form as Ui_Setting
@@ -2706,26 +2706,66 @@ class NonCriticalErrorDetail(QWidget,Ui_NonCriticalError):
         self.pushButton_2.clicked.connect(self.close)
 
 
-class check_update(QWidget,Ui_NewVersion):
+class check_update(QWidget, Ui_NewVersion):
     update_signal = Signal()
-    def __init__(self,version,change_log,data):
+
+    def __init__(self, version, change_log, data):
         super().__init__()
         self.setupUi(self)
+
         # 设置为无边框透明窗口
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
+
         self.version = version
         self.change_log = change_log
+
+        # 数据解析
         for i in data:
-            print(i)
             if i["name"] == "Windows_amd64.zip":
                 self.download_url = i["download_url"]
                 self.download_name = i["name"]
             if i["name"] == "AobaUpdater.exe":
                 self.updater_url = i["download_url"]
                 self.updater_name = i["name"]
+            if i["name"] == "changelog.html":
+                self.html_url = i["download_url"]
+                self.html_name = i["name"]
+
         self.label_2.setText(self.version)
+
+        # --- 图片显示逻辑修复 ---
+        # 1. 创建滚动区域
+        self.image_frame = QScrollArea()
+        self.image_frame.setWidgetResizable(True)
+
+        # 2. 创建内部容器和布局
+        container = QWidget()
+        self.grid_lay = QGridLayout(container)
+        self.grid_lay.setContentsMargins(0, 0, 0, 0)  # 移除内边距使图片贴合
+
+        # 3. 创建图片标签并加载图片
+        pixmap = QPixmap("hifuazui.jpg")
+        if pixmap.isNull():
+            print("错误：无法加载图片 'hifuazui.jpg'，请检查路径。")
+
+        self.image = ImageLabel(pixmap)
+        self.image.scaledToWidth(self.geometry().width()-70)
+
+
+        # 【关键修复】将图片添加到布局中
+        self.grid_lay.addWidget(self.image)
+        self.grid_lay.setAlignment(Qt.AlignCenter)  # 居中显示
+
+        # 4. 将容器设置给滚动区域
+        self.image_frame.setWidget(container)
+
+        # 5. 替换 UI 中的 textBrowser
         self.textBrowser.setText(self.change_log)
+        # 注意：如果布局中已经有 textBrowser，replaceWidget 是正确的做法
+        # self.verticalLayout_2.replaceWidget(self.textBrowser, self.image_frame)
+        # self.textBrowser.hide()  # 彻底隐藏旧组件
+
         self.signal()
         self.download_window = None
 
