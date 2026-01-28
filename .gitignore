@@ -5,4 +5,9 @@
 /output/
 /WorkPath/
 icon.psd
+/log/
+/make/Release/
+/make/output/
+/make/upx/
+.idea/
 
