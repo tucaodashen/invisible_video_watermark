@@ -2,12 +2,13 @@ from enum import Enum
 
 
 studio = "PraySoftware"
-__version__ = "v0.1.1-Omicron"
+__version__ = "v0.1.2-Omicron"
 alias = "Omicron"
 software_name = "Invisible Video Watermark NEXT"
 
 
-COMPATIBLE_VERSIONS = ["v0.1.0_Omicron"]
+COMPATIBLE_VERSIONS = ["v0.1.0_Omicron","v0.1.1_Omicron","v0.1.2_Omicron"]
+
 
 owner = "tucaodashen"
 name = "invisible_video_watermark"
