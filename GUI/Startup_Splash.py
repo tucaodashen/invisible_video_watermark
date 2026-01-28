@@ -86,29 +86,21 @@ class SplashScreen(QWidget, Ui_SplashDesu):
         self.process, pid = run_process_and_get_pid(["LogServer.exe"])
 
     def custom_exception_hook(self, exc_type, exc_value, exc_traceback):
-        """
-        这是一个自定义的异常钩子函数，用于捕获所有未处理的异常。
-        """
-
-        # --- 1. 记录/处理异常信息 ---
+        formatted_traceback_lines = traceback.format_exception(
+            exc_type, exc_value, exc_traceback
+        )
+        # 将列表中的行连接成一个完整的字符串
+        full_traceback_string = "".join(formatted_traceback_lines)
+        if "scroll_bar.py" in full_traceback_string:
+            return
+        self.MainWindow.show_NCW([str(exc_value), full_traceback_string])
         print("=" * 60)
         print("🚨 捕获到一个未处理的异常！")
         print(f"异常类型: {exc_type.__name__}")
         print(f"异常信息: {exc_value}")
-
-        formatted_traceback_lines = traceback.format_exception(
-            exc_type, exc_value, exc_traceback
-        )
-
         print("\n--- 完整追溯信息 (格式化为字符串) ---")
-        # 将列表中的行连接成一个完整的字符串
-        full_traceback_string = "".join(formatted_traceback_lines)
         print(full_traceback_string)
-
         print("=" * 60)
-        if "scroll_bar.py" in full_traceback_string:
-            return
-        self.MainWindow.show_NCW([str(exc_value), full_traceback_string])
 
     def start_now(self):
         from GUI.main import MainWindow

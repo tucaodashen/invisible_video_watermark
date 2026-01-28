@@ -13,6 +13,7 @@ import threading
 import time
 import traceback
 import uuid
+from copy import deepcopy
 from functools import partial
 from typing import Optional
 
@@ -369,7 +370,11 @@ class SettingUi_L(QFrame,Ui_Setting):
         self.CompleteDingCheck.setChecked(self.setting_list["CompleteNotice"])
         self.DefaultSaveDictTextEdit.setText(self.setting_list["DefaultSavePath"])
         self.OutputStructureComboBox.setCurrentIndex(self.OutputStructureComboBox.findData(self.setting_list["OutputStructure"]))
-        self.DumpCoreDataWhenExceptionOccuredCheckBox.setChecked(self.setting_list["EnableCoreDump"])
+        if self.setting_list["EnableCoreDump"] == True:
+            self.DumpCoreDataWhenExceptionOccuredCheckBox.setChecked(True)
+        else:
+            self.DumpCoreDataWhenExceptionOccuredCheckBox.setChecked(False)
+        print(self.setting_list["EnableCoreDump"])
         self.CB_autocheck.setChecked(self.setting_list["AutoCheckUpdate"])
         self.CB_Theme.setCurrentIndex(self.CB_Theme.findData(self.setting_list["Theme"]))
 
@@ -381,10 +386,7 @@ class SettingUi_L(QFrame,Ui_Setting):
             self.setting_list["CompleteNotice"] = False
         self.setting_list["DefaultSavePath"] = self.DefaultSaveDictTextEdit.text()
         self.setting_list["OutputStructure"] = self.OutputStructureComboBox.currentData()
-        if self.DumpCoreDataWhenExceptionOccuredCheckBox.isChecked():
-            self.setting_list["EnableCoreDump"] = True
-        else:
-            self.setting_list["EnableCoreDump"] = False
+        self.DumpCoreDataWhenExceptionOccuredCheckBox.setChecked(True)
         if self.CB_autocheck.isChecked():
             self.setting_list["AutoCheckUpdate"] = True
         else:
@@ -912,51 +914,68 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         return
 
     def update_details(self):
+        # 1. 确定当前要显示的任务对象 (target)
+        target = None
         if self.task_queue:
             if self.current_selected_task is None:
                 self.update_default()
-                self.SourceLabel.setText(_("源文件:") + os.path.basename(self.default_detail_show.file))
-                self.progressBar.setValue(self.default_detail_show.progress*100)
-                self.FileNameLabel.setText(_("文件名:") + os.path.basename(self.default_detail_show.file))
-                self.FilePathLabel.setText(_("文件路径:") + self.default_detail_show.file)
-                self.FileFormatLabel.setText(_("格式:") + self.default_detail_show.output_format)
-                self.ProjectPresentLabel.setText(_("项目预设:"))
-                self.VideoInfoLabel.setText(_(f"视频:{get_video_parameters_simple(self.default_detail_show.file)}"))
-                self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(self.default_detail_show.MaximumBitRate)+" Target Bitrate:"+str(self.default_detail_show.TargetBitRate))
-                self.AudioLabel.setText(_(f"音频:{get_audio_parameters_simple(self.default_detail_show.file)}"))
-                self.label_10.setImage(cv2_to_qpixmap(self.get_thumbnail(self.default_detail_show)))
-                self.label_10.scaledToHeight(216)
-                if self.default_detail_show.start_time is not None:
-                    self.StartTimeLabel.setText(_("开始时间:") + self.default_detail_show.start_time)
-                else:
-                    self.StartTimeLabel.setText(_("开始时间:未开始"))
-                if self.default_detail_show.consumed_timer is not None and self.default_detail_show.running:
-                    self.ComsumedTimeLabel.setText(_("消耗时间:") + str(round(time.time() - self.default_detail_show.consumed_timer, 2)) + "s")
-
+                target = self.default_detail_show
             else:
+                # 查找索引匹配的任务 (注意：你的逻辑是 index == current_selected_task + 1)
                 for i in self.task_queue:
-                    if i.index == self.current_selected_task+1:
-                        self.SourceLabel.setText(_("源文件:") + os.path.basename(i.file))
-                        self.progressBar.setValue(i.progress*100)
-                        self.FileNameLabel.setText(_("文件名:") + os.path.basename(i.file))
-                        self.FilePathLabel.setText(_("文件路径:") + i.file)
-                        self.FileFormatLabel.setText(_("格式:") + i.output_format)
-                        self.ProjectPresentLabel.setText(_("项目预设:"))
-                        self.VideoInfoLabel.setText(_(f"视频:{get_video_parameters_simple(i.file)}"))
-                        self.BitRateLabel.setText(_("码率:") + "Maximum Bitrate:"+str(i.MaximumBitRate)+" Target Bitrate:"+str(i.TargetBitRate))
-                        self.AudioLabel.setText(_(f"音频:{get_audio_parameters_simple(i.file)}"))
-                        self.label_10.setImage(cv2_to_qpixmap(self.get_thumbnail(i)))
-                        self.label_10.scaledToHeight(216)
-                        if i.start_time is not None:
-                            self.StartTimeLabel.setText(_("开始时间:") + i.start_time)
-                        else:
-                            self.StartTimeLabel.setText(_("开始时间:未开始"))
-                        if i.consumed_timer is not None and i.running:
-                            self.ComsumedTimeLabel.setText(_("消耗时间:") + str(
-                                round(time.time() - i.consumed_timer, 2)) + "s")
-        else:
+                    if i.index == self.current_selected_task + 1:
+                        target = i
+                        break
+
+        # 2. 如果队列为空或没找到目标，显示默认 UI 并返回
+        if not target:
             self.label_10.setImage("assets/image/reisa.jpg")
             self.label_10.scaledToHeight(216)
+            # 清空或重置一些关键标签（可选）
+            self.SourceLabel.setText(_("源文件:当前无任务"))
+            self.progressBar.setValue(0)
+            return
+
+        # 3. 统一更新 UI 标签 (DRY原则：只写一次)
+        self.SourceLabel.setText(_("源文件:") + os.path.basename(target.file))
+        self.progressBar.setValue(int(target.progress * 100))
+        self.FileNameLabel.setText(_("文件名:") + os.path.basename(target.file))
+        self.FilePathLabel.setText(_("文件路径:") + target.file)
+        self.FileFormatLabel.setText(_("格式:") + target.output_format)
+        self.ProjectPresentLabel.setText(_("项目预设:"))
+
+        # 视频/音频信息更新
+        self.VideoInfoLabel.setText(_(f"视频:{get_video_parameters_simple(target.file)}"))
+        self.BitRateLabel.setText(_("码率:") + f"Max:{target.MaximumBitRate} Target:{target.TargetBitRate}")
+        self.AudioLabel.setText(_(f"音频:{get_audio_parameters_simple(target.file)}"))
+
+        # 缩略图更新
+        thumb = self.get_thumbnail(target)
+        if thumb is not None:
+            self.label_10.setImage(cv2_to_qpixmap(thumb))
+            self.label_10.scaledToHeight(216)
+
+        # 4. 时间逻辑处理
+        # 更新开始时间
+        if target.start_time:
+            self.StartTimeLabel.setText(_("开始时间:") + str(target.start_time))
+        else:
+            self.StartTimeLabel.setText(_("开始时间:未开始"))
+
+        # 更新消耗时间
+        if target.consumed_timer is not None:
+            if target.running:
+                # 任务运行中：显示动态时间
+                elapsed = time.time() - target.consumed_timer
+                self.ComsumedTimeLabel.setText(_("消耗时间:") + f"{elapsed:.2f}s")
+            else:
+                # 任务停止/完成：保持显示最后的数值，或者从任务属性中读取总耗时
+                # 如果你在任务结束时记录了 final_duration，这里可以显示它
+                if hasattr(target, 'final_duration'):
+                    self.ComsumedTimeLabel.setText(_("消耗时间:") + f"{target.final_duration:.2f}s")
+                # 如果没有记录，目前的逻辑会保持显示 label 上的最后一个值
+        else:
+            self.ComsumedTimeLabel.setText(_("消耗时间:未开始"))
 
     def prepare_thumbnail(self):
         with self.thumbnail_lock:
@@ -1141,6 +1160,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             args.update({'file': i})
             args.update({'output_path': os.path.join(origin['output_path'],os.path.basename(i).split(".")[0])})
             self.temporary = ProcessUnit.ProcessUnit(i)
+            subargs = deepcopy(args)
+            subargs['watermark_content'] = ""
+            self.temporary.description = str(subargs)
             self.temporary.set_args(**args)
             self.temporary.index = len(self.task_queue)+1
             self.temporary.progress_identify = str(uuid.uuid4())
@@ -1162,6 +1184,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             templ = preset
         self.temporary = ProcessUnit.ProcessUnit(templ['file'])
         self.temporary.set_args(**templ)
+        subargs = deepcopy(templ)
+        subargs['watermark_content'] = ""
+        self.temporary.description = str(subargs)
         self.temporary.index = len(self.task_queue)+1
         self.temporary.progress_identify = str(uuid.uuid4())
         self.temporary.dump_uuid = str(uuid.uuid4())
@@ -1499,6 +1524,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def closeEvent(self, event):
         print("TryToClose",self.update_close)
+        if self.update_close:
+            logger.success(_("正在关闭！请勿手动关闭此窗口！软件将会自动更新！"), tags="main:closeEvent")
+        else:
+            logger.success(_("正在关闭！请勿手动关闭此窗口！"), tags="main:closeEvent")
         try:
             if self.credit_window is not None:
                 self.credit_window.close()
@@ -1819,6 +1848,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                 }
                 if not previews:
                     watermark_content = cv2.imread(self.LE_WatermarkContent.text())
+
                 else:
                     watermark_content = self.LE_WatermarkContent.text()
             else:
@@ -1869,6 +1899,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
             }
             if not previews:
                 watermark_content = cv2.imread(self.LE_WatermarkContent.text())
+
             else:
                 watermark_content = self.LE_WatermarkContent.text()
         elif int(self.CB_WatermarkAgori.currentIndex()) == 2:
@@ -2126,6 +2157,10 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.set_encoders()
 
     def check_validity(self):
+        if cv2.imread(self.LE_WatermarkContent.text()) == None and self.CB_IW.isChecked():
+            showFlyout(self, self.LE_WatermarkContent, InfoBarIcon.ERROR, _("请检查图片路径是否正确？是否为有权限目录？"),
+                       _("图片无法读取！"))
+            return False
         if int(self.CB_BitRateControl.currentIndex()) == 1 and len(self.LE_BitRate.text()) == 1:
             showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率?！"),_("比特率不合规！"))
             return False

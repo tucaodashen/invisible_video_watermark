@@ -3,7 +3,7 @@
     "CompleteNotice": true,
     "DefaultSavePath": "",
     "OutputStructure": "dir",
-    "EnableCoreDump": false,
+    "EnableCoreDump": true,
     "AutoCheckUpdate": false,
     "Theme": "dark"
 }

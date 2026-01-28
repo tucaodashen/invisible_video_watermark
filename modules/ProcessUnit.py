@@ -218,6 +218,8 @@ class ProcessUnit(QObject):
             with open("setting.json","r") as f:
                 self.preference_args = json.load(f)
 
+        self.description = None
+
 
     def audio_process(self,input_video, path):
         track_count = get_audio_tracks_info(input_video)
@@ -382,7 +384,7 @@ class ProcessUnit(QObject):
 
     @timer_decorator
     def run(self):
-        self.logger.info(f"Start process unit: {self.identify}",tags=f"ProcessUnit:ProcessUnit:run:{os.path.basename(self.file)}")
+        self.logger.info(f"Start process unit: {self.identify} with configuration {self.preference_args} and description {self.description}",tags=f"ProcessUnit:ProcessUnit:run:{os.path.basename(self.file)}")
         self.setup_ipc()
         self.set_stage(0)
         self.sample()

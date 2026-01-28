@@ -6,6 +6,18 @@ setup_logger(default_tags="pltform", enable_udp=True, enable_console=True)
 logger = get_logger()
 
 
+def get_nvidia_gpu():
+    try:
+        import subprocess
+        # 尝试运行 nvidia-smi 获取显卡名称
+        cmd = "nvidia-smi --query-gpu=name --format=csv,noheader"
+        output = subprocess.check_output(cmd, shell=True).decode().strip()
+        if output:
+            return {output: "nvidia"}
+    except Exception:
+        pass
+    return {}
+
 @cache
 def get_render_devices():
     device_list = {}
@@ -18,9 +30,7 @@ def get_render_devices():
         logger.error(f"CPU信息获取失败: {e}")
         device_list.update({"Unknown CPU": "cpu"})
 
-    # 2. 尝试获取 AMD 显卡 (使用 pyadl)
     try:
-        # 延迟导入，只有在调用函数时才尝试加载 pyadl
         from pyadl import ADLManager
 
         instance = ADLManager.getInstance()
@@ -30,15 +40,10 @@ def get_render_devices():
                 adapter_name = str(device.adapterName).replace("b'", "").replace("'", "")
                 if "AMD" in adapter_name.upper():
                     device_list.update({adapter_name: "amd"})
-                elif "NVIDIA" in adapter_name.upper():
-                    device_list.update({adapter_name: "nvidia"})
     except Exception as e:
-        # 如果没有 AMD 显卡，pyadl 会报 ADLError
-        # 这里我们捕获它，记录日志并跳过，确保程序不崩溃
         logger.warning(f"AMD 设备检测跳过 (可能无AMD显卡或驱动): {e}")
 
-    # 3. 如果你需要更准确地检测 NVIDIA 显卡，建议在此处额外添加 nvidia-smi 的逻辑
-    # 目前保持你原有的逻辑结构
+    device_list.update(get_nvidia_gpu())
 
     logger.info(f"获取到渲染设备列表: {device_list}", tags="pltform:get_render_devices")
     return device_list
