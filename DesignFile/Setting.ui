@@ -32,7 +32,7 @@
         <x>0</x>
         <y>0</y>
         <width>768</width>
-        <height>603</height>
+        <height>635</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -112,6 +112,24 @@
               </property>
               <property name="checked">
                <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_6">
+            <item>
+             <widget class="QLabel" name="label">
+              <property name="text">
+               <string>链接图片文件</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="PushButton" name="pushButton">
+              <property name="text">
+               <string>注册</string>
               </property>
              </widget>
             </item>

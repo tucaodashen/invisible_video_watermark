@@ -8,19 +8,20 @@ import pickle
 import random
 import shutil
 import subprocess
-import sys
+import tempfile
 import threading
 import time
-import traceback
 import uuid
 from copy import deepcopy
 from functools import partial
 from typing import Optional
-
 import PySide6.QtCore
+import markdown
 import numpy as np
 import psutil
 import pyanime4k
+import requests
+from html2image import Html2Image
 
 from BasicSystem.log_client import setup_logger, get_logger
 from GUI.NewVersionFround import Ui_NewVersion
@@ -29,6 +30,7 @@ from GUI.UpScale import Ui_UpScaleAni
 from GUI.UserInterfaceErrorFeedback import ErrorFeedbackUi_L
 from GUI.download_newversion import Ui_DownloadNew
 from GUI.log_viewer import LogViewerWindow
+from GUI.ImageViewer import ImageProcessWindow
 from modules.PyAv import extract_video_frames
 from modules.GenerateVideo import get_video_parameters_simple,get_audio_parameters_simple
 import cv2
@@ -37,10 +39,10 @@ from PySide6.QtGui import QPixmap, QImage, QDesktopServices
 from BasicSystem import const
 from modules import ProcessUnit, PyAv, multithread_downloader, update_check
 from PySide6.QtWidgets import QApplication, QWidget, QMainWindow, QFrame, QVBoxLayout, QTableWidgetItem, QProgressBar, \
-    QHeaderView, QTableWidget, QFileDialog, QAbstractItemView, QLineEdit, QScrollArea, QGridLayout
+    QHeaderView, QTableWidget, QFileDialog, QAbstractItemView, QLineEdit, QScrollArea, QGridLayout, QHBoxLayout
 from PySide6.QtCore import Qt, QTimer, Signal, QSize, QUrl
 from qfluentwidgets import FluentIcon as FIF, FlyoutViewBase, Flyout, InfoBarIcon, ImageLabel, RoundMenu, Action, \
-    FluentIcon, InfoBar, InfoBarPosition, PushButton, LineEdit, PixmapLabel
+    FluentIcon, InfoBar, InfoBarPosition, PushButton, LineEdit, PixmapLabel, AvatarWidget, TransparentPushButton
 
 from GUI.MainWindows import Ui_MainWindow
 from GUI.Setting import Ui_Form as Ui_Setting
@@ -147,6 +149,8 @@ def _get_duration_opencv(video_path: str) -> Optional[float]:
         return None
 
 def resize_image_to_fixed_height_simple(image, target_height=216):
+    if image is None:
+        raise ValueError("Input image is None")
     h, w = image.shape[:2]
 
     # 计算缩放比例和新宽度
@@ -251,6 +255,8 @@ class UpscaleWindow(QWidget,Ui_UpScaleAni):
             return
         if os.path.isfile(self.lineEdit.text()) and os.path.exists(self.lineEdit_2.text()):
             src = cv2.imread(self.lineEdit.text())
+            if src is None:
+                raise ValueError("Input image is None")
             dst = processor(src)
             cv2.imwrite(filename=os.path.join(self.lineEdit_2.text(), str(os.path.basename(self.lineEdit.text()))), img=dst)
             self.pushButton_2.setEnabled(
@@ -523,6 +529,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     check_update_timer = QTimer()
     def __init__(self):
         super().__init__()
+        self.image_process = None
+        self.avatar = None
         self.check_thread = None
         self.update_close = False
         self.new_version_window = None
@@ -568,7 +576,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.thumbnail_lock = threading.Lock()  # 防止竞态条件
         self.default_detail_show = None
         self.started = False
-        self.browser.setDisabled(True)
         self.preference_args = {}
         self.load_setting()
         self.update_button_signal.connect(self.set_button_status)
@@ -579,6 +586,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.check_update_timer.timeout.connect(self.check_update_from_github)
             self.check_update_timer.setSingleShot(True)
             self.check_update_timer.start(3000)
+        # self.set_post_modify()
 
 
 
@@ -588,6 +596,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 json_data = f.read()
             self.preference_args = json.loads(json_data)
             print(self.preference_args)
+
+    def set_post_modify(self):
+        self.container_widget = QFrame()
+        self.container_widget.setObjectName("CONT")
+        self.loginandadmin = TransparentPushButton()
+        self.loginandadmin.setText(_("点击以登录"))
+        self.setStyleSheet("#CONT { border-radius: 10px; border: 1px solid gray; }")
+        layout = QHBoxLayout(self.container_widget)
+        layout.setContentsMargins(5, 2, 5, 2)
+        layout.setSpacing(2)
+        self.avatar = AvatarWidget()
+        self.avatar.setImage("./assets/image/AvatarPlaceHolder.png")
+        self.avatar.scaledToHeight(25)
+        self.avatar.setRadius(25)
+        layout.addWidget(self.avatar)
+        layout.addWidget(self.loginandadmin)
+        self.menubar.setCornerWidget(self.container_widget)
+
 
 
 
@@ -1060,8 +1086,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.error_feedback_ui.show()
 
     def handle_error(self, err, _id,dump_file):
-        print(err)
-        print(dump_file)
+        logger.critical(f"Error {err[0]}: {err[1]}", tags="main:MainWindow:handle_error")
         window = error_report.ErrorReportDialog(error=err,dump_file=dump_file)
         window.error_signal.connect(self.show_error_feedback)
         self.error_window.append(window)
@@ -1111,11 +1136,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             if not preset:
                 file = files[0]
-                self.setUp_form = CreateNewProject(file,self)
-                self.setUp_form.setWindowModality(Qt.ApplicationModal)
-                self.setUp_form.show()
-                self.setUp_form.complete.connect(self.save_profile)
-                self.setUp_form.create_preset.connect(self.receive_preset)
+                print(file)
+                if file.endswith((".mp4",".mkv",".mov",".avi")):
+                    self.setUp_form = CreateNewProject(file,self)
+                    self.setUp_form.setWindowModality(Qt.ApplicationModal)
+                    self.setUp_form.show()
+                    self.setUp_form.complete.connect(self.save_profile)
+                    self.setUp_form.create_preset.connect(self.receive_preset)
+                elif file.endswith((".png",".jpg",".jpeg",".webp")):
+                    self.image_process = ImageProcessWindow([file],self)
+                    self.image_process.error_report_call_back = self.image_error_callback
+                    self.image_process.setWindowModality(Qt.ApplicationModal)
+                    self.image_process.show()
             else:
                 file = files[0]
                 self.setUp_form = CreateNewProject(file, self)
@@ -1127,12 +1159,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.setUp_form.show()
                 self.setUp_form.create_preset.connect(self.receive_preset)
 
+
+    def image_error_callback(self,err):
+        logger.critical(f"Error {err[0]}: {err[1]}", tags="main:MainWindow:image_error_callback")
+        window = error_report.ErrorReportDialog(error=err, dump_file=err[2])
+        window.error_signal.connect(self.show_error_feedback)
+        self.error_window.append(window)
+        error_list.append([err[0], "CRITICAL", err[1], err[2], get_log()])
+        self.error_window[-1].show()
+
     def add_batch_process(self, files):
-        self.batch_setUp_form = CreateNewProject(files, self)
-        self.batch_setUp_form.setWindowModality(Qt.ApplicationModal)
-        self.batch_setUp_form.show()
-        self.batch_setUp_form.complete.connect(self.set_batch_file)
-        self.batch_setUp_form.create_preset.connect(self.receive_preset)
+        img = []
+        vd = []
+        for i in files:
+            if i.endswith((".png", ".jpg", ".jpeg", ".webp")):
+                img.append(i)
+            elif i.endswith((".mp4",".mkv",".mov",".avi")):
+                vd.append(i)
+        if img:
+            #设为独立窗口
+            self.image_process = ImageProcessWindow(img, self)
+            self.image_process.error_report_call_back = self.image_error_callback
+            self.image_process.setWindowModality(Qt.ApplicationModal)
+            self.image_process.show()
+        if vd:
+            self.batch_setUp_form = CreateNewProject(vd, self)
+            self.batch_setUp_form.setWindowModality(Qt.ApplicationModal)
+            self.batch_setUp_form.show()
+            self.batch_setUp_form.complete.connect(self.set_batch_file)
+            self.batch_setUp_form.create_preset.connect(self.receive_preset)
 
     #处理批量模板任务的函数，但是以前的名字和qt内部函数冲突。WTF？？？
     def idkwant_but_the_function_name_have_conflict_with_qt(self,arg):
@@ -1475,9 +1530,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.label_Present.setText(_("预设"))
         self.CreatePresentButton.setText(_("创建新模板"))
         self.DeletePresentButton.setText(_("删除模板"))
-        self.MediaSelectorTips.setText(_("请选择媒体文件"))
-        self.DeleteSelected.setText(_("删除选中"))
-        self.UseSelected.setText(_("使用选中"))
         self.SourceLabel.setText(_("源文件:{path}").format(path=_("当前无任务")))
         self.StartTimeLabel.setText(_("开始时间:{time}").format(time=""))
         self.ComsumedTimeLabel.setText(_("已耗时:{time}").format(time=""))
@@ -1523,45 +1575,44 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.MediaBrowserDock.show()
 
     def closeEvent(self, event):
-        print("TryToClose",self.update_close)
+        # 1. 日志记录
+        status_msg = _("正在关闭！请勿手动关闭此窗口！")
         if self.update_close:
-            logger.success(_("正在关闭！请勿手动关闭此窗口！软件将会自动更新！"), tags="main:closeEvent")
-        else:
-            logger.success(_("正在关闭！请勿手动关闭此窗口！"), tags="main:closeEvent")
+            status_msg += _("软件将会自动更新！")
+        logger.success(status_msg, tags="main:closeEvent")
+
         try:
-            if self.credit_window is not None:
-                self.credit_window.close()
-            if self.new_version_window is not None:
-                self.new_version_window.close()
-            if self.error_feedback_ui is not None:
-                self.error_feedback_ui.close()
-            if self.preference_window is not None:
-                self.preference_window.close()
-            if self.upscale_window is not None:
-                self.upscale_window.close()
-            if self.recover_window is not None:
-                self.recover_window.close()
-            if self.confirm_preset_form is not None:
-                self.confirm_preset_form.close()
-            if not self.error_window:
-                for i in self.error_window:
-                    i.close()
-            if self.setUp_form is not None:
-                self.setUp_form.close()
+            sub_windows = [
+                self.credit_window, self.new_version_window, self.error_feedback_ui,
+                self.preference_window, self.upscale_window, self.recover_window,
+                self.confirm_preset_form, self.setUp_form
+            ]
+            for window in sub_windows:
+                if window is not None:
+                    window.close()
+
+            if self.error_window:
+                for window in self.error_window:
+                    window.close()
+
+        except Exception as e:
+            logger.error(f"关闭子窗口时发生错误: {e}")
+
         finally:
+            # 3. 清理后台进程
             if self.log_process:
                 self.log_process.terminate()
+
+            # 尝试清理 ffmpeg，但不要因为清理失败而阻止退出
             if is_running_simple("ffmpeg.exe"):
-                if kill_process_by_name("ffmpeg"):
-                    if self.update_close:
-                        run_updater()
-                    event.accept()
-                else:
-                    event.ignore()
-            else:
-                if self.update_close:
-                    run_updater()
-                event.accept()
+                kill_process_by_name("ffmpeg")
+
+            # 4. 更新程序逻辑
+            if self.update_close:
+                run_updater()
+
+            # 5. 核心修改：无论如何都允许退出，不要 event.ignore()
+            event.accept()
                 
                 
     def set_button_status(self,status):
@@ -1627,7 +1678,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self._prev_temp = None
         self.size = None
         self.checker = QTimer()
-        self.checker.timeout.connect(self.setup_correct_setting_item)
         self.checker.start(50)
         self.template = None
         self.file_path = file_path
@@ -1637,7 +1687,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.detail_timer.start(100)
         self.CB_MultiProcess.setChecked(True)
         self.CB_MultiProcess.setEnabled(False)
-        self.CB_ProjectType.setEnabled(False)
         self.L_D_OutputPath.setText("")
         self.L_D_CalculateOccupation.setText("")
         self.PB_wmcontent.clicked.connect(self.select_image)
@@ -2124,8 +2173,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
 
     def set_text(self):
         self.L_CreateProject.setText(_("创建新项目"))
-        self.CB_ProjectType.addItem(_("视频水印"))
-        self.CB_ProjectType.addItem(_("图片水印"))
         for device in list(self.render_device.keys()):
             self.CB_RenderDevices.addItem(device)
         self.CB_BitRateControl.addItem(_("VBR"))
@@ -2481,12 +2528,6 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
 
 
 
-    def setup_correct_setting_item(self):
-        if self.CB_ProjectType.currentIndex() == 0:
-            self.F_Video.show()
-        else:
-            self.F_Video.hide()
-
 
 
 
@@ -2648,7 +2689,7 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
                 st += _(f"组{ind}\n")
                 for ite in i:
                     st += f"{ite}\n"
-                ind = + 1
+                ind += 1
             self.textBrowser.setText(st)
         createSuccessInfoBar(self,_("分析完成"),_(f"请查看分析结果"))
 
@@ -2754,6 +2795,7 @@ class check_update(QWidget, Ui_NewVersion):
 
         self.version = version
         self.change_log = change_log
+        self.html_url = None
 
         # 数据解析
         for i in data:
@@ -2779,10 +2821,27 @@ class check_update(QWidget, Ui_NewVersion):
         self.grid_lay = QGridLayout(container)
         self.grid_lay.setContentsMargins(0, 0, 0, 0)  # 移除内边距使图片贴合
 
-        # 3. 创建图片标签并加载图片
-        pixmap = QPixmap("hifuazui.jpg")
+
+        if self.html_url is None:
+            html_cont = markdown.markdown(self.change_log, extensions=['extra', 'codehilite', 'toc'])
+        else:
+            html_cont = download_html(self.html_url)
+        custom_flags = [
+            '--force-device-scale-factor=4.0',
+            '--high-dpi-support=1'
+        ]
+        hti = Html2Image(custom_flags=custom_flags)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pth = os.path.join(temp_dir,"output.png")
+            hti.output_path = temp_dir
+
+            hti.screenshot(html_str=html_cont, save_as="output.png",size=(650, 600))
+            pixmap = QPixmap(pth)
         if pixmap.isNull():
-            print("错误：无法加载图片 'hifuazui.jpg'，请检查路径。")
+            logger.warning(f"Cannot load image {pth}! Use plain text mode instead.",tags="main:check_update:__init__")
+            text_mode = True
+        else:
+            text_mode = False
 
         self.image = ImageLabel(pixmap)
         self.image.scaledToWidth(self.geometry().width()-70)
@@ -2798,8 +2857,9 @@ class check_update(QWidget, Ui_NewVersion):
         # 5. 替换 UI 中的 textBrowser
         self.textBrowser.setText(self.change_log)
         # 注意：如果布局中已经有 textBrowser，replaceWidget 是正确的做法
-        # self.verticalLayout_2.replaceWidget(self.textBrowser, self.image_frame)
-        # self.textBrowser.hide()  # 彻底隐藏旧组件
+        if not text_mode:
+            self.verticalLayout_2.replaceWidget(self.textBrowser, self.image_frame)
+            self.textBrowser.hide()  # 彻底隐藏旧组件
 
         self.signal()
         self.download_window = None
@@ -2918,6 +2978,31 @@ def is_running_simple(process_name):
     return any(process_name.lower() in proc.info['name'].lower()
                for proc in psutil.process_iter(['name'])
                if proc.info['name'])
+
+
+def download_html(url):
+    try:
+        # 1. 发送 GET 请求
+        # 加入 timeout 防止程序卡死，加入 headers 模拟浏览器防止被拦截
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+
+        # 2. 检查请求是否成功 (状态码 200)
+        response.raise_for_status()
+
+        # 3. 设置正确的编码（防止中文乱码）
+        # 自动从 HTTP 头部推测编码，如果乱码可以手动指定为 'utf-8'
+        response.encoding = response.apparent_encoding
+
+        # 4. 获取 HTML 内容
+        html_text = response.text
+        return html_text
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"An error occurred when download html from {url}: {e}",tags="main:download_html")
+        return None
 
 
 if __name__ == "__main__":

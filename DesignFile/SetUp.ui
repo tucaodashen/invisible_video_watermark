@@ -23,9 +23,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-180</y>
+        <y>0</y>
         <width>377</width>
-        <height>1066</height>
+        <height>1034</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -68,20 +68,6 @@
           </item>
          </layout>
         </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_10">
-         <item>
-          <widget class="SubtitleLabel" name="L_ProjectType">
-           <property name="text">
-            <string>工程类型</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="ComboBox" name="CB_ProjectType"/>
-         </item>
-        </layout>
        </item>
        <item>
         <widget class="QFrame" name="F_Watermark">

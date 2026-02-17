@@ -16,8 +16,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QGroupBox,
-    QHBoxLayout, QHeaderView, QScrollArea, QSizePolicy,
-    QSpacerItem, QTableWidgetItem, QVBoxLayout, QWidget)
+    QHBoxLayout, QHeaderView, QLabel, QScrollArea,
+    QSizePolicy, QSlider, QSpacerItem, QTableWidgetItem,
+    QVBoxLayout, QWidget)
 
 from CustomGUI import ImagePreviewWidget
 from qfluentwidgets import (BodyLabel, ComboBox, LineEdit, PrimaryPushButton,
@@ -96,7 +97,7 @@ class Ui_ImageProcessWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 329, 489))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, -131, 329, 513))
         self.verticalLayout_6 = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_6.setObjectName(u"verticalLayout_6")
         self.groupBox = QGroupBox(self.scrollAreaWidgetContents)
@@ -237,6 +238,25 @@ class Ui_ImageProcessWindow(object):
 
         self.verticalLayout_5.addLayout(self.horizontalLayout_9)
 
+        self.horizontalLayout_11 = QHBoxLayout()
+        self.horizontalLayout_11.setObjectName(u"horizontalLayout_11")
+        self.label_12 = QLabel(self.groupBox_3)
+        self.label_12.setObjectName(u"label_12")
+
+        self.horizontalLayout_11.addWidget(self.label_12)
+
+        self.horizontalSlider = QSlider(self.groupBox_3)
+        self.horizontalSlider.setObjectName(u"horizontalSlider")
+        self.horizontalSlider.setMinimum(1)
+        self.horizontalSlider.setMaximum(100)
+        self.horizontalSlider.setValue(100)
+        self.horizontalSlider.setOrientation(Qt.Orientation.Horizontal)
+
+        self.horizontalLayout_11.addWidget(self.horizontalSlider)
+
+
+        self.verticalLayout_5.addLayout(self.horizontalLayout_11)
+
         self.horizontalLayout_8 = QHBoxLayout()
         self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
         self.label_11 = BodyLabel(self.groupBox_3)
@@ -343,6 +363,7 @@ class Ui_ImageProcessWindow(object):
         self.label_7.setText(QCoreApplication.translate("ImageProcessWindow", u"TextLabel", None))
         self.groupBox_3.setTitle(QCoreApplication.translate("ImageProcessWindow", u"\u8f6c\u5316\u8bbe\u7f6e", None))
         self.label_8.setText(QCoreApplication.translate("ImageProcessWindow", u"\u8f93\u51fa\u683c\u5f0f", None))
+        self.label_12.setText(QCoreApplication.translate("ImageProcessWindow", u"\u56fe\u7247\u8d28\u91cf", None))
         self.label_11.setText(QCoreApplication.translate("ImageProcessWindow", u"\u8f93\u51fa\u65b9\u5f0f", None))
         self.label_9.setText(QCoreApplication.translate("ImageProcessWindow", u"\u8f93\u51fa\u8def\u5f84", None))
         self.pushButton_3.setText(QCoreApplication.translate("ImageProcessWindow", u"PushButton", None))

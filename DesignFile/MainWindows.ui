@@ -236,62 +236,6 @@
          </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="browser">
-        <attribute name="title">
-         <string>媒体浏览器</string>
-        </attribute>
-        <layout class="QGridLayout" name="gridLayout_5">
-         <item row="0" column="0">
-          <layout class="QVBoxLayout" name="verticalLayout_3">
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_4">
-             <item>
-              <widget class="BodyLabel" name="MediaSelectorTips">
-               <property name="text">
-                <string>TextLabel</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer_5">
-               <property name="orientation">
-                <enum>Qt::Orientation::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <widget class="TableWidget" name="MediaSelector"/>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_5">
-             <item>
-              <widget class="PushButton" name="DeleteSelected">
-               <property name="text">
-                <string>删除所选</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="PrimaryPushButton" name="UseSelected">
-               <property name="text">
-                <string>使用所选</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </widget>
       </widget>
      </item>
     </layout>
@@ -469,7 +413,7 @@
            <string/>
           </property>
           <property name="pixmap">
-           <pixmap resource="../GUI/allin.qrc">:/MainWindow/C:/Users/ASUS/Desktop/G0DtOFdaQAEjRZC.jpg</pixmap>
+           <pixmap>:/MainWindow/C:/Users/ASUS/Desktop/G0DtOFdaQAEjRZC.jpg</pixmap>
           </property>
           <property name="scaledContents">
            <bool>true</bool>

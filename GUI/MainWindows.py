@@ -227,50 +227,6 @@ class Ui_MainWindow(object):
         self.gridLayout_4.addWidget(self.MultipleProcessSelector, 1, 0, 1, 1)
 
         self.tabWidget.addTab(self.quickaction, "")
-        self.browser = QWidget()
-        self.browser.setObjectName(u"browser")
-        self.gridLayout_5 = QGridLayout(self.browser)
-        self.gridLayout_5.setObjectName(u"gridLayout_5")
-        self.verticalLayout_3 = QVBoxLayout()
-        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-        self.horizontalLayout_4 = QHBoxLayout()
-        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.MediaSelectorTips = BodyLabel(self.browser)
-        self.MediaSelectorTips.setObjectName(u"MediaSelectorTips")
-
-        self.horizontalLayout_4.addWidget(self.MediaSelectorTips)
-
-        self.horizontalSpacer_5 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_4.addItem(self.horizontalSpacer_5)
-
-
-        self.verticalLayout_3.addLayout(self.horizontalLayout_4)
-
-        self.MediaSelector = TableWidget(self.browser)
-        self.MediaSelector.setObjectName(u"MediaSelector")
-
-        self.verticalLayout_3.addWidget(self.MediaSelector)
-
-        self.horizontalLayout_5 = QHBoxLayout()
-        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
-        self.DeleteSelected = PushButton(self.browser)
-        self.DeleteSelected.setObjectName(u"DeleteSelected")
-
-        self.horizontalLayout_5.addWidget(self.DeleteSelected)
-
-        self.UseSelected = PrimaryPushButton(self.browser)
-        self.UseSelected.setObjectName(u"UseSelected")
-
-        self.horizontalLayout_5.addWidget(self.UseSelected)
-
-
-        self.verticalLayout_3.addLayout(self.horizontalLayout_5)
-
-
-        self.gridLayout_5.addLayout(self.verticalLayout_3, 0, 0, 1, 1)
-
-        self.tabWidget.addTab(self.browser, "")
 
         self.gridLayout.addWidget(self.tabWidget, 0, 0, 1, 1)
 
@@ -499,10 +455,6 @@ class Ui_MainWindow(object):
         self.MLBrowser.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.MFOpen.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.quickaction), QCoreApplication.translate("MainWindow", u"\u5feb\u6377\u5bfc\u5165", None))
-        self.MediaSelectorTips.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
-        self.DeleteSelected.setText(QCoreApplication.translate("MainWindow", u"\u5220\u9664\u6240\u9009", None))
-        self.UseSelected.setText(QCoreApplication.translate("MainWindow", u"\u4f7f\u7528\u6240\u9009", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.browser), QCoreApplication.translate("MainWindow", u"\u5a92\u4f53\u6d4f\u89c8\u5668", None))
         self.label_Present.setText(QCoreApplication.translate("MainWindow", u"TextLabel", None))
         self.CreatePresentButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
         self.DeletePresentButton.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))

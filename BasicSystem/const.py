@@ -2,12 +2,12 @@ from enum import Enum
 
 
 studio = "PraySoftware"
-__version__ = "v0.1.2-Omicron"
-alias = "Omicron"
+__version__ = "v0.2.0-Shinonome"
+alias = "Shinonome"
 software_name = "Invisible Video Watermark NEXT"
 
 
-COMPATIBLE_VERSIONS = ["v0.1.0_Omicron","v0.1.1_Omicron","v0.1.2_Omicron"]
+COMPATIBLE_VERSIONS = ["v0.1.0_Omicron","v0.1.1-Omicron","v0.1.2-Omicron","v0.2.0-Shinonome"]
 
 
 owner = "tucaodashen"
@@ -135,6 +135,13 @@ process_unit_template = {
     "output_format":None,
     "two_pass":None,
 }
+
+class IMAGE_TYPE(Enum):
+    JPG = ".jpg"
+    JPEG = ".jpeg"
+    PNG = ".png"
+    WEBP = ".webp"
+    AVIF = ".avif"
 
 rollbar_token = "758277cc22ea4655b27f5cfbce61c7b51b3fe548b91539cd99784ed5995ec6622595257bc724b3cefff6dd36a3f4daa1"
 

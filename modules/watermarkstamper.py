@@ -11,6 +11,7 @@ all the functions' input are cv2 images and output are cv2 images
 """
 
 def guofei_text(cv2_image, wm_text,attachment_data=None):
+    print(f"wm_text: {wm_text}")
     if attachment_data is not None:
         bwm1 = guofei.WaterMark(password_img=attachment_data['img_password'], password_wm=attachment_data['wm_password'])
         bwm1.read_img(img=cv2_image)

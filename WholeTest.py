@@ -1,38 +1,18 @@
-from html2image import Html2Image
+import os
+import sys
 
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication
+from qfluentwidgets import setTheme, Theme
 
-hti = Html2Image(
-    custom_flags=['--no-sandbox', '--force-device-scale-factor=2']
-)
+from GUI import ImageViewer
+from GUI.ImageViewer import ImageProcessWindow
 
-html_code = """
-<style>
-    body { 
-        margin: 0; 
-        background: linear-gradient(45deg, #12c2e9, #c471ed, #f64f59); 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        height: 100vh;
-        color: white;
-        font-family: "Microsoft YaHei", sans-serif;
-    }
-    .box {
-        border: 2px solid white;
-        padding: 40px;
-        border-radius: 20px;
-        font-size: 40px;
-        font-weight: bold;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-</style>
-<div class="box">清晰水印测试</div>
-"""
-
-# 2. 截图时指定 size
-# 注意：如果设置了 scale-factor=2，实际生成的图片像素会是 size 的两倍
-hti.screenshot(
-    html_str=html_code,
-    save_as='clear_result.png',
-    size=(800, 600)
-)
+if __name__ == "__main__":
+    setTheme(Theme.AUTO)
+    QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+    app = QApplication(sys.argv)
+    lists = os.listdir(r"D:\mangatranslation\General\Alice\ORIGIN")
+    w = ImageProcessWindow([os.path.join(r"D:\mangatranslation\General\Alice\ORIGIN", file) for file in lists])
+    w.show()
+    sys.exit(app.exec())

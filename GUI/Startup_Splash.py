@@ -7,10 +7,10 @@ import sys
 import traceback
 from PySide6.QtWidgets import QWidget, QApplication
 from qfluentwidgets import Dialog, MessageBoxBase, SubtitleLabel, ProgressBar, BodyLabel
+from BasicSystem import const
 from GUI import PrepareRequirements
 from GUI.Splash import Ui_SplashDesu
-from PySide6.QtCore import QTimer, Qt, Signal, QThread  # 导入 QThread 和 Signal
-
+from PySide6.QtCore import QTimer, Qt, Signal
 _ = gettext.gettext
 
 
@@ -40,8 +40,11 @@ class SplashScreen(QWidget, Ui_SplashDesu):
         self.timer_st_oneshot.timeout.connect(self.start_now)
         self.setupUi(self)
         self.setInvisible()
-        self.Tips.setText("Loading...")
+        self.Tips.setText(_("检查环境设置..."))
         self.progressBar.setValue(0)
+        self.Pic.setImage("./assets/image/Splash_Nano.png")
+        self.Pic.scaledToWidth(self.width())
+        self.version_info.setText(const.__version__)
 
         self.prepare()  # 从这里开始检查环境
 

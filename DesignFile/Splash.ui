@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QLabel" name="Pic">
+  <widget class="ImageLabel" name="Pic">
    <property name="geometry">
     <rect>
      <x>0</x>
@@ -26,17 +26,17 @@
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap resource="../GUI/allin.qrc">:/splash/BandiView_Splash.png</pixmap>
+    <pixmap>:/splash/BandiView_Splash.png</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>440</y>
+     <y>410</y>
      <width>351</width>
      <height>51</height>
     </rect>
@@ -67,11 +67,29 @@
     </item>
    </layout>
   </widget>
+  <widget class="QLabel" name="version_info">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>10</y>
+     <width>181</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>TextLabel</string>
+   </property>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>
    <class>ProgressBar</class>
    <extends>QProgressBar</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>ImageLabel</class>
+   <extends>QLabel</extends>
    <header>qfluentwidgets</header>
   </customwidget>
  </customwidgets>

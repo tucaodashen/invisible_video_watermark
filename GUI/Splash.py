@@ -18,7 +18,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QApplication, QLabel, QSizePolicy, QVBoxLayout,
     QWidget)
 
-from qfluentwidgets import ProgressBar
+from qfluentwidgets import (ImageLabel, ProgressBar)
 from . import allin_rc
 
 class Ui_SplashDesu(object):
@@ -26,25 +26,25 @@ class Ui_SplashDesu(object):
         if not SplashDesu.objectName():
             SplashDesu.setObjectName(u"SplashDesu")
         SplashDesu.resize(725, 500)
-        self.Pic = QLabel(SplashDesu)
+        self.Pic = ImageLabel(SplashDesu)
         self.Pic.setObjectName(u"Pic")
         self.Pic.setGeometry(QRect(0, 0, 725, 500))
         self.Pic.setPixmap(QPixmap(u":/splash/BandiView_Splash.png"))
         self.Pic.setScaledContents(True)
-        self.widget = QWidget(SplashDesu)
-        self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(20, 440, 351, 51))
-        self.verticalLayout = QVBoxLayout(self.widget)
+        self.layoutWidget = QWidget(SplashDesu)
+        self.layoutWidget.setObjectName(u"layoutWidget")
+        self.layoutWidget.setGeometry(QRect(20, 410, 351, 51))
+        self.verticalLayout = QVBoxLayout(self.layoutWidget)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.progressBar = ProgressBar(self.widget)
+        self.progressBar = ProgressBar(self.layoutWidget)
         self.progressBar.setObjectName(u"progressBar")
         self.progressBar.setValue(24)
         self.progressBar.setTextVisible(False)
 
         self.verticalLayout.addWidget(self.progressBar)
 
-        self.Tips = QLabel(self.widget)
+        self.Tips = QLabel(self.layoutWidget)
         self.Tips.setObjectName(u"Tips")
         font = QFont()
         font.setFamilies([u"\u6c49\u4eea\u6674\u7a7a\u4f53W"])
@@ -53,6 +53,9 @@ class Ui_SplashDesu(object):
 
         self.verticalLayout.addWidget(self.Tips)
 
+        self.version_info = QLabel(SplashDesu)
+        self.version_info.setObjectName(u"version_info")
+        self.version_info.setGeometry(QRect(40, 10, 181, 16))
 
         self.retranslateUi(SplashDesu)
 
@@ -63,5 +66,6 @@ class Ui_SplashDesu(object):
         SplashDesu.setWindowTitle(QCoreApplication.translate("SplashDesu", u"Form", None))
         self.Pic.setText("")
         self.Tips.setText(QCoreApplication.translate("SplashDesu", u"Loading\u2026\u2026", None))
+        self.version_info.setText(QCoreApplication.translate("SplashDesu", u"TextLabel", None))
     # retranslateUi
 

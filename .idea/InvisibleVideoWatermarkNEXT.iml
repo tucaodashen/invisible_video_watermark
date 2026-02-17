@@ -5,6 +5,10 @@
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/1MainEntrance.dist" />
       <excludeFolder url="file://$MODULE_DIR$/Adobe Premiere Pro Auto-Save" />
+      <excludeFolder url="file://$MODULE_DIR$/WorkPath" />
+      <excludeFolder url="file://$MODULE_DIR$/ffmpeg" />
+      <excludeFolder url="file://$MODULE_DIR$/make/Release" />
+      <excludeFolder url="file://$MODULE_DIR$/make/output" />
     </content>
     <orderEntry type="jdk" jdkName="uv (InvisibleVideoWatermarkNEXT)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
