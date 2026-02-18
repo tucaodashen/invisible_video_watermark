@@ -21,6 +21,7 @@ import numpy as np
 import psutil
 import pyanime4k
 import requests
+from exif import Image
 from html2image import Html2Image
 
 from BasicSystem.log_client import setup_logger, get_logger
@@ -1146,7 +1147,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 elif file.endswith((".png",".jpg",".jpeg",".webp")):
                     self.image_process = ImageProcessWindow([file],self)
                     self.image_process.error_report_call_back = self.image_error_callback
-                    self.image_process.setWindowModality(Qt.ApplicationModal)
+                    # self.image_process.setWindowModality(Qt.ApplicationModal)
                     self.image_process.show()
             else:
                 file = files[0]
@@ -1180,7 +1181,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             #设为独立窗口
             self.image_process = ImageProcessWindow(img, self)
             self.image_process.error_report_call_back = self.image_error_callback
-            self.image_process.setWindowModality(Qt.ApplicationModal)
+            #self.image_process.setWindowModality(Qt.ApplicationModal)
             self.image_process.show()
         if vd:
             self.batch_setUp_form = CreateNewProject(vd, self)
@@ -2594,6 +2595,10 @@ def createSuccessInfoBar(self,title,content):
 class RecoverWindow(QFrame,Ui_Recover_Form):
     def __init__(self, parent=None):
         super().__init__(parent,Qt.Window)
+        self.all_images = []
+        self.image = None
+        self.has_json = None
+        self.json_file = None
         self.plk_data = None
         self.watermark_file = None
         self.video_file = None
@@ -2620,6 +2625,7 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         self.pushButton_5.setText(_("保存所有图片"))
         self.setWindowTitle(_("恢复水印"))
         self.error_window = []
+        self.is_image = False
 
 
     def show_error_window(self,err,dump_file):
@@ -2639,9 +2645,20 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         logger.debug("RecoverWindow initialized", tags="main:recover_init")
 
     def check_and_start(self,files):
-        if len(files) != 2:
-            showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请选择视频文件和水印文件"),_("错误"))
+        if len(files) == 2:
+            for i in files:
+                if str(i).endswith(("mp4","mkv","avi","mov","pkl")):
+                    showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请选择视频文件和水印文件"),_("错误"))
+                elif str(i).endswith(("png","jpg","jpeg","avif","webp")):
+                    self.is_image = True
+                    self.image = str(i)
+                else:
+                    showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请选择正确的水印文件"),_("错误"))
+                    return False
+
             return False
+        else:
+            pass
         if len(files) == 2:
             have_video = False
             have_pkl = False
@@ -2649,6 +2666,12 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
                 if str(i).split(".")[-1] in ["mp4","mkv","avi","mov"]:
                     have_video = True
                     self.video_file = str(i)
+                if str(i).endswith(("png","jpg","jpeg","avif","webp")):
+                    self.is_image = True
+                    self.image = str(i)
+                if str(i).endswith(("json")):
+                    self.json_file = str(i)
+                    self.has_json = True
                 if str(i).split(".")[-1] == "pkl":
                     have_pkl = True
                     self.watermark_file = str(i)
@@ -2658,9 +2681,33 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
                 self.label_5.setText(_("正在分析中，请稍候"))
                 self.frame.hide()
                 self.label_2.setText(_("分析中，请稍等"))
-            else:
+            elif self.is_image:
+                if self.has_json:
+                    with open(self.json_file, "r") as f:
+                        data = json.load(f)
+                    try:
+                        dicted_data = dict(data)
+                    except:
+                        showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请确定您的输入正确"),_("错误"))
+                        return False
+
+                else:
+                    with open(self.image, "rb") as f:
+                        img = Image(f)
+                        if img.has_exif:
+                            # 直接像访问属性一样读取
+                            software = getattr(img, "software", "")
+                            user_comment = getattr(img, "user_comment", "")
+                            if str(software).split(" ")[-1] in const.IMAGE_COMPATIBLE_VERSIONS and user_comment != "":
+                                pass
+                            else:
+                                showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请确定您的输入正确"),_("错误"))
+                                return False
                 showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请确定您的输入只含有视频文件和水印文件"),_("错误"))
                 return False
+        elif len(files) > 2:
+            showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请确定您的输入只含有视频文件和水印文件"),_("错误"))
+            return False
         return True
 
     def pre_process_result(self,*args):
@@ -2694,6 +2741,11 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         createSuccessInfoBar(self,_("分析完成"),_(f"请查看分析结果"))
 
         self.soundplayer.play()
+
+    def recover_image(self):
+        for ifes in self.all_images:
+            pass
+
 
     def save_text_to_file(self):
         if self.result:

@@ -14,7 +14,6 @@ from BasicSystem import const
 from GUI.image import Ui_ImageProcessWindow
 from qfluentwidgets import Theme, setTheme, TransparentPushButton, InfoBarIcon, Flyout, qconfig
 from gettext import gettext as _
-from qfluentwidgets.common.font import setFont
 
 from modules.ImageProcessUnit import ImageProcessUnit
 
@@ -434,6 +433,7 @@ class ImageProcessWindow(QFrame, Ui_ImageProcessWindow):
             self.prefix,
             self.ext,
             self.quality,
+            output_method=self.output_method,
             content=self.content
         )
         self.unit.log_emit.connect(self.update_log)

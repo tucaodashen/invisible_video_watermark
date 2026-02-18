@@ -8,6 +8,7 @@ software_name = "Invisible Video Watermark NEXT"
 
 
 COMPATIBLE_VERSIONS = ["v0.1.0_Omicron","v0.1.1-Omicron","v0.1.2-Omicron","v0.2.0-Shinonome"]
+IMAGE_COMPATIBLE_VERSIONS = ["v0.2.0-Shinonome"]
 
 
 owner = "tucaodashen"
@@ -98,6 +99,8 @@ class WatermarkAlgorithm(Enum):
     TEXT_FREQM = 4
     IMAGE_FIREKEEPER = 5
     IMAGE_GUOFEI = 6
+
+
 
 class SourceType(Enum):
     IMAGE = 0

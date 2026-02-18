@@ -145,6 +145,7 @@ class ImageProcessUnit(QObject):
                 if cur_img is None:
                     raise ValueError(_("图片 {images} 读取失败，请检查文件是否损坏。").format(images=images))
                 proceeded_image, ret_atta = self.stamp(self.watermark_method,self.attachment_data,cur_img,self.content)
+                ret_atta.update({"software":const.software_name,"version":const.__version__,"method":self.watermark_method.value})
                 if proceeded_image is None:
                     raise ValueError(_("图片 {images} 打标失败，请检查文件是否损坏。").format(images=images))
                 logger.success(f"Image {images} watermark stamp success. Init convert and embed process.",tags="ImageProcessUnit:ImageProcessUnit:run")
