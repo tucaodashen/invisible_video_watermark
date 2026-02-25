@@ -21,7 +21,7 @@ import numpy as np
 import psutil
 import pyanime4k
 import requests
-from exif import Image
+from PIL import Image as PILImage
 from html2image import Html2Image
 
 from BasicSystem.log_client import setup_logger, get_logger
@@ -32,6 +32,7 @@ from GUI.UserInterfaceErrorFeedback import ErrorFeedbackUi_L
 from GUI.download_newversion import Ui_DownloadNew
 from GUI.log_viewer import LogViewerWindow
 from GUI.ImageViewer import ImageProcessWindow
+from modules.ImageDecoder import ImageDecoder
 from modules.PyAv import extract_video_frames
 from modules.GenerateVideo import get_video_parameters_simple,get_audio_parameters_simple
 import cv2
@@ -55,7 +56,6 @@ from PySide6.QtCore import Qt
 from GUI import error_report
 from GUI.credit import Ui_Credit
 from modules.ThreadingScheduler import ThreadPoolManager
-import os
 from modules.audio import AudioPlayer
 from modules.ExtractUnit import ExtracUnit
 from modules.pltform import get_render_devices
@@ -766,7 +766,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         stop_action.setEnabled(False)
                         pause_action.setEnabled(False)
                         delete_action.setEnabled(False)
-                    if i.error_occured:
+                    if i.error_occur:
                         start_action.setEnabled(False)
                         stop_action.setEnabled(False)
                         pause_action.setEnabled(False)
@@ -2205,7 +2205,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.set_encoders()
 
     def check_validity(self):
-        if cv2.imread(self.LE_WatermarkContent.text()) == None and self.CB_IW.isChecked():
+        if cv2.imread(self.LE_WatermarkContent.text()) is None and self.CB_IW.isChecked():
             showFlyout(self, self.LE_WatermarkContent, InfoBarIcon.ERROR, _("请检查图片路径是否正确？是否为有权限目录？"),
                        _("图片无法读取！"))
             return False
@@ -2595,6 +2595,7 @@ def createSuccessInfoBar(self,title,content):
 class RecoverWindow(QFrame,Ui_Recover_Form):
     def __init__(self, parent=None):
         super().__init__(parent,Qt.Window)
+        self.text_result = []
         self.all_images = []
         self.image = None
         self.has_json = None
@@ -2644,71 +2645,154 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         self.label_5.setText(_("请先启动分析"))
         logger.debug("RecoverWindow initialized", tags="main:recover_init")
 
-    def check_and_start(self,files):
-        if len(files) == 2:
-            for i in files:
-                if str(i).endswith(("mp4","mkv","avi","mov","pkl")):
-                    showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请选择视频文件和水印文件"),_("错误"))
-                elif str(i).endswith(("png","jpg","jpeg","avif","webp")):
-                    self.is_image = True
-                    self.image = str(i)
-                else:
-                    showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请选择正确的水印文件"),_("错误"))
-                    return False
+    def check_and_start(self, files):
+        videos, pkls, images, jsons = [], [], [], []
 
+        # 1. 遍历并分类所有输入文件
+        for f in files:
+            f_path = str(f).lower()
+            if f_path.endswith(("mp4", "mkv", "avi", "mov")):
+                videos.append(str(f))
+            elif f_path.endswith(".pkl"):
+                pkls.append(str(f))
+            elif f_path.endswith(("png", "jpg", "jpeg", "avif", "webp")):
+                images.append(str(f))
+            elif f_path.endswith(".json"):
+                jsons.append(str(f))
+            else:
+                showFlyout(self, self.L_title, InfoBarIcon.ERROR, _("包含不支持的文件格式"), _("错误"))
+                return False
+
+        has_video_task = bool(videos or pkls)
+        has_image_task = bool(images or jsons)
+
+        # 规则 5：不能同时处理视频和图片业务
+        if has_video_task and has_image_task:
+            showFlyout(self, self.L_title, InfoBarIcon.ERROR, _("不能同时处理视频和图片业务，请分开拖入"), _("错误"))
             return False
-        else:
-            pass
-        if len(files) == 2:
-            have_video = False
-            have_pkl = False
-            for i in files:
-                if str(i).split(".")[-1] in ["mp4","mkv","avi","mov"]:
-                    have_video = True
-                    self.video_file = str(i)
-                if str(i).endswith(("png","jpg","jpeg","avif","webp")):
-                    self.is_image = True
-                    self.image = str(i)
-                if str(i).endswith(("json")):
-                    self.json_file = str(i)
-                    self.has_json = True
-                if str(i).split(".")[-1] == "pkl":
-                    have_pkl = True
-                    self.watermark_file = str(i)
-            if have_pkl and have_video:
-                self.plk_data = pickle.load(open(self.watermark_file, 'rb'))
-                self.run_recover(self.video_file,self.watermark_file)
-                self.label_5.setText(_("正在分析中，请稍候"))
-                self.frame.hide()
-                self.label_2.setText(_("分析中，请稍等"))
-            elif self.is_image:
-                if self.has_json:
-                    with open(self.json_file, "r") as f:
-                        data = json.load(f)
+
+        if not has_video_task and not has_image_task:
+            return False
+
+        # ================= 视频处理逻辑 (单任务) =================
+        if has_video_task:
+            if len(videos) != 1 or len(pkls) != 1:
+                showFlyout(self, self.L_title, InfoBarIcon.ERROR, _("请确保只输入一个视频和一个对应的PKL水印文件"),
+                           _("错误"))
+                return False
+
+            self.video_file = videos[0]
+            self.watermark_file = pkls[0]
+            self.is_image = False
+
+            self.plk_data = pickle.load(open(self.watermark_file, 'rb'))
+            self.run_recover(self.video_file, self.watermark_file)
+
+            self.label_5.setText(_("正在分析中，请稍候"))
+            self.frame.hide()
+            self.label_2.setText(_("分析中，请稍等"))
+            return True
+
+        # ================= 图片处理逻辑 (支持多图批量) =================
+        if has_image_task:
+            if len(jsons) > 0 and len(images) == 0:
+                showFlyout(self, self.L_title, InfoBarIcon.ERROR, _("请提供与JSON对应的图片文件"), _("错误"))
+                return False
+
+            json_dict = {os.path.splitext(os.path.basename(j))[0]: j for j in jsons}
+            self.valid_image_tasks = []
+
+            for img_path in images:
+                base_name = os.path.splitext(os.path.basename(img_path))[0]
+
+                # 优先查找外部 JSON
+                if base_name in json_dict:
+                    json_path = json_dict[base_name]
                     try:
-                        dicted_data = dict(data)
-                    except:
-                        showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请确定您的输入正确"),_("错误"))
+                        with open(json_path, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                        self.valid_image_tasks.append({
+                            "image": img_path, "type": "json", "data": dict(data)
+                        })
+                    except Exception:
+                        showFlyout(self, self.L_title, InfoBarIcon.ERROR,
+                                   f"JSON读取失败: {os.path.basename(json_path)}", _("错误"))
+                        return False
+                else:
+                    # 规则 4：没有同名 JSON，检查图片内 EXIF (使用 Pillow 增强版逻辑)
+                    try:
+                        with PILImage.open(img_path) as img:
+                            exif = img.getexif()
+                            if not exif:
+                                showFlyout(self, self.L_title, InfoBarIcon.ERROR,
+                                           f"图片缺少EXIF数据: {os.path.basename(img_path)}", _("错误"))
+                                return False
+
+                            # 1. 获取 Software (Tag 305)
+                            software = str(exif.get(305, "")).strip()
+
+                            # 2. 获取 UserComment (Tag 37506)
+                            # 注意：UserComment 经常存在于子目录 (ExifOffset, Tag 34665) 中
+                            user_comment_raw = exif.get(37506)
+                            logger.debug(f"EXIF UserComment: {user_comment_raw},EXIF: {exif}",
+                                         tags="main:RecoverWindow:check_and_start")
+                            if user_comment_raw is None and 34665 in exif:
+                                # 进子目录找
+                                sub_ifd = exif.get_ifd(34665)
+                                user_comment_raw = sub_ifd.get(37506)
+
+                            if not user_comment_raw:
+                                showFlyout(self, self.L_title, InfoBarIcon.ERROR,
+                                           f"图片EXIF中未找到水印信息: {os.path.basename(img_path)}", _("错误"))
+                                return False
+
+                            # 3. 处理编码头并解析 JSON 内容
+                            user_comment = ""
+                            if isinstance(user_comment_raw, bytes):
+                                # 跳过前 8 字节编码声明 (如 'ASCII\0\0\0')
+                                try:
+                                    user_comment = user_comment_raw[8:].decode('utf-8', errors='ignore').strip()
+                                except:
+                                    user_comment = ""
+                            else:
+                                user_comment = str(user_comment_raw).strip()
+
+
+                            # 4. 校验版本并封装数据
+                            software_version = software.split(" ")[-1]
+                            if software_version in const.IMAGE_COMPATIBLE_VERSIONS and user_comment != "":
+                                try:
+                                    # 将读取到的字符串还原为字典
+                                    exif_dict_data = json.loads(user_comment)
+                                    self.valid_image_tasks.append({
+                                        "image": img_path,
+                                        "type": "exif",
+                                        "data": exif_dict_data
+                                    })
+                                except Exception:
+                                    showFlyout(self, self.L_title, InfoBarIcon.ERROR,
+                                               f"EXIF水印数据格式损坏: {os.path.basename(img_path)}", _("错误"))
+                                    return False
+                            else:
+                                showFlyout(self, self.L_title, InfoBarIcon.ERROR,
+                                           f"图片版本不兼容: {os.path.basename(img_path)}", _("错误"))
+                                return False
+
+                    except Exception as e:
+                        showFlyout(self, self.L_title, InfoBarIcon.ERROR,
+                                   f"读取图片发生错误: {os.path.basename(img_path)}\n错误信息: {str(e)}", _("错误"))
                         return False
 
-                else:
-                    with open(self.image, "rb") as f:
-                        img = Image(f)
-                        if img.has_exif:
-                            # 直接像访问属性一样读取
-                            software = getattr(img, "software", "")
-                            user_comment = getattr(img, "user_comment", "")
-                            if str(software).split(" ")[-1] in const.IMAGE_COMPATIBLE_VERSIONS and user_comment != "":
-                                pass
-                            else:
-                                showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请确定您的输入正确"),_("错误"))
-                                return False
-                showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请确定您的输入只含有视频文件和水印文件"),_("错误"))
-                return False
-        elif len(files) > 2:
-            showFlyout(self,self.L_title,InfoBarIcon.ERROR,_("请确定您的输入只含有视频文件和水印文件"),_("错误"))
-            return False
-        return True
+            # 所有图片校验通过，更新 UI 并启动
+            self.is_image = True
+            self.label_5.setText(_("正在分析图片，请稍候"))
+            self.frame.hide()
+            self.label_2.setText(_("分析中，请稍等"))
+
+            self.run_image_recover()
+            return True
+
+        return False
 
     def pre_process_result(self,*args):
         self.process_result(self._inst.result)
@@ -2742,13 +2826,58 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
 
         self.soundplayer.play()
 
+
+
+    def rec_image_result(self,a):
+        self.F_ImageResult.hide()
+        self.F_TextResult.hide()
+        if a:
+            ind = 1
+            result = a
+            self.label_5.hide()
+            tex_result = []
+            img_result = []
+            for i in result:
+                if i[0] == const.WatermarkAlgorithm.IMAGE_GUOFEI or i[0] == const.WatermarkAlgorithm.IMAGE_FIREKEEPER:
+                    img_result.append(i[1])
+                else:
+                    tex_result.append(i[1])
+            if tex_result:
+                self.text_result = tex_result
+                self.label_6.setText(_(f"分析完成，超过可识别阈值的文字{len(tex_result)}组"))
+                self.F_TextResult.show()
+                st = ""
+                for i in tex_result:
+                    st += _(f"组{ind}\n")
+                    # Todo: 得加上同样的有意义字符串检查
+                    for ite in [i]:
+                        st += f"{ite}\n"
+                    ind += 1
+                self.textBrowser.setText(st)
+            if img_result:
+                self.label_7.setText(_(f"分析完成，超过可识别阈值的图片有{len(img_result)}张"))
+                self.result = img_result
+                self.F_ImageResult.show()
+                self.L_CurIndex.setText(f"{self.image_index}/{len(self.result)}")
+                self.progressBar_2.setValue(0)
+                if len(self.result) > 0:
+                    self.set_correct_image()
+            createSuccessInfoBar(self, _("分析完成"), _(f"请查看分析结果"))
+            self.soundplayer.play()
+        else:
+            logger.error("rec_image_result: 分析结果为空")
+
+
+
     def recover_image(self):
         for ifes in self.all_images:
             pass
 
 
     def save_text_to_file(self):
-        if self.result:
+        if self.text_result:
+            self._save_text_to_file(str(self.text_result))
+        elif self.result:
             self._save_text_to_file(str(self.result))
 
     def _save_text_to_file(self,context):
@@ -2784,14 +2913,14 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
 
 
     def next_image(self):
-        if 0 < self.image_index <= len(self.result):
+        if 0 < self.image_index < len(self.result):
             self.image_index += 1
             self.set_correct_image()
             self.L_CurIndex.setText(f"{self.image_index}/{len(self.result)}")
             self.progressBar_2.setValue(self.image_index*100//len(self.result))
 
     def prev_image(self):
-        if 0 < self.image_index <= len(self.result):
+        if 0 < self.image_index <= len(self.result) and self.image_index != 1:
             self.image_index -= 1
             self.set_correct_image()
             self.L_CurIndex.setText(f"{self.image_index}/{len(self.result)}")
@@ -2812,6 +2941,15 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         self.recover_process = threading.Thread(target=self._inst.run)
         self.recover_process.start()
 
+
+    def run_image_recover(self):
+        self._inst = ImageDecoder(self.valid_image_tasks)
+        print(self.valid_image_tasks)
+        self._inst.process_percentage.connect(self.set_progress)
+        self._inst.process_over.connect(self.rec_image_result)
+        self._inst.error_occur.connect(self.warpper_error)
+        self.recover_process = threading.Thread(target=self._inst.check_and_run)
+        self.recover_process.start()
 
     def set_progress(self,progress):
         if type(progress) == float:
