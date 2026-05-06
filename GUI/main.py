@@ -1604,7 +1604,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if self.log_process:
                 self.log_process.terminate()
 
-            # 尝试清理 ffmpeg，但不要因为清理失败而阻止退出
+            # 清理后台进程 (PyAV 迁移后不再使用 ffmpeg.exe 子进程)
             if is_running_simple("ffmpeg.exe"):
                 kill_process_by_name("ffmpeg")
 
