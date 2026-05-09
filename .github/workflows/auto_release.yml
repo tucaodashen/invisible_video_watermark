@@ -92,5 +92,6 @@ jobs:
           body: ${{ github.event.inputs.changelog }}
           files: |
             Windows_amd64.zip
+            make/AobaUpdater.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
