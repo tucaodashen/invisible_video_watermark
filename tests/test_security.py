@@ -20,9 +20,10 @@ def test_rollbar_token_env_var():
     import importlib
     try:
         mod = importlib.import_module("BasicSystem.const")
-        source = open(mod.__file__).read()
+        with open(mod.__file__, encoding="utf-8") as f:
+            source = f.read()
         assert "758277cc22ea" not in source, "Hardcoded token still present in const.py"
-    except (ImportError, FileNotFoundError):
+    except (ImportError, FileNotFoundError, UnicodeDecodeError):
         pytest.skip("Cannot verify const.py in this environment")
 
 

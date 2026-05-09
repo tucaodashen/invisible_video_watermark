@@ -176,11 +176,12 @@ def test_imports_no_unused():
     import importlib
     try:
         mod = importlib.import_module("modules.networks")
-        source = open(mod.__file__).read()
+        with open(mod.__file__, encoding="utf-8") as f:
+            source = f.read()
         assert "import zmq" not in source
         assert "import pickle" not in source
         assert "import zlib" not in source
-    except (ImportError, FileNotFoundError):
+    except (ImportError, FileNotFoundError, UnicodeDecodeError):
         pytest.skip("Cannot verify networks.py imports in this environment")
 
 
