@@ -57,7 +57,7 @@ jobs:
       - name: 🔨 Build Main App
         working-directory: make
         run: |
-          uv run python -m nuitka --assume-yes-for-downloads --standalone --show-progress --show-memory --output-filename="IVW_Omicron" --main="../MainEntrance.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="InvisibleWatermarkMaker" --remove-output --product-name="IVWNext" --output-dir="output" --report="compile_log" --windows-icon-from-ico="pw.ico" --enable-plugins=pyside6,upx --lto=yes --upx-binary="upx/upx.exe"
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --show-progress --show-memory --output-filename="IVW_Omicron" --main="../MainEntrance.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="InvisibleWatermarkMaker" --remove-output --product-name="IVWNext" --output-dir="output" --report="compile_log" --windows-icon-from-ico="pw.ico" --enable-plugins=pyside6 --lto=yes
 
       - name: 📁 Assemble release package
         shell: powershell

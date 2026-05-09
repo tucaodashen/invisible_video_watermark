@@ -105,7 +105,7 @@ goto compile_main
 :compile_main
 echo.
 echo --- ���ڱ��� ������ IVW_Omicron.exe ---
-uv run python -m nuitka --standalone --show-memory --output-filename="IVW_Omicron" --main="../MainEntrance.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="InvisivleWatermarkMaker" --remove-output --product-name="IVWNext" --output-dir="output" --report="compile_log" --windows-icon-from-ico="pw.ico" --enable-plugins=pyside6,upx --lto=yes --upx-binary="%~dp0upx\upx.exe"
+uv run python -m nuitka --standalone --show-memory --output-filename="IVW_Omicron" --main="../MainEntrance.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="InvisivleWatermarkMaker" --remove-output --product-name="IVWNext" --output-dir="output" --report="compile_log" --windows-icon-from-ico="pw.ico" --enable-plugins=pyside6 --lto=yes
 if errorlevel 1 (
     echo ���������ʧ��!
     pause
