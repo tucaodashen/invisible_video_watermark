@@ -9,6 +9,7 @@ icon.psd
 /make/Release/
 /make/output/
 /make/upx/
+!/make/upx/upx.exe
 .idea/
 
 # Byte-compiled / optimized / DLL files
@@ -227,3 +228,9 @@ __marimo__/
 /dumps/
 /logs/
 /identify_session.txt
+/eula.json
+/setting.json
+*.exe
+!/make/upx/upx.exe
+/make/hw.build/
+/make/hw.dish/
