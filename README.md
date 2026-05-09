@@ -8,7 +8,7 @@
 <div align="center">
 
 
-![Logo](readme/Splash.png)
+![Logo](readme/Splash_Nano.png)
 
 **先进的视频隐形水印解决方案**
 
