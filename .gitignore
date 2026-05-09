@@ -223,3 +223,7 @@ __marimo__/
 
 
 /modules/OAuth/credentials.json
+*.dump
+/dumps/
+/logs/
+/identify_session.txt

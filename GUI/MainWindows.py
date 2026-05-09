@@ -346,7 +346,7 @@ class Ui_MainWindow(object):
         self.label_10.setSizePolicy(sizePolicy)
         self.label_10.setMinimumSize(QSize(192, 108))
         self.label_10.setMaximumSize(QSize(192, 108))
-        self.label_10.setPixmap(QPixmap(u":/MainWindow/C:/Users/ASUS/Desktop/G0DtOFdaQAEjRZC.jpg"))
+        self.label_10.setPixmap(QPixmap(u":/MainWindow/C:/Users/ASUS/Desktop/G0DtOFdaQAEjRZC.jpg"))  # Resource path from compiled Qt resources
         self.label_10.setScaledContents(True)
         self.label_10.setWordWrap(False)
         self.label_10.setOpenExternalLinks(False)

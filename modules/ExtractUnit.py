@@ -15,6 +15,7 @@ from BasicSystem.const import *
 import os
 import cv2
 import pickle
+import socket
 import modules.networks as network
 from BasicSystem.VirtualFileSystem import FileSystem
 from BasicSystem.log_client import setup_logger,get_logger
@@ -42,7 +43,8 @@ class ExtracUnit(QObject):
         super().__init__()
         self.dump_file = []
         self.executor = ConcurrentExecutor()
-        self.plk_data = pickle.load(open(pkl, 'rb'))
+        with open(pkl, 'rb') as f:
+            self.plk_data = pickle.load(f)
         self.frame_count = get_frame_count(video)
         self.video = video
         self._slice_list = []
@@ -63,7 +65,10 @@ class ExtracUnit(QObject):
         self.dump_file = list(set(self.dump_file))
 
     def generate_slice(self):
-        threading.Thread(target=network.ipc_recv, args=("127.0.0.1", 1165, self.calcu_progress)).start()
+        with socket.socket() as s:
+            s.bind(('', 0))
+            self.ipc_port = s.getsockname()[1]
+        threading.Thread(target=network.ipc_recv, args=("127.0.0.1", self.ipc_port, self.calcu_progress)).start()
         a = spitter(self.frame_count,self._slice_length)
         logger.debug(f"generate slice {a}",tags=f"ExtractUnit:ExtractUnit:generate_slice:{os.path.basename(self.video)}")
         id = 0
@@ -74,7 +79,8 @@ class ExtracUnit(QObject):
                 video=self.video,
                 frame_range=ranges,
                 attachment_data=self.plk_data['attachment_data'],
-                method=self.plk_data['watermark_method']
+                method=self.plk_data['watermark_method'],
+                ipc_port=self.ipc_port
             )
             inst.dump_uuid = self.dump_uuid
             inst.identify = {"order":id}
@@ -94,7 +100,7 @@ class ExtracUnit(QObject):
         self.generate_slice()
         logger.debug(f"start extract slice",tags=f"ExtractUnit:ExtractUnit:run:{os.path.basename(self.video)}")
         result = self.executor.execute_concurrently(self._slice_list, self.max_worker,self.report_error)
-        network.ipc_send("exit", "127.0.0.1", 1165)
+        network.ipc_send("exit", "127.0.0.1", self.ipc_port)
         _result = self.post_process(result)
         self.result = _result
         self.receive_result.emit()
@@ -132,7 +138,7 @@ class ExtracUnit(QObject):
         else:
             text_result = []
             for texts in result:
-                if texts:
+                if texts is not None:
                     for item in texts:
                         text_result.append(item)
             ret_result = group_text(text_result)
@@ -159,7 +165,7 @@ class ExtracUnit(QObject):
 
 
 class ExtractSlice:
-    def __init__(self,video,frame_range,attachment_data,method):
+    def __init__(self,video,frame_range,attachment_data,method,ipc_port=None):
         self.dump_file = None
         self.video = video
         self.frame_range = frame_range
@@ -169,6 +175,7 @@ class ExtractSlice:
         self.method = method
         self.identify = None
         self.dump_uuid = None
+        self.ipc_port = ipc_port
 
 
     def start(self):
@@ -204,9 +211,7 @@ class ExtractSlice:
 
     def _start(self):
         logger.debug(f"extract slice {self.identify} {self.frame_range}",tags=f"ExtractUnit:ExtractSlice:start:{os.path.basename(self.video)}:{self.identify['order']}")
-        frame_list = []
-        for i in range(self.frame_range[0],self.frame_range[1]+1):
-            frame_list.append(i)
+        frame_list = list(range(self.frame_range[0], self.frame_range[1]+1))
         self._frame_data = get_video_frames(self.video, frame_list)
         self.decode()
         return self._result
@@ -255,7 +260,7 @@ class ExtractSlice:
                             logger.error(f"decode {self.identify} {self.frame_range} error {e}",tags=f"ExtractUnit:ExtractSlice:decode:{os.path.basename(self.video)}:{self.identify['order']}")
                             raise
                         self._result.append(result)
-        network.ipc_send("Over","127.0.0.1",1165)
+        network.ipc_send("Over","127.0.0.1",self.ipc_port)
         del self._frame_data
 
 

@@ -3,6 +3,8 @@ import coredumpy
 
 from BasicSystem.log_client import setup_logger, get_logger
 
+logger = get_logger("ErrorReport")
+
 
 
 def process_data(data):

@@ -144,7 +144,11 @@ class ImageProcessUnit(QObject):
                 cur_img = cv2.imread(images)
                 if cur_img is None:
                     raise ValueError(_("图片 {images} 读取失败，请检查文件是否损坏。").format(images=images))
-                proceeded_image, ret_atta = self.stamp(self.watermark_method,self.attachment_data,cur_img,self.content)
+                stamp_result = self.stamp(self.watermark_method,self.attachment_data,cur_img,self.content)
+                if not isinstance(stamp_result, tuple) or len(stamp_result) != 2:
+                    proceeded_image, ret_atta = stamp_result, {}
+                else:
+                    proceeded_image, ret_atta = stamp_result
                 ret_atta.update({"software":const.software_name,"version":const.__version__,"method":self.watermark_method.value})
                 if proceeded_image is None:
                     raise ValueError(_("图片 {images} 打标失败，请检查文件是否损坏。").format(images=images))

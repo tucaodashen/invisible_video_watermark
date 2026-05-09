@@ -274,6 +274,7 @@ class ImageProcessWindow(QFrame, Ui_ImageProcessWindow):
             if content is not None:
                 self.content = content
             else:
+                self.content = None
                 showFlyout(self,self.lineEdit,_("图片读取失败"),InfoBarIcon.ERROR,_("请检查图片路径是否正确"))
             self.lineEdit.setText(file_path)
 
@@ -367,7 +368,7 @@ class ImageProcessWindow(QFrame, Ui_ImageProcessWindow):
         """添加文件到表格"""
         for file in self.files:
             # 获取文件名
-            filename = file.split("\\")[-1]
+            filename = os.path.basename(file)
 
             # 添加行
             row_position = self.FileList.rowCount()

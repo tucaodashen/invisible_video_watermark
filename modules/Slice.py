@@ -93,7 +93,9 @@ class Slice:
         self.watermark = watermark
         self.attachment_data_result = "114514"
 
-        self.fps = cv2.VideoCapture(self.file).get(cv2.CAP_PROP_FPS)
+        cap = cv2.VideoCapture(self.file)
+        self.fps = cap.get(cv2.CAP_PROP_FPS)
+        cap.release()
         self._file_path = None
         self.extract_retry_times = 0
 
@@ -160,7 +162,7 @@ class Slice:
                 self.extract()
             else:
                 raise
-        except:
+        except Exception:
             raise
 
 
@@ -277,8 +279,9 @@ class Slice:
                                                                                    self.attachment_data)
                 else:
                     self._result = image
-                os.remove(file)
-                cv2.imwrite(file,self._result)
+                temp_path = file + ".tmp"
+                cv2.imwrite(temp_path, self._result)
+                os.replace(temp_path, file)
                 self.logger.info(f"Stamped frame {number} saved to {file}",tags=f"Slice:Slice:stamp:{os.path.basename(self.file)}:{self.identify['order']}")
             else:
                 pass
@@ -326,7 +329,7 @@ class Slice:
                 if self.ffmpeg_retry_count >= 50:
                     self.output_progress_description(16, _("FFmpeg retry count exceeded"))
                     self.logger.error(f"FFmpeg retry count exceeded",tags=f"Slice:Slice:run:{os.path.basename(self.file)}:{self.identify['order']}")
-                    raise SystemError(_("FFmpeg retry count exceeded"))
+                    raise RuntimeError(_("FFmpeg retry count exceeded"))
                 self.output_progress_description(16, _("FFmpeg error, retry"))
 
 

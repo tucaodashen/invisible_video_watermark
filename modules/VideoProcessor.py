@@ -135,7 +135,7 @@ def video_sampler(source_path,sampler_times,sampler_extension,sampler_type,manua
         logger.info(f"Final sampler point: {final_sampler_point}",tags="VideoProcessor:video_sampler")
         return final_sampler_point
     elif sampler_type == const.SamplerType.PSY:
-        pass
+        raise NotImplementedError("PSY sampler not yet implemented")
     else:
         sampler_list = str(manual).split(",")
         final_sampler_point = []
@@ -293,20 +293,18 @@ def extract_frames(video_path, start_frame, end_frame, output_dir, formate="png"
             output_path = os.path.join(output_dir, f"frame_{frame_num:06d}.{formate}")
             cv2.imwrite(output_path, frame)
 
-            # 显示进度 (完全保留原有逻辑)
-            if frame_num % 1 == 0:
-                logger.debug(f"Extracted frame {frame_num}/{end_frame}", tags=f"VideoProcessor:extract_frames:{os.path.basename(video_path)}")
-                total = ((end_frame-start_frame+1)*1.0)
-                cur = ((frame_num-start_frame)*1.0)
-                if callback is not None and type(callback) is not float:
-                    try:
-                        if cur/total <= 0.98:
-                            callback(cur/total)
-                        else:
-                            callback(1)
-                    except TypeError:
+            logger.debug(f"Extracted frame {frame_num}/{end_frame}", tags=f"VideoProcessor:extract_frames:{os.path.basename(video_path)}")
+            total = ((end_frame-start_frame+1)*1.0)
+            cur = ((frame_num-start_frame)*1.0)
+            if callback is not None and type(callback) is not float:
+                try:
+                    if cur/total <= 0.98:
+                        callback(cur/total)
+                    else:
                         callback(1)
-                    #这是个奇妙Bug，如果进度逼近1，就会出现TypeError，但是不影响程序运行，所以暂时这样用着吧。
+                except TypeError:
+                    callback(1)
+                #这是个奇妙Bug，如果进度逼近1，就会出现TypeError，但是不影响程序运行，所以暂时这样用着吧。
 
     finally:
         # 确保释放资源
@@ -366,20 +364,18 @@ def ffmpeg_extract_frames(video_path, start_frame, end_frame, output_dir,formate
         output_path = os.path.join(output_dir, f"frame_{frame_num:06d}.{formate}")
         cv2.imwrite(output_path, frame)
 
-        # 显示进度
-        if frame_num % 1 == 0:
-            logger.debug(f"Extracted frame {frame_num}/{end_frame}",tags=f"VideoProcessor:extract_frames:{os.path.basename(video_path)}")
-            total = ((end_frame-start_frame+1)*1.0)
-            cur = ((frame_num-start_frame)*1.0)
-            if callback is not None and type(callback) is not float:
-                try:
-                    if cur/total <= 0.98:
-                        callback(cur/total)
-                    else:
-                        callback(1)
-                except TypeError:
+        logger.debug(f"Extracted frame {frame_num}/{end_frame}",tags=f"VideoProcessor:extract_frames:{os.path.basename(video_path)}")
+        total = ((end_frame-start_frame+1)*1.0)
+        cur = ((frame_num-start_frame)*1.0)
+        if callback is not None and type(callback) is not float:
+            try:
+                if cur/total <= 0.98:
+                    callback(cur/total)
+                else:
                     callback(1)
-                #这是个奇妙Bug，如果进度逼近1，就会出现TypeError，但是不影响程序运行，所以暂时这样用着吧。
+            except TypeError:
+                callback(1)
+            #这是个奇妙Bug，如果进度逼近1，就会出现TypeError，但是不影响程序运行，所以暂时这样用着吧。
 
     # 释放资源
     cap.release()

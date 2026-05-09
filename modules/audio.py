@@ -115,11 +115,13 @@ class AudioPlayer:
             should_write = False
 
             # 1. 安全读取数据
+            local_stream = None
             with self.lock:
                 if self._playing and not self._paused and self.wf:
                     data = self.wf.readframes(self.chunk)
                     if len(data) > 0:
                         should_write = True
+                        local_stream = self.stream
                     else:
                         # 数据读完，说明播放结束
                         self._playing = False
@@ -127,13 +129,14 @@ class AudioPlayer:
                         logger.debug("Audio playback finished.",tags="audio:play")
 
             # 2. 写入音频流 (耗时操作，放在锁外面)
-            if should_write and self.stream:
+            if should_write and local_stream is not None:
                 try:
-                    self.stream.write(data)
+                    local_stream.write(data)
                 except OSError as e:
                     # 处理可能的音频设备错误
                     logger.error(f"Audio stream error: {e}",tags="audio:play")
-                    self._playing = False
+                    with self.lock:
+                        self._playing = False
 
             # 3. 如果没有播放，稍微休眠以节省CPU
             if not should_write:

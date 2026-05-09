@@ -262,20 +262,25 @@ class UpscaleWindow(QWidget,Ui_UpScaleAni):
                 raise ValueError("Input image is None")
             dst = processor(src)
             cv2.imwrite(filename=os.path.join(self.lineEdit_2.text(), str(os.path.basename(self.lineEdit.text()))), img=dst)
-            self.pushButton_2.setEnabled(
-                True
-            )
-            self.pushButton_2.setText(_("启动"))
-        if not os.path.isfile(self.lineEdit.text()) and os.path.exists(self.lineEdit_2.text()):
+        elif not os.path.isfile(self.lineEdit.text()) and os.path.exists(self.lineEdit_2.text()):
             for file in os.listdir(self.lineEdit.text()):
                 if file.endswith(".png") or file.endswith(".jpg") or file.endswith(".jpeg"):
                     src = cv2.imread(os.path.join(self.lineEdit.text(), file))
                     dst = processor(src)
                     cv2.imwrite(filename=os.path.join(self.lineEdit_2.text(), file), img=dst)
-            self.pushButton_2.setEnabled(
-                True
+        else:
+            InfoBar.error(
+                title=_("错误"),
+                content=_("输入或输出路径无效"),
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self
             )
+            self.pushButton_2.setEnabled(True)
             self.pushButton_2.setText(_("启动"))
+            return
+        self.pushButton_2.setEnabled(True)
+        self.pushButton_2.setText(_("启动"))
         InfoBar.success(
             title=_("处理完成"),
             content=_("Yay!"),
@@ -522,16 +527,16 @@ def run_updater():
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
-    QueueProgressUpdater = QTimer()
-    freq_detail = QTimer()
-    update_detail = QTimer()
     thumbnail_status_signal = Signal(str)
     update_button_signal = Signal(bool)
     snw = Signal(list)
     anv = Signal()
-    check_update_timer = QTimer()
     def __init__(self):
         super().__init__()
+        self.QueueProgressUpdater = QTimer()
+        self.freq_detail = QTimer()
+        self.update_detail = QTimer()
+        self.check_update_timer = QTimer()
         self.enable_login = False
         try:
             from modules.OAuth import google_login
@@ -1056,36 +1061,37 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                             print(f"Warning: Frame {spf_list[idx]} extraction failed")
 
                     if thu:
-                        self.thumbnail_cache.update({str(i.progress_identify): thu})
+                        with self.thumbnail_lock:
+                            self.thumbnail_cache.update({str(i.progress_identify): thu})
                         self.thumbnail_status_signal.emit(_("准备就绪"))
                         logger.success(f"Thumbnail cache for task {i.progress_identify} prepared successfully", tags="main:prepare_thumbnail")
                     else:
                         print(f"Error: No thumbnails generated for {i.progress_identify}")
 
     def clear_useless_cache(self):
-        if self.task_queue:
-            for i in self.task_queue:
-                if str(i.progress_identify) in list(self.thumbnail_cache.keys()) and i.completed:
-                    cache = self.thumbnail_cache[str(i.progress_identify)][-1]
-                    self.thumbnail_cache[str(i.progress_identify)] = [cache]
-        # print(self.task_queue)
-        if not self.task_queue:
-            self.thumbnail_cache = {}
+        with self.thumbnail_lock:
+            if self.task_queue:
+                for i in self.task_queue:
+                    if str(i.progress_identify) in self.thumbnail_cache and i.completed:
+                        cache = self.thumbnail_cache[str(i.progress_identify)][-1]
+                        self.thumbnail_cache[str(i.progress_identify)] = [cache]
+            if not self.task_queue:
+                self.thumbnail_cache = {}
             # logger.info(f"Thumbnail cache cleared successfully", tags="main:clear_useless_cache")
 
 
 
 
     def get_thumbnail(self,task):
-        if self.task_queue:
-            if str(task.progress_identify) in list(self.thumbnail_cache.keys()):
-                if len(self.thumbnail_cache[str(task.progress_identify)]) <= 2:
-                    return self.thumbnail_cache[str(task.progress_identify)][0]
-                return (self.thumbnail_cache[str(task.progress_identify)])[int(task.progress*100)]
-            else:
-                return cv2.imread(r"assets\image\reisa.jpg")
+        with self.thumbnail_lock:
+            if self.task_queue:
+                if str(task.progress_identify) in self.thumbnail_cache:
+                    if len(self.thumbnail_cache[str(task.progress_identify)]) <= 2:
+                        return self.thumbnail_cache[str(task.progress_identify)][0]
+                    return (self.thumbnail_cache[str(task.progress_identify)])[int(task.progress*100)]
         if task is None:
             return cv2.imread(r"assets\image\reisa.jpg")
+        return None
 
     def jump_to_website(self,url):
         QDesktopServices.openUrl(QUrl(url))
@@ -1333,7 +1339,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if task.running:
                 task.stop()
                 task.running = False
-                task.completed = _("已终止")
+                task.stopped = True
+                task.statue = _("已终止")
         self.set_status()
         logger.info(f"Stopped {len(self.task_queue)} tasks", tags="main:queue_stop")
 
@@ -1366,7 +1373,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if task.running:
                 task.start()
                 task.running = True
-                self.temporary.consumed_timer = time.time()
+                task.consumed_timer = time.time()
 
                 task.update_progress.connect(self.update_queue_percentage)
                 task.OccurError.connect(self.handle_error)
@@ -1494,7 +1501,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     if task.index == index_text:
                         if not task.completed:
                             progress_bar = self.QueueList.cellWidget(pb, 4)
-                            tpb += progress_bar.value()
+                            if progress_bar is not None:
+                                tpb += progress_bar.value()
                         break
             if total_progress != 0:
                 self.QueueProgressBar.setValue(tpb/total_progress)
@@ -2056,7 +2064,7 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         TargetBitRate = str(self.LE_BitRate.text())
         if self.CB_VideoExportFormat.text() == "MP4":
             output_format = "mp4"
-        elif self.CB_VideoExportFormat == "MKV":
+        elif self.CB_VideoExportFormat.currentText() == "MKV":
             output_format = "mkv"
         elif self.CB_VideoExportFormat.text() == "MOV":
             output_format = "mov"
@@ -2651,6 +2659,8 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
         if len(self.error_window) <= 10:
             self.error_window.append(error_report.ErrorReportDialog(error=err, dump_file=dump_file))
             self.error_window[-1].show()
+        else:
+            logger.warning(f"Error window limit reached, discarding error: {err}", tags="main:RecoverWindow:show_error_window")
 
 
 
@@ -2701,7 +2711,8 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
             self.watermark_file = pkls[0]
             self.is_image = False
 
-            self.plk_data = pickle.load(open(self.watermark_file, 'rb'))
+            with open(self.watermark_file, 'rb') as f:
+                self.plk_data = pickle.load(f)
             self.run_recover(self.video_file, self.watermark_file)
 
             self.label_5.setText(_("正在分析中，请稍候"))
@@ -2768,7 +2779,7 @@ class RecoverWindow(QFrame,Ui_Recover_Form):
                                 # 跳过前 8 字节编码声明 (如 'ASCII\0\0\0')
                                 try:
                                     user_comment = user_comment_raw[8:].decode('utf-8', errors='ignore').strip()
-                                except:
+                                except (UnicodeDecodeError, IndexError, AttributeError):
                                     user_comment = ""
                             else:
                                 user_comment = str(user_comment_raw).strip()

@@ -1,3 +1,4 @@
+import os
 from enum import Enum
 
 
@@ -146,7 +147,7 @@ class IMAGE_TYPE(Enum):
     WEBP = ".webp"
     AVIF = ".avif"
 
-rollbar_token = "758277cc22ea4655b27f5cfbce61c7b51b3fe548b91539cd99784ed5995ec6622595257bc724b3cefff6dd36a3f4daa1"
+rollbar_token = os.environ.get("ROLLBAR_TOKEN", "")
 
 
 

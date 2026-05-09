@@ -17,6 +17,7 @@ from modules.ProcessSchedulerSusFec import ConcurrentExecutor, manage_process_by
 from modules.decorator import timer_decorator
 import json
 import pickle
+import random
 import socket
 import threading
 import gettext
@@ -139,7 +140,7 @@ class ProcessUnit(QObject):
         self.scheduler = None
         self.file = file
         self.watermark_method = None
-        self.attachment_data = {'img_password':1145,'wm_password':1919}
+        self.attachment_data = {}
         self.output_name = "coded_mul_"
         self.output_path = "./"
         self.slice_length = 10
@@ -207,6 +208,8 @@ class ProcessUnit(QObject):
         self.root_dir = None
         if not image:
             self.frame_count = VideoProcessor.get_frame_count(file)
+        else:
+            self.frame_count = 0
         self.progress = 0
         self.batch_files = []
         self.stopped = False
@@ -276,6 +279,8 @@ class ProcessUnit(QObject):
         except json.JSONDecodeError:
             self.logger.warning(f"Invalid JSON data: {data}",tags=f"ProcessUnit:ProcessUnit:ipc_callback:{os.path.basename(self.file)}")
         if self.progress_dict != {}:
+            if not self.slice_list:
+                return
             cur_sum = 0
             for i in list(self.progress_dict.values()):
                 cur_sum += i
@@ -300,6 +305,8 @@ class ProcessUnit(QObject):
         # self.logger.debug(f"Sample list: {self._sample_list}",tags=f"ProcessUnit:ProcessUnit:sample")
 
     def generate_queue(self):
+        if self.frame_count == 0:
+            return
         count = self.frame_count
         self._sliced_list = VideoProcessor.spitter(count,self.slice_length)
         self.logger.debug(f"Slice list length: {len(self._sliced_list)}",tags=f"ProcessUnit:ProcessUnit:generate_queue:{os.path.basename(self.file)}")
@@ -385,6 +392,8 @@ class ProcessUnit(QObject):
     @timer_decorator
     def run(self):
         self.logger.info(f"Start process unit: {self.identify} with configuration {self.preference_args} and description {self.description}",tags=f"ProcessUnit:ProcessUnit:run:{os.path.basename(self.file)}")
+        if not self.attachment_data:
+            self.attachment_data = {'img_password': random.randint(1000, 9999), 'wm_password': random.randint(1000, 9999)}
         self.setup_ipc()
         self.set_stage(0)
         self.sample()
@@ -405,7 +414,7 @@ class ProcessUnit(QObject):
                 stack_trace = traceback.format_exc()
                 frame = [e, stack_trace]
                 self.report_error(frame)
-        if not self.error_occured and self.result_list[0] != 'Terminated':
+        if not self.error_occured and self.result_list and self.result_list[0] != 'Terminated':
             self.set_stage(3)
             print(self.result_list)
             self.set_stage(4)
@@ -436,16 +445,22 @@ class ProcessUnit(QObject):
 
 
     def suspend(self):
+        if self.scheduler is None:
+            return
         for i in self.scheduler.get_running_pids():
             manage_process_by_pid(i, "suspend")
             self.logger.info(f"Suspend process: {i}",tags=f"ProcessUnit:ProcessUnit:suspend:{os.path.basename(self.file)}")
 
     def resume(self):
+        if self.scheduler is None:
+            return
         for i in self.scheduler.get_running_pids():
             manage_process_by_pid(i, "resume")
             self.logger.info(f"Resume process: {i}",tags=f"ProcessUnit:ProcessUnit:resume:{os.path.basename(self.file)}")
 
     def stop(self):
+        if self.scheduler is None:
+            return
         for i in self.scheduler.get_running_pids():
             manage_process_by_pid(i, "terminate")
             self.logger.info(f"Stop process: {i}",tags=f"ProcessUnit:ProcessUnit:stop:{os.path.basename(self.file)}")
@@ -502,6 +517,8 @@ class ProcessUnit(QObject):
         return list_data
 
     def remove_workspace(self):
+        if isinstance(self.saved_file_path, list):
+            return
         vi = os.path.dirname(os.path.normpath(str(self.saved_file_path)))
         root = os.path.dirname(os.path.normpath(vi))
         shutil.rmtree(root)

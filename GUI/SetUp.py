@@ -237,6 +237,7 @@ class Ui_SetUpNewForm(object):
 
         self.SB_Slicelength = SpinBox(self.F_Video)
         self.SB_Slicelength.setObjectName(u"SB_Slicelength")
+        self.SB_Slicelength.setMinimum(1)
         self.SB_Slicelength.setMaximum(99999999)
         self.SB_Slicelength.setValue(300)
 

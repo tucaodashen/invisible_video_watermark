@@ -71,7 +71,8 @@ class ThreadPoolManager:
                     self.task_queue.task_done()
 
             except queue.Empty:
-                # 如果队列为空且线程池停止运行，则退出线程
+                if self.completed_count >= self.total_tasks and self.total_tasks > 0:
+                    break
                 if not self.is_running:
                     break
 

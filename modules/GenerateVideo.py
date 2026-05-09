@@ -9,7 +9,7 @@ setup_logger(default_tags="GenerateVideo", enable_udp=True, enable_console=True)
 logger = get_logger()
 
 
-ffmpeg_path = "ffmpeg.exe"
+ffmpeg_path = "ffmpeg"
 
 
 def execute_command(args):
@@ -194,7 +194,7 @@ def merge_sequences(input_files,
                 logger.critical("Forward-compatibility is not supported for this encoder",tags="GenerateVideo:merge_sequences")
                 raise ValueError("Forward-compatibility is not supported for this encoder")
         #tune
-        if video_encoder != Encoder.AMD_H264 or Encoder.AMD_HEVC:
+        if video_encoder not in (Encoder.AMD_H264, Encoder.AMD_HEVC):
             if tune != FFmpegTune.NULL:
                 args.append('-tune')
                 if tune == FFmpegTune.X264_FILM:
@@ -209,14 +209,14 @@ def merge_sequences(input_files,
                     args.append('fastdecode')
                 elif tune == FFmpegTune.X264_ZEROLANTENCY:
                     args.append('zerolatency')
-                elif tune == FFmpegTune.NV_AV1_HQ or FFmpegTune.NV_AV1_SHQ or FFmpegTune.NV_H265_SHQ or FFmpegTune.NV_H264_HQ or FFmpegTune.NV_H265_HQ:
+                elif tune in (FFmpegTune.NV_AV1_HQ, FFmpegTune.NV_AV1_SHQ, FFmpegTune.NV_H265_SHQ, FFmpegTune.NV_H264_HQ, FFmpegTune.NV_H265_HQ):
                     args.append('hq')
                 elif tune == FFmpegTune.NV_AV1_LL or FFmpegTune.NV_H264_LL or FFmpegTune.NV_H265_LL:
                     args.append('ll')
                 elif tune == FFmpegTune.NV_AV1_SLL or FFmpegTune.NV_H264_SLL or FFmpegTune.NV_H265_SLL:
                     args.append('ull')
         #2pass
-        if two_pass and bitrate_control == BitRateControl.VBR and video_encoder == Encoder.NVIDIA_AV1 or video_encoder == Encoder.NVIDIA_H264 or video_encoder == Encoder.NVIDIA_HEVC:
+        if two_pass and bitrate_control == BitRateControl.VBR and video_encoder in (Encoder.NVIDIA_AV1, Encoder.NVIDIA_H264, Encoder.NVIDIA_HEVC):
             args.append("-multipass")
             args.append("fullres")
 

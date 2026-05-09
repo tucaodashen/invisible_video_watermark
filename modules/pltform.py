@@ -1,4 +1,4 @@
-from functools import cache
+from functools import lru_cache
 import cpuinfo
 from BasicSystem.log_client import setup_logger, get_logger
 
@@ -18,7 +18,7 @@ def get_nvidia_gpu():
         pass
     return {}
 
-@cache
+@lru_cache(maxsize=1)
 def get_render_devices():
     device_list = {}
 
