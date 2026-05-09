@@ -47,17 +47,17 @@ jobs:
       - name: 🔨 Build LogServer
         working-directory: make
         run: |
-          uv run python -m nuitka --standalone --output-filename="LogServer" --main="../LogServer/main.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="NetworkLogger" --onefile --remove-output --product-name="LogServer"
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --output-filename="LogServer" --main="../LogServer/main.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="NetworkLogger" --onefile --remove-output --product-name="LogServer"
 
       - name: 🔨 Build AobaUpdater
         working-directory: make
         run: |
-          uv run python -m nuitka --standalone --output-filename="AobaUpdater" --main="../updater/aoba_updater.py" --windows-icon-from-ico="aoba.ico" --company-name="PraySoftware" --product-name="AobaUpdater" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="SoftwareUpdater" --onefile --remove-output
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --output-filename="AobaUpdater" --main="../updater/aoba_updater.py" --windows-icon-from-ico="aoba.ico" --company-name="PraySoftware" --product-name="AobaUpdater" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="SoftwareUpdater" --onefile --remove-output
 
       - name: 🔨 Build Main App
         working-directory: make
         run: |
-          uv run python -m nuitka --standalone --output-filename="IVW_Omicron" --main="../MainEntrance.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="InvisibleWatermarkMaker" --remove-output --product-name="IVWNext" --output-dir="output" --report="compile_log" --windows-icon-from-ico="pw.ico" --enable-plugins=pyside6 --lto=yes --upx-binary="upx/upx.exe"
+          uv run python -m nuitka --assume-yes-for-downloads --standalone --output-filename="IVW_Omicron" --main="../MainEntrance.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="InvisibleWatermarkMaker" --remove-output --product-name="IVWNext" --output-dir="output" --report="compile_log" --windows-icon-from-ico="pw.ico" --enable-plugins=pyside6 --lto=yes --upx-binary="upx/upx.exe"
 
       - name: 📁 Assemble release package
         shell: powershell
