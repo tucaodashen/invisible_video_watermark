@@ -279,7 +279,7 @@ class Slice:
                                                                                    self.attachment_data)
                 else:
                     self._result = image
-                temp_path = file + ".tmp"
+                temp_path = f"{file}.tmp{path.suffix}"
                 cv2.imwrite(temp_path, self._result)
                 os.replace(temp_path, file)
                 self.logger.info(f"Stamped frame {number} saved to {file}",tags=f"Slice:Slice:stamp:{os.path.basename(self.file)}:{self.identify['order']}")

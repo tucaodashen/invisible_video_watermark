@@ -1,37 +1,37 @@
 @echo OFF
 :: =================================
-:: 0. Æô¶¯Ç°ÇåÀí¾ÉµÄ±àÒë²ÐÁô
+:: 0. ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ÉµÄ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 :: =================================
 echo.
-echo ÕýÔÚÇåÀí¾ÉµÄ±àÒë²ÐÁôÎÄ¼þ...
+echo ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÉµÄ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½...
 rmdir hw.build /Q /S
 rmdir hw.dish /Q /S
-echo ÇåÀíÍê³É¡£
+echo ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¡ï¿½
 echo.
 
 :: =================================
-:: 1. »·¾³Í¬²½ºÍ³õÊ¼»¯
+:: 1. ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½Í³ï¿½Ê¼ï¿½ï¿½
 :: =================================
-echo ÕýÔÚÍ¬²½ uv »·¾³ÒÀÀµ...
+echo ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ uv ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½...
 uv sync
 echo.
 
 :: =================================
-:: 2. ²Ëµ¥Ñ¡Ôñ
+:: 2. ï¿½Ëµï¿½Ñ¡ï¿½ï¿½
 :: =================================
 echo.
 echo =================================
-echo ÇëÑ¡Ôñ²Ù×÷£º
-echo 1. È«²¿±àÒë (LogServer + Updater + Main + ¹¹½¨½á¹¹)
-echo 2. Ö»±àÒë¸½¼Ó×é¼þ (LogServer + Updater)
-echo 3. Ö»¹¹½¨·¢²¼½á¹¹ (Ìø¹ý±àÒë)
-echo 4. ÍË³ö
+echo ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+echo 1. È«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (LogServer + Updater + Main + ï¿½ï¿½ï¿½ï¿½ï¿½á¹¹)
+echo 2. Ö»ï¿½ï¿½ï¿½ë¸½ï¿½ï¿½ï¿½ï¿½ï¿½ (LogServer + Updater)
+echo 3. Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á¹¹ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+echo 4. ï¿½Ë³ï¿½
 echo =================================
 echo.
 
-choice /c 1234 /n /m "ÇëÊäÈëÑ¡Ôñ£¨1-4£©:"
+choice /c 1234 /n /m "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½1-4ï¿½ï¿½:"
 
-:: **ÖØÒªÐÞ¸´£º±£´æÓÃ»§Ñ¡Ôñµ½±äÁ¿**
+:: **ï¿½ï¿½Òªï¿½Þ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½Ñ¡ï¿½ñµ½±ï¿½ï¿½ï¿½**
 set CHOICE=%errorlevel%
 
 if %CHOICE%==4 goto exit
@@ -40,96 +40,96 @@ if %CHOICE%==2 goto compile_addons
 if %CHOICE%==1 goto compile_all
 
 :: =================================
-:: 3. ÍË³ö±êÇ©
+:: 3. ï¿½Ë³ï¿½ï¿½ï¿½Ç©
 :: =================================
 :exit
-echo ÍË³ö½Å±¾¡£
+echo ï¿½Ë³ï¿½ï¿½Å±ï¿½ï¿½ï¿½
 goto :eof
 
 :: =================================
-:: 4. ¡°È«²¿±àÒë¡±Èë¿Ú
+:: 4. ï¿½ï¿½È«ï¿½ï¿½ï¿½ï¿½ï¿½ë¡±ï¿½ï¿½ï¿½
 :: =================================
 :compile_all
 echo.
-echo *** Ä£Ê½£ºÈ«²¿±àÒë (1) ***
+echo *** Ä£Ê½ï¿½ï¿½È«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (1) ***
 goto compile_logserver
 
 :: =================================
-:: 5. ¡°Ö»±àÒë¸½¼Ó×é¼þ¡±Èë¿Ú
+:: 5. ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ë¸½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 :: =================================
 :compile_addons
 echo.
-echo *** Ä£Ê½£ºÖ»±àÒë¸½¼Ó×é¼þ (2) ***
+echo *** Ä£Ê½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ë¸½ï¿½ï¿½ï¿½ï¿½ï¿½ (2) ***
 goto compile_logserver
 
 :: =================================
-:: 6. ±àÒë LogServer
+:: 6. ï¿½ï¿½ï¿½ï¿½ LogServer
 :: =================================
 :compile_logserver
 echo.
-echo --- ÕýÔÚ±àÒë LogServer.exe (¸½¼Ó×é¼þ 1/2) ---
+echo --- ï¿½ï¿½ï¿½Ú±ï¿½ï¿½ï¿½ LogServer.exe (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 1/2) ---
 uv run python -m nuitka --standalone --show-memory --output-filename="LogServer" --main="../LogServer/main.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="NetworkLogger" --onefile --remove-output --product-name="LogServer"
 if errorlevel 1 (
-    echo LogServer ±àÒëÊ§°Ü!
+    echo LogServer ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½!
     pause
     goto :eof
 )
 goto compile_updater
 
 :: =================================
-:: 7. ±àÒë AobaUpdater
+:: 7. ï¿½ï¿½ï¿½ï¿½ AobaUpdater
 :: =================================
 :compile_updater
 echo.
-echo --- ÕýÔÚ±àÒë AobaUpdater.exe (¸½¼Ó×é¼þ 2/2) ---
+echo --- ï¿½ï¿½ï¿½Ú±ï¿½ï¿½ï¿½ AobaUpdater.exe (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 2/2) ---
 uv run python -m nuitka --standalone --show-memory --output-filename="AobaUpdater" --main="../updater/aoba_updater.py" --windows-icon-from-ico="aoba.ico" --company-name="PraySoftware" --product-name="AobaUpdater" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="SoftwareUpdater" --onefile --remove-output
 if errorlevel 1 (
-    echo AobaUpdater ±àÒëÊ§°Ü!
+    echo AobaUpdater ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½!
     pause
     goto :eof
 )
 
-:: **ÖØÒªÐÞ¸´£ºÊ¹ÓÃ±£´æµÄ±äÁ¿½øÐÐÅÐ¶Ï**
+:: **ï¿½ï¿½Òªï¿½Þ¸ï¿½ï¿½ï¿½Ê¹ï¿½Ã±ï¿½ï¿½ï¿½Ä±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½**
 if %CHOICE%==2 (
     echo.
-    echo ¸½¼Ó×é¼þ±àÒëÍê³É¡£
+    echo ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¡ï¿½
     goto end
 )
 
-:: ·ñÔò£¬¼ÌÐø±àÒëÖ÷³ÌÐò (Ö»ÔÚÑ¡Ôñ 1 Ê±Ö´ÐÐ)
+:: ï¿½ï¿½ï¿½ò£¬¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (Ö»ï¿½ï¿½Ñ¡ï¿½ï¿½ 1 Ê±Ö´ï¿½ï¿½)
 goto compile_main
 
 :: =================================
-:: 8. ±àÒëÖ÷³ÌÐò
+:: 8. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 :: =================================
 :compile_main
 echo.
-echo --- ÕýÔÚ±àÒë Ö÷³ÌÐò IVW_Omicron.exe ---
-uv run python -m nuitka --standalone --show-memory --output-filename="IVW_Omicron" --main="../MainEntrance.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="InvisivleWatermarkMaker" --remove-output --product-name="IVWNext" --output-dir="output" --report="compile_log" --windows-icon-from-ico="pw.ico" --enable-plugins="pyside6","upx" --lto=yes --upx-binary="upx/upx.exe"
+echo --- ï¿½ï¿½ï¿½Ú±ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ IVW_Omicron.exe ---
+uv run python -m nuitka --standalone --show-memory --output-filename="IVW_Omicron" --main="../MainEntrance.py" --company-name="PraySoftware" --file-version="0.0.0.1" --product-version="0.0.0.1" --file-description="InvisivleWatermarkMaker" --remove-output --product-name="IVWNext" --output-dir="output" --report="compile_log" --windows-icon-from-ico="pw.ico" --enable-plugins=pyside6 --lto=yes --upx-binary="%~dp0upx\upx.exe"
 if errorlevel 1 (
-    echo Ö÷³ÌÐò±àÒëÊ§°Ü!
+    echo ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½!
     pause
     goto :eof
 )
 goto build_file_structure
 
 :: =================================
-:: 9. ¹¹½¨·¢²¼ÎÄ¼þ½á¹¹
+:: 9. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½á¹¹
 :: =================================
 :build_file_structure
 echo.
-echo --- ÕýÔÚ¹¹½¨·¢²¼ÎÄ¼þ½á¹¹ ---
+echo --- ï¿½ï¿½ï¿½Ú¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½á¹¹ ---
 
-:: ´´½¨Ä¿Â¼
+:: ï¿½ï¿½ï¿½ï¿½Ä¿Â¼
 mkdir Release 2>nul
 mkdir Release\logs 2>nul
 mkdir Release\dumps 2>nul
 mkdir Release\download 2>nul
 mkdir Release\preset 2>nul
-echo Ä¿±êÎÄ¼þ¼Ð´´½¨Íê³É¡£
+echo Ä¿ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½É¡ï¿½
 
-:: ¸´ÖÆÎÄ¼þ/×ÊÔ´
-echo ÕýÔÚ¸´ÖÆ×ÊÔ´ºÍ¿ÉÖ´ÐÐÎÄ¼þ...
+:: ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½/ï¿½ï¿½Ô´
+echo ï¿½ï¿½ï¿½Ú¸ï¿½ï¿½ï¿½ï¿½ï¿½Ô´ï¿½Í¿ï¿½Ö´ï¿½ï¿½ï¿½Ä¼ï¿½...
 robocopy output/MainEntrance.dist Release /E /NFL /NDL /NJH /NJS
 robocopy ../assets Release/assets /E /NFL /NDL /NJH /NJS
 copy LogServer.exe Release\LogServer.exe /Y
@@ -138,11 +138,11 @@ copy AobaUpdater.exe Release\AobaUpdater.exe /Y
 goto end
 
 :: =================================
-:: 10. ½áÊøºÍÔÝÍ£
+:: 10. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í£
 :: =================================
 :end
 echo.
 echo =================================
-echo ²Ù×÷Íê³É£¡Çë¼ì²é Release ÎÄ¼þ¼Ð¡£
+echo ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É£ï¿½ï¿½ï¿½ï¿½ï¿½ Release ï¿½Ä¼ï¿½ï¿½Ð¡ï¿½
 echo =================================
 pause
