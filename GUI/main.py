@@ -24,6 +24,7 @@ import requests
 from PIL import Image as PILImage
 from html2image import Html2Image
 
+import modules.VideoProcessor
 from BasicSystem.log_client import setup_logger, get_logger
 from GUI.NewVersionFround import Ui_NewVersion
 from GUI.NonCW import Ui_NonCriticalError
@@ -59,6 +60,7 @@ from modules.ThreadingScheduler import ThreadPoolManager
 from modules.audio import AudioPlayer
 from modules.ExtractUnit import ExtracUnit
 from modules.pltform import get_render_devices
+from modules import utility
 
 error_list = []
 
@@ -530,6 +532,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     check_update_timer = QTimer()
     def __init__(self):
         super().__init__()
+        self.enable_login = False
+        try:
+            from modules.OAuth import google_login
+            self.enable_login = True
+        except Exception as e:
+            logger.warning(f"Failed to import google_login module: {e}. OpenCore version determined. Disable Google Drive features.",tags="main:MainWindow:__init__")
         self.image_process = None
         self.avatar = None
         self.check_thread = None
@@ -587,7 +595,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.check_update_timer.timeout.connect(self.check_update_from_github)
             self.check_update_timer.setSingleShot(True)
             self.check_update_timer.start(3000)
-        # self.set_post_modify()
+        if self.enable_login:
+            self.set_post_modify()
 
 
 
@@ -599,21 +608,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print(self.preference_args)
 
     def set_post_modify(self):
-        self.container_widget = QFrame()
-        self.container_widget.setObjectName("CONT")
-        self.loginandadmin = TransparentPushButton()
-        self.loginandadmin.setText(_("点击以登录"))
-        self.setStyleSheet("#CONT { border-radius: 10px; border: 1px solid gray; }")
-        layout = QHBoxLayout(self.container_widget)
-        layout.setContentsMargins(5, 2, 5, 2)
-        layout.setSpacing(2)
-        self.avatar = AvatarWidget()
-        self.avatar.setImage("./assets/image/AvatarPlaceHolder.png")
-        self.avatar.scaledToHeight(25)
-        self.avatar.setRadius(25)
-        layout.addWidget(self.avatar)
-        layout.addWidget(self.loginandadmin)
-        self.menubar.setCornerWidget(self.container_widget)
+        pass
+        # self.container_widget = QFrame()
+        # self.container_widget.setObjectName("CONT")
+        # self.loginandadmin = TransparentPushButton()
+        # self.loginandadmin.setText(_("点击以登录"))
+        # self.setStyleSheet("#CONT { border-radius: 10px; border: 1px solid gray; }")
+        # layout = QHBoxLayout(self.container_widget)
+        # layout.setContentsMargins(5, 2, 5, 2)
+        # layout.setSpacing(2)
+        # self.avatar = AvatarWidget()
+        # self.avatar.setImage("./assets/image/AvatarPlaceHolder.png")
+        # self.avatar.scaledToHeight(25)
+        # self.avatar.setRadius(25)
+        # layout.addWidget(self.avatar)
+        # layout.addWidget(self.loginandadmin)
+        # self.menubar.setCornerWidget(self.container_widget)
 
 
 
@@ -766,7 +776,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         stop_action.setEnabled(False)
                         pause_action.setEnabled(False)
                         delete_action.setEnabled(False)
-                    if i.error_occur:
+                    if i.error_occured:
                         start_action.setEnabled(False)
                         stop_action.setEnabled(False)
                         pause_action.setEnabled(False)
@@ -948,9 +958,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.update_default()
                 target = self.default_detail_show
             else:
-                # 查找索引匹配的任务 (注意：你的逻辑是 index == current_selected_task + 1)
                 for i in self.task_queue:
-                    if i.index == self.current_selected_task + 1:
+                    if i.index == self.current_selected_task:
                         target = i
                         break
 
@@ -965,7 +974,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # 3. 统一更新 UI 标签 (DRY原则：只写一次)
         self.SourceLabel.setText(_("源文件:") + os.path.basename(target.file))
-        self.progressBar.setValue(int(target.progress * 100))
+        if target.completed or target.status == 0:
+            self.progressBar.setValue(100)
+        else:
+            self.progressBar.setValue(int(target.progress * 100))
         self.FileNameLabel.setText(_("文件名:") + os.path.basename(target.file))
         self.FilePathLabel.setText(_("文件路径:") + target.file)
         self.FileFormatLabel.setText(_("格式:") + target.output_format)
@@ -1330,8 +1342,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def set_first_selected(self):
         all = self.get_selected_rows()
         if all:
-            self.current_selected_task = all[0]
-            self.update_details()
+            row = all[0]
+            item = self.QueueList.item(row, 0)
+            if item:
+                self.current_selected_task = int(item.text())
+                self.update_details()
         else:
             self.current_selected_task = None
 
@@ -1468,13 +1483,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         tpb = 0
         if self.QueueList.rowCount() != 0:
             for task in self.task_queue:
-                total_progress += 1
+                if not task.completed:
+                    total_progress += 1
             for pb in range(self.QueueList.rowCount()):
-                progress_bar = self.QueueList.cellWidget(pb, 4)
-                tpb += progress_bar.value()
+                item = self.QueueList.item(pb, 0)
+                if not item:
+                    continue
+                index_text = int(item.text())
+                for task in self.task_queue:
+                    if task.index == index_text:
+                        if not task.completed:
+                            progress_bar = self.QueueList.cellWidget(pb, 4)
+                            tpb += progress_bar.value()
+                        break
             if total_progress != 0:
                 self.QueueProgressBar.setValue(tpb/total_progress)
-            self.set_is_completed()
+            else:
+                self.QueueProgressBar.setValue(100)
+        else:
+            self.QueueProgressBar.setValue(0)
+        self.set_is_completed()
 
 
     def terminal_all_task(self):
@@ -1549,7 +1577,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.StopButton.setIcon(FIF.CLOSE)
         self.setWindowTitle(_("Invisible Watermark Toolbox NEXT"))
         self.QueueProgressBar.setValue(0)
-        self.progressBar.setValue(10)
+        self.progressBar.setValue(0)
         self.progressBar.setTextVisible(True)
         self.SingleSelectLabel.setText(_("请选择文件"))
         self.SLBrowser.setText(_("浏览"))
@@ -1696,6 +1724,18 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
                 self.preference_args = json.load(f)
         self.LE_VideoExportPath.setText(self.preference_args["DefaultSavePath"])
         self.PB_VideoExportPath.clicked.connect(self.set_out_path)
+        self.optimize_max_process_count()
+
+
+
+    def optimize_max_process_count(self):
+        total_frame_count = modules.VideoProcessor.get_frame_count(self.file_path[0])
+        total_cpu_cores = utility.get_cpu_count()//1.5
+        slice_length = int(total_frame_count//total_cpu_cores)
+        logger.debug(f"Calculated the most effective configuration with {total_cpu_cores} and {slice_length} slice length.", tags="CreateNewProject:optimize_max_process_count")
+        self.SB_MultiProcess.setValue(total_cpu_cores)
+        self.SB_Slicelength.setValue(slice_length)
+
 
 
 
@@ -2205,120 +2245,96 @@ class CreateNewProject(QFrame,Ui_SetUpNewForm):
         self.set_encoders()
 
     def check_validity(self):
-        if cv2.imread(self.LE_WatermarkContent.text()) is None and self.CB_IW.isChecked():
-            showFlyout(self, self.LE_WatermarkContent, InfoBarIcon.ERROR, _("请检查图片路径是否正确？是否为有权限目录？"),
-                       _("图片无法读取！"))
+        # 1. 水印内容基本检查
+        wm_text = self.LE_WatermarkContent.text().strip()
+        if len(wm_text) == 0:
+            showFlyout(self, self.LE_WatermarkContent, InfoBarIcon.ERROR, _("请输入水印内容！"), _("水印内容不能为空！"))
             return False
-        if int(self.CB_BitRateControl.currentIndex()) == 1 and len(self.LE_BitRate.text()) == 1:
-            showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率?！"),_("比特率不合规！"))
-            return False
-        elif int(self.CB_BitRateControl.currentIndex()) == 0:
-            if len(self.LE_BitRate.text()) == 1 or len(self.LE_MaxBitRate.text()) == 1:
-                showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率！"),_("比特率不合规！"))
-                return False
 
-        if int(self.CB_BitRateControl.currentIndex()) == 1 and len(self.LE_BitRate.text()) == 0:
-            showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率！"),_("比特率不能为空！"))
-            return False
-        elif int(self.CB_BitRateControl.currentIndex()) == 0:
-            if len(self.LE_BitRate.text()) == 0 or len(self.LE_MaxBitRate.text()) == 0:
-                showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率！"),_("比特率不能为空！"))
-                return False
-        if int(self.CB_WatermarkAgori.currentIndex()) == 3:
-            if len(str(self.LE_WatermarkContent.text()).encode('utf-8')) != 4:
-                showFlyout(self,self.LE_WatermarkContent,InfoBarIcon.ERROR,_("RivaGan算法目前并不支持四字节以外长度！"),_("水印长度不匹配！"))
-                return False
-        if len(self.LE_WatermarkContent.text()) >= 500:
+        if len(wm_text) >= 500:
             showFlyout(self, self.LE_WatermarkContent, InfoBarIcon.ERROR, _("其实这个并不是很能藏的......"),
                        _("水印长度过长！"))
             return False
 
-
-
-        if int(self.CB_BitRateControl.currentIndex()) == 1:
-            try:
-                int(str(self.LE_BitRate.text()).replace("k","").replace("K","").replace("M","").replace("m","").replace(" ",""))
-            except ValueError:
-                    showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率?！"),_("比特率不合规！"))
-                    return False
-            except Exception as e:
-                print(e)
-                return False
-        else:
-            try:
-                int(str(self.LE_BitRate.text()).replace("k","").replace("K","").replace("M","").replace("m","").replace(" ",""))
-                int(str(self.LE_MaxBitRate.text()).replace("k", "").replace("K", "").replace("M", "").replace("m",
-                                                                                                           "").replace(
-                    " ", ""))
-            except ValueError:
-                    showFlyout(self,self.CB_BitRateControl,InfoBarIcon.ERROR,_("请重新输入比特率！"),_("比特率不合规！"))
-                    return False
-            except Exception as e:
-                print(e)
+        # 2. 图片水印路径检查 (修正报错点)
+        if self.CB_IW.isChecked():
+            img = cv2.imread(wm_text)
+            # 必须使用 'is None' 显式判断，严禁直接使用 'if not cv2.imread(...):'
+            if img is None:
+                showFlyout(self, self.LE_WatermarkContent, InfoBarIcon.ERROR,
+                           _("请检查图片路径是否正确？是否为有权限目录？"), _("图片无法读取！"))
                 return False
 
-        if self.CB_Sampler.currentIndex() == 2 and len(self.LE_SamplerSheet.text().replace("\n","")) == 0:
-            showFlyout(self,self.CB_Sampler,InfoBarIcon.ERROR,_("请输入采样器工作表"),_("采样表不能为空！"))
+        # 3. 比特率校验逻辑优化 (合并了非空、长度和格式校验)
+        idx = self.CB_BitRateControl.currentIndex()
+        br_raw = self.LE_BitRate.text().strip()
+        mbr_raw = self.LE_MaxBitRate.text().strip()
+
+        def is_invalid_br(text):
+            if not text or len(text) == 1: return True
+            try:
+                # 清理单位以便校验数字
+                clean_val = text.lower().replace("k", "").replace("m", "").replace(" ", "")
+                int(clean_val)
+                return False
+            except ValueError:
+                return True
+
+        if idx == 1:  # 固定比特率
+            if is_invalid_br(br_raw):
+                showFlyout(self, self.CB_BitRateControl, InfoBarIcon.ERROR, _("请重新输入比特率！"),
+                           _("比特率不合规或为空！"))
+                return False
+        else:  # 动态比特率
+            if is_invalid_br(br_raw) or is_invalid_br(mbr_raw):
+                showFlyout(self, self.CB_BitRateControl, InfoBarIcon.ERROR, _("请重新输入比特率！"),
+                           _("比特率不合规或为空！"))
+                return False
+
+        # 4. 算法与编码器逻辑检查
+        # RivaGan 长度检查
+        if self.CB_WatermarkAgori.currentIndex() == 3:
+            if len(wm_text.encode('utf-8')) != 4:
+                showFlyout(self, self.LE_WatermarkContent, InfoBarIcon.ERROR,
+                           _("RivaGan算法目前并不支持四字节以外长度！"), _("水印长度不匹配！"))
+                return False
+
+        # 修正：AV1 与 MOV 兼容性检查 (注意：原代码 self.CB_VideoExportFormat 缺少 .text() 或 .currentText())
+        if "AV1" in self.CB_VideoEncoder.text() and self.CB_VideoExportFormat.currentText() == "MOV":
+            showFlyout(self, self.CB_VideoEncoder, InfoBarIcon.ERROR, _("AV1编码不支持MOV格式！"),
+                       _("请选择其他格式进行编码"))
             return False
-        if len(self.LE_VideoExportPath.text()) == 0:
-            showFlyout(self,self.LE_VideoExportPath,InfoBarIcon.ERROR,_("请输入导出路径！"),_("导出路径不能为空！"))
+
+        # 5. 采样器与路径检查
+        if self.CB_Sampler.currentIndex() == 2 and not self.LE_SamplerSheet.text().strip():
+            showFlyout(self, self.CB_Sampler, InfoBarIcon.ERROR, _("请输入采样器工作表"), _("采样表不能为空！"))
             return False
-        if "AV1" in self.CB_VideoEncoder.text() and self.CB_VideoExportFormat == "MOV":
-            showFlyout(self,self.CB_VideoEncoder,InfoBarIcon.ERROR,_("AV1编码不支持MOV格式！"),_("请选择其他格式进行编码"))
+
+        if self.CB_Sampler.currentIndex() in [0, 1] and self.SB_SamplerTimes.value() == 0:
+            showFlyout(self, self.SB_SamplerTimes, InfoBarIcon.ERROR, _("请输入采样次数！"), _("采样次数不能为0！"))
             return False
-        if self.CB_Sampler.currentIndex() in [0,1] and self.SB_SamplerTimes.value() == 0:
-            showFlyout(self,self.SB_SamplerTimes,InfoBarIcon.ERROR,_("请输入采样次数！"),_("采样次数不能为0！"))
-            return False
+
         if self.SB_Slicelength.value() == 0:
-            showFlyout(self,self.SB_Slicelength,InfoBarIcon.ERROR,_("请输入切片长度！"),_("切片长度不能为0！"))
+            showFlyout(self, self.SB_Slicelength, InfoBarIcon.ERROR, _("请输入切片长度！"), _("切片长度不能为0！"))
             return False
-        if len(self.LE_WatermarkContent.text()) == 0:
-            showFlyout(self,self.LE_WatermarkContent,InfoBarIcon.ERROR,_("请输入水印内容！"),_("水印内容不能为空！"))
+
+        if len(self.LE_VideoExportPath.text()) == 0:
+            showFlyout(self, self.LE_VideoExportPath, InfoBarIcon.ERROR, _("请输入导出路径！"), _("导出路径不能为空！"))
             return False
-        if self.LE_wmpara1.isVisible() and len(self.LE_wmpara1.text()) == 0:
-            showFlyout(self,self.LE_wmpara1,InfoBarIcon.ERROR,_("请输入参数1！"),_("参数1不能为空！"))
-            return False
-        if self.LE_wmpara2.isVisible() and len(self.LE_wmpara2.text()) == 0:
-            showFlyout(self,self.LE_wmpara2,InfoBarIcon.ERROR,_("请输入参数2！"),_("参数2不能为空！"))
-            return False
-        if self.LE_wmpara3.isVisible() and len(self.LE_wmpara3.text()) == 0:
-            showFlyout(self,self.LE_wmpara3,InfoBarIcon.ERROR,_("请输入参数3！"),_("参数3不能为空！"))
-            return False
-        if self.LE_wmpara4.isVisible() and len(self.LE_wmpara4.text()) == 0:
-            showFlyout(self,self.LE_wmpara4,InfoBarIcon.ERROR,_("请输入参数4！"),_("参数4不能为空！"))
-            return False
-        if self.LE_wmpara1.isVisible():
-            try:
-                content = self.LE_wmpara1.text()
-                res = content.replace(",","")
-                int(res)
-            except ValueError:
-                showFlyout(self,self.LE_wmpara1,InfoBarIcon.ERROR,_("请输入参数1！"),_("参数1不合规！"))
-                return False
-        if self.LE_wmpara2.isVisible():
-            try:
-                content = self.LE_wmpara2.text()
-                res = content.replace(",","")
-                int(res)
-            except ValueError:
-                showFlyout(self,self.LE_wmpara2,InfoBarIcon.ERROR,_("请输入参数2！"),_("参数2不合规！"))
-                return False
-        if self.LE_wmpara3.isVisible():
-            try:
-                content = self.LE_wmpara3.text()
-                res = content.replace(",","")
-                int(res)
-            except ValueError:
-                showFlyout(self,self.LE_wmpara3,InfoBarIcon.ERROR,_("请输入参数3！"),_("参数3不合规！"))
-                return False
-        if self.LE_wmpara4.isVisible():
-            try:
-                content = self.LE_wmpara4.text()
-                res = content.replace(",","")
-                int(res)
-            except ValueError:
-                showFlyout(self,self.LE_wmpara4,InfoBarIcon.ERROR,_("请输入参数4！"),_("参数4不合规！"))
-                return False
+
+        # 6. 动态参数校验 (参数1-4)
+        for i, le in enumerate([self.LE_wmpara1, self.LE_wmpara2, self.LE_wmpara3, self.LE_wmpara4], 1):
+            if le.isVisible():
+                val = le.text().strip()
+                if not val:
+                    showFlyout(self, le, InfoBarIcon.ERROR, _(f"请输入参数{i}！"), _(f"参数{i}不能为空！"))
+                    return False
+                try:
+                    int(val.replace(",", ""))
+                except ValueError:
+                    showFlyout(self, le, InfoBarIcon.ERROR, _(f"请输入参数{i}！"), _(f"参数{i}不合规！"))
+                    return False
+
         return True
 
 
