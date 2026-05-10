@@ -67,8 +67,11 @@ jobs:
           New-Item -ItemType Directory -Force -Path Release\download
           New-Item -ItemType Directory -Force -Path Release\preset
 
-          $dist = Get-ChildItem -Path make\output -Directory -Filter "*.dist" | Select-Object -First 1
-          if (-not $dist) { Write-Error "No .dist folder found"; exit 1 }
+          $dist = Get-ChildItem -Path make\output -Directory -Filter "*.dist" |
+              Where-Object { $_.Name -notmatch "LogServer|AobaUpdater" } |
+              Select-Object -First 1
+          if (-not $dist) { Write-Error "No main app .dist folder found"; exit 1 }
+          Write-Host "Found dist: $($dist.FullName)"
           Copy-Item -Recurse -Force "$($dist.FullName)\*" Release\
 
           Copy-Item -Recurse -Force assets Release\assets
