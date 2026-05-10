@@ -129,13 +129,15 @@ def test_pyproject_zmq_fixed():
 
 
 def test_init_files_exist():
-    """GUI/__init__.py and modules/__init__.py should exist."""
+    """GUI/__init__.py should exist, but modules/__init__.py should NOT (namespace package)."""
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     gui_init = os.path.join(base_dir, "GUI", "__init__.py")
     mod_init = os.path.join(base_dir, "modules", "__init__.py")
 
     assert os.path.exists(gui_init), "GUI/__init__.py missing"
-    assert os.path.exists(mod_init), "modules/__init__.py missing"
+    assert not os.path.exists(mod_init), (
+        "modules/__init__.py should NOT exist — modules is a namespace package"
+    )
 
 
 if __name__ == "__main__":
