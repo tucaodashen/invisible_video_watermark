@@ -66,7 +66,11 @@ jobs:
           New-Item -ItemType Directory -Force -Path Release\dumps
           New-Item -ItemType Directory -Force -Path Release\download
           New-Item -ItemType Directory -Force -Path Release\preset
-          Copy-Item -Recurse -Force make\output\IVW_Omicron.dist\* Release\
+
+          $dist = Get-ChildItem -Path make\output -Directory -Filter "*.dist" | Select-Object -First 1
+          if (-not $dist) { Write-Error "No .dist folder found"; exit 1 }
+          Copy-Item -Recurse -Force "$($dist.FullName)\*" Release\
+
           Copy-Item -Recurse -Force assets Release\assets
           Copy-Item -Force make\LogServer.exe Release\LogServer.exe
           Copy-Item -Force make\AobaUpdater.exe Release\AobaUpdater.exe
