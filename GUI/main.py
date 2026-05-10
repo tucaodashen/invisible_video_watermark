@@ -60,7 +60,7 @@ from modules.ThreadingScheduler import ThreadPoolManager
 from modules.audio import AudioPlayer
 from modules.ExtractUnit import ExtracUnit
 from modules.pltform import get_render_devices
-from modules import utility
+import modules.utility as utility
 
 error_list = []
 
