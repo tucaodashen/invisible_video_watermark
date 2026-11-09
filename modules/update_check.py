@@ -45,7 +45,7 @@ def get_latest_github_release_info(repo_owner, repo_name):
 
     try:
         # 发送 GET 请求
-        response = requests.get(api_url, headers=headers)
+        response = requests.get(api_url, headers=headers, timeout=10)
 
         # 检查响应状态码
         if response.status_code == 200:
